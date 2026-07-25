@@ -1,14 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { anyone } from '../access'
-import {
-  siteScoped,
-  siteScopedAdmin,
-  siteFieldAccess,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  createSiteScopedSlugValidation,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { adminOnly, anyone, createUniqueSlugValidation } from '../access'
 import slugify from 'slugify'
 
 export const PowerGroups: CollectionConfig = {
@@ -16,38 +7,17 @@ export const PowerGroups: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     group: 'Settings',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
     read: anyone,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this power group belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
     {
       name: 'title',
       type: 'text',
@@ -72,7 +42,7 @@ export const PowerGroups: CollectionConfig = {
           en: 'URL-friendly identifier (auto-generated from title if left empty)',
         },
       },
-      validate: createSiteScopedSlugValidation('power-groups'),
+      validate: createUniqueSlugValidation('power-groups'),
       hooks: {
         beforeValidate: [
           ({ value, data }) => {

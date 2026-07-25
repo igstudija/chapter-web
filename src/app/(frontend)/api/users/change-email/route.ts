@@ -5,8 +5,7 @@ import config from '@/payload.config'
 import crypto from 'node:crypto'
 import { sendEmail } from '@/lib/sendEmail'
 import { generateEmailTemplate } from '@/lib/emailTemplate'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
-import { getSiteSettingsById } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { type EmailLocale, getEmailTranslations } from '@/lib/emailTranslations'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 import { DEFAULT_LOCALE } from '@/lib/i18n'
@@ -52,16 +51,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Email already in use' }, { status: 400 })
     }
 
-    // Get site and locale from host
     const host = headers.get('host') || 'localhost:3050'
     const protocol =
       headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https')
     const baseUrl = `${protocol}://${host}`
 
-    const site = await getSiteFromHost(host)
-    const siteSettings = site ? await getSiteSettingsById(String(site.id)) : null
-    const locale: EmailLocale = (site?.locale as EmailLocale) || DEFAULT_LOCALE
-    const chapterName = siteSettings?.siteName || site?.name || DEFAULT_ORG_NAME
+    const settings = await getSettings()
+    const locale: EmailLocale = (settings?.locale as EmailLocale) || DEFAULT_LOCALE
+    const chapterName = settings?.siteName || DEFAULT_ORG_NAME
     const t = getEmailTranslations(locale)
 
     // Generate verification token
@@ -86,7 +83,6 @@ export async function POST(request: Request) {
     await sendEmail({
       to: newEmail,
       subject: `${t.emailChange.subject} - ${chapterName}`,
-      siteId: site?.id,
       html: generateEmailTemplate({
         title: t.emailChange.title,
         chapterName,
@@ -128,7 +124,6 @@ export async function POST(request: Request) {
     await sendEmail({
       to: user.email,
       subject: `${t.emailChange.notificationSubject} - ${chapterName}`,
-      siteId: site?.id,
       html: generateEmailTemplate({
         title: t.emailChange.notificationTitle,
         chapterName,

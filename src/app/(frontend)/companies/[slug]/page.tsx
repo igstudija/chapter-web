@@ -8,32 +8,31 @@ import { Mail, Phone, Globe, User } from 'lucide-react'
 import slugify from 'slugify'
 import { GalleryLightbox } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import type { SiteMembership, User as PayloadUser } from '@/payload-types'
+import type { Member, User as PayloadUser } from '@/payload-types'
 
 function generateCompanySlug(company: string): string {
   return slugify(company, { lower: true, strict: true })
 }
 
 // Helper type for membership with populated user
-type MembershipWithUser = SiteMembership & {
+type MembershipWithUser = Member & {
   user: PayloadUser
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const settings = await getSettings()
 
-  if (!currentSite) {
+  if (!settings) {
     return { title: 'Company Not Found' }
   }
 
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     limit: 100,
@@ -61,19 +60,18 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
   const { user } = await payload.auth({ headers })
   const isLoggedIn = user && isUserActive(user as UserWithContext)
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     notFound()
   }
 
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   // Fetch memberships for current site
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     limit: 100,

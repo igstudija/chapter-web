@@ -4,7 +4,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import type { PowerGroup, Media, User } from '@/payload-types'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getThumbnailUrl } from '@/lib/getThumbnailUrl'
 import VCardsPageClient from './page-client'
 
@@ -24,16 +24,15 @@ export default async function VCardsPage() {
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     redirect('/login')
   }
 
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     limit: 100,
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     depth: 1,

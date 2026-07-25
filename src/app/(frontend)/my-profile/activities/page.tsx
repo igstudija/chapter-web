@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { isUserAdmin } from '@/lib/userHelpers'
 import { MyProfilePageWrapper } from '@/components/MyProfilePageWrapper'
 import { ActivitiesContent } from '@/components/ActivitiesContent'
 import {
@@ -14,27 +15,26 @@ export const metadata = {
 
 export default async function ActivitiesPage() {
   const baseData = await getMyProfileBaseData()
-  const { user, membership, currentSite, t, payload, profileImage, logo, memberForHeader, previewLink } = baseData
+  const { user, membership, settings, t, payload, profileImage, logo, memberForHeader, previewLink } = baseData
 
   // Check if activities feature is enabled
-  if (!currentSite.enableActivities) {
+  if (!settings.enableActivities) {
     redirect('/my-profile')
   }
 
   // Check if blocked
-  const isActive = baseData.userWithContext.isSuperadmin || membership?.status === 'active'
+  const isActive = isUserAdmin(baseData.userWithContext) || membership?.status === 'active'
   if (!isActive) {
     redirect('/my-profile')
   }
 
   // Fetch all data in parallel
   const [tabCounts, meetingsData, referralsGivenData, referralsReceivedData, members] = await Promise.all([
-    getProfileTabCounts(payload, user.id, currentSite.id),
+    getProfileTabCounts(payload, user.id, settings.id),
     payload.find({
       collection: 'one-to-one-meetings',
       where: {
         and: [
-          { site: { equals: currentSite.id } },
           {
             or: [
               { createdBy: { equals: user.id } },
@@ -52,7 +52,6 @@ export default async function ActivitiesPage() {
       where: {
         and: [
           { fromUser: { equals: user.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
       limit: 100,
@@ -64,14 +63,13 @@ export default async function ActivitiesPage() {
       where: {
         and: [
           { toUser: { equals: user.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
       limit: 100,
       sort: '-date',
       depth: 1,
     }),
-    getSiteMembers(payload, String(currentSite.id), String(user.id)),
+    getSiteMembers(payload, String(settings.id), String(user.id)),
   ])
 
   // Transform meetings data
@@ -142,9 +140,9 @@ export default async function ActivitiesPage() {
       activeTab="activities"
       tabCounts={tabCounts}
       enableActivities={true}
-      enableSuccessStories={currentSite.enableSuccessStories !== false}
+      enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
-      siteId={currentSite.id}
+      siteId={settings.id}
     >
       <ActivitiesContent
         userId={String(user.id)}

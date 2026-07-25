@@ -147,7 +147,7 @@ export function createSeoTab(options?: { includeAdvanced?: boolean }): Field {
 
 /**
  * Site-level SEO settings with additional global options.
- * Used in SiteSettingsCollection for site-wide defaults.
+ * Used in Settings for site-wide defaults.
  */
 export const siteSeoFields: Field[] = [
   {

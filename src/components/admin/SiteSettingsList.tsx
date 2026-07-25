@@ -1,5 +1,5 @@
 import { SingletonRedirect } from './SingletonRedirect'
 
-const SiteSettingsList = () => <SingletonRedirect collectionSlug="site-settings-collection" />
+const SiteSettingsList = () => <SingletonRedirect collectionSlug="settings" />
 
 export default SiteSettingsList

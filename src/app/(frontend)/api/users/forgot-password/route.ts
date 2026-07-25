@@ -5,31 +5,47 @@ import config from '@/payload.config'
 import crypto from 'node:crypto'
 import { sendEmail } from '@/lib/sendEmail'
 import { generateEmailTemplate } from '@/lib/emailTemplate'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
-import { getSiteSettingsById } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { type EmailLocale, getEmailTranslations } from '@/lib/emailTranslations'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 import { DEFAULT_LOCALE } from '@/lib/i18n'
+import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rateLimit'
 
 export async function POST(request: Request) {
   try {
     const headers = await getHeaders()
+
+    // Unauthenticated and sends mail to whatever address is posted: rate limited
+    // so it cannot be used to flood a member's inbox or burn the SMTP quota.
+    const rateLimitResult = checkRateLimit(getClientIp(headers), RATE_LIMITS.EMAIL_TRIGGER)
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { message: 'Too many requests. Please try again later.' },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': String(rateLimitResult.retryAfter || 900),
+            'X-RateLimit-Remaining': '0',
+            'X-RateLimit-Reset': String(rateLimitResult.resetAt),
+          },
+        },
+      )
+    }
+
     const { email } = await request.json()
 
     if (!email) {
       return NextResponse.json({ message: 'Email is required' }, { status: 400 })
     }
 
-    // Get site and locale from host
     const host = headers.get('host') || 'localhost:3050'
     const protocol =
       headers.get('x-forwarded-proto') || (host.includes('localhost') ? 'http' : 'https')
     const baseUrl = `${protocol}://${host}`
 
-    const site = await getSiteFromHost(host)
-    const siteSettings = site ? await getSiteSettingsById(String(site.id)) : null
-    const locale: EmailLocale = (site?.locale as EmailLocale) || DEFAULT_LOCALE
-    const chapterName = siteSettings?.siteName || site?.name || DEFAULT_ORG_NAME
+    const settings = await getSettings()
+    const locale: EmailLocale = (settings?.locale as EmailLocale) || DEFAULT_LOCALE
+    const chapterName = settings?.siteName || DEFAULT_ORG_NAME
     const t = getEmailTranslations(locale)
 
     const payload = await getPayload({ config })
@@ -71,7 +87,6 @@ export async function POST(request: Request) {
     await sendEmail({
       to: email,
       subject: `${t.passwordReset.subject} - ${chapterName}`,
-      siteId: site?.id,
       html: generateEmailTemplate({
         title: t.passwordReset.title,
         chapterName,

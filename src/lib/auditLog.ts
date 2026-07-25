@@ -4,14 +4,12 @@ type AuditAction =
   | 'user_deleted'
   | 'user_created'
   | 'user_updated'
-  | 'superadmin_login'
-  | 'superadmin_login_failed'
-  | 'membership_created'
-  | 'membership_deleted'
-  | 'site_created'
-  | 'site_deleted'
+  | 'admin_login'
+  | 'admin_login_failed'
+  | 'member_created'
+  | 'member_deleted'
 
-type TargetType = 'user' | 'site' | 'membership'
+type TargetType = 'user' | 'member'
 
 interface AuditLogParams {
   payload: Payload

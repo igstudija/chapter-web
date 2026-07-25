@@ -4,8 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import slugify from 'slugify'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import { getCurrentSite } from '@/lib/getSiteSettings'
-import type { SiteMembership } from '@/payload-types'
+import { getSettings } from '@/lib/getSiteSettings'
+import type { Member } from '@/payload-types'
 import { headers } from 'next/headers'
 import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
 
@@ -23,7 +23,7 @@ export async function generateMetadata() {
   try {
     const headersList = await headers()
     const host = headersList.get('host')
-    const currentSite = await getCurrentSite()
+    const currentSite = await getSettings()
     const siteId = currentSite?.id
 
     if (!currentSite) {
@@ -46,7 +46,7 @@ export async function generateMetadata() {
         depth: 1,
       }),
       payload.find({
-        collection: 'site-settings-collection',
+        collection: 'settings',
         where: { site: { equals: siteId } },
         limit: 1,
         depth: 1,
@@ -82,7 +82,7 @@ export async function generateMetadata() {
 export default async function CompaniesPage() {
   const payload = await getPayload({ config })
 
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   if (!currentSite) {
     return (
       <div className="bg-neutral-50 dark:bg-surface min-h-screen">
@@ -99,10 +99,9 @@ export default async function CompaniesPage() {
   const [membershipsData, powerGroupsData, top40Data, specialRequestsData, companiesSettingsData] =
     await Promise.all([
       payload.find({
-        collection: 'site-memberships',
+        collection: 'members',
         limit: 100,
         where: {
-          site: { equals: currentSite.id },
           status: { equals: 'active' },
         },
         depth: 1,
@@ -112,17 +111,21 @@ export default async function CompaniesPage() {
         limit: 100,
         sort: 'title',
       }),
+      // Counted per member below, nothing else read. See the same pair in
+      // members/page.tsx for why depth 0 + select rather than depth 1.
       payload.find({
         collection: 'top40',
         where: { site: { equals: currentSite.id } },
         limit: 5000,
-        depth: 1,
+        depth: 0,
+        select: { submittedBy: true },
       }),
       payload.find({
         collection: 'special-requests',
         where: { site: { equals: currentSite.id } },
         limit: 5000,
-        depth: 1,
+        depth: 0,
+        select: { requestedBy: true },
       }),
       payload.find({
         collection: 'companies-page-settings',
@@ -152,7 +155,7 @@ export default async function CompaniesPage() {
   }
 
   // Enrich memberships with rating data
-  type MemberWithRating = SiteMembership & { rating: number }
+  type MemberWithRating = Member & { rating: number }
   const membersWithRating: MemberWithRating[] = membershipsData.docs.map((m) => {
     const memberUser = m.user && typeof m.user === 'object' ? m.user : null
     const userId = String(memberUser?.id || (typeof m.user === 'string' ? m.user : ''))

@@ -1,13 +1,6 @@
 import type { CollectionConfig } from 'payload'
+import { authenticated, adminOnly } from '../access'
 import { tinyEditor } from '../lib/tinyEditor'
-import {
-  siteScoped,
-  siteScopedAdmin,
-  siteField,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
 import { createSeoFields } from '../fields/seoFields'
 
 export const FAQSettings: CollectionConfig = {
@@ -19,8 +12,6 @@ export const FAQSettings: CollectionConfig = {
   admin: {
     useAsTitle: 'pageTitle',
     group: 'Content',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       views: {
         list: {
@@ -30,16 +21,12 @@ export const FAQSettings: CollectionConfig = {
     },
   },
   access: {
-    read: siteScoped,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: authenticated,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    siteField({ required: true }),
     {
       name: 'pageTitle',
       type: 'text',

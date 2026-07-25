@@ -1,12 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScoped,
-  siteScopedAdmin,
-  siteField,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { authenticated, adminOnly } from '../access'
 import { createSeoFields } from '../fields/seoFields'
 
 export const HomepageSettings: CollectionConfig = {
@@ -19,8 +12,6 @@ export const HomepageSettings: CollectionConfig = {
     useAsTitle: 'internalTitle',
     group: 'Content',
     description: 'Edit the homepage hero section, statistics, and call-to-action.',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       views: {
         list: {
@@ -30,42 +21,17 @@ export const HomepageSettings: CollectionConfig = {
     },
   },
   access: {
-    read: siteScoped,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: authenticated,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    // Site field - auto-assigned, hidden from non-superadmin
-    siteField({ required: true }),
     {
       name: 'internalTitle',
       type: 'text',
       admin: {
         hidden: true,
-      },
-      hooks: {
-        beforeChange: [
-          async ({ data, req }) => {
-            // Auto-generate title from site name
-            if (data?.site) {
-              const siteId = typeof data.site === 'object' ? data.site.id : data.site
-              try {
-                const site = await req.payload.findByID({
-                  collection: 'sites',
-                  id: siteId,
-                })
-                return `Homepage - ${site.name}`
-              } catch {
-                return 'Homepage'
-              }
-            }
-            return 'Homepage'
-          },
-        ],
       },
     },
     {

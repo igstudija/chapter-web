@@ -13,7 +13,7 @@ export default async function GroupSlidePage() {
   const {
     user,
     membership,
-    currentSite,
+    settings,
     t,
     payload,
     profileImage,
@@ -27,7 +27,7 @@ export default async function GroupSlidePage() {
     redirect('/my-profile')
   }
 
-  const tabCounts = await getProfileTabCounts(payload, String(user.id), String(currentSite.id))
+  const tabCounts = await getProfileTabCounts(payload, String(user.id), String(settings.id))
 
   // Get the power group data
   const powerGroupId =
@@ -51,10 +51,10 @@ export default async function GroupSlidePage() {
       previewLink={previewLink}
       activeTab="group-slide"
       tabCounts={tabCounts}
-      enableActivities={currentSite.enableActivities || false}
-      enableSuccessStories={currentSite.enableSuccessStories !== false}
+      enableActivities={settings.enableActivities || false}
+      enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={true}
-      siteId={String(currentSite.id)}
+      siteId={String(settings.id)}
     >
       <GroupSlideEditor
         powerGroupId={String(powerGroup.id)}

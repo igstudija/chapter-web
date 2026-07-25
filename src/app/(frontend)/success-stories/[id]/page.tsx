@@ -8,10 +8,10 @@ import { Mail, Phone, Globe, User as UserIcon, Award, Calendar, Building2 } from
 import slugify from 'slugify'
 import { Breadcrumb } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
 import type { Payload } from 'payload'
-import type { SuccessStory, SiteMembership, User } from '@/payload-types'
+import type { SuccessStory, Member, User } from '@/payload-types'
 
 // Helper: Fetch author membership data
 async function fetchAuthorMembership(
@@ -20,10 +20,9 @@ async function fetchAuthorMembership(
   siteId: string | number,
 ) {
   const result = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
       user: { equals: authorId },
-      site: { equals: siteId },
     },
     limit: 1,
     depth: 1,
@@ -32,13 +31,13 @@ async function fetchAuthorMembership(
 }
 
 // Helper: Extract profile image from membership
-function getProfileImage(membership: SiteMembership | null) {
+function getProfileImage(membership: Member | null) {
   if (!membership?.profileImage) return null
   return typeof membership.profileImage === 'object' ? membership.profileImage : null
 }
 
 // Helper: Extract logo from membership
-function getLogo(membership: SiteMembership | null) {
+function getLogo(membership: Member | null) {
   if (!membership?.logo) return null
   return typeof membership.logo === 'object' ? membership.logo : null
 }
@@ -60,11 +59,6 @@ async function fetchSuccessStory(payload: Payload, id: string, currentSiteId: st
     return null
   }
 
-  const storySiteId = typeof story.site === 'object' ? story.site?.id : story.site
-  if (storySiteId && String(storySiteId) !== String(currentSiteId)) {
-    return null
-  }
-
   return story
 }
 
@@ -77,7 +71,7 @@ function extractUser(userOrId: string | number | User | null | undefined): User 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const settings = await getSettings()
 
   try {
     const story = await payload.findByID({
@@ -94,8 +88,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
     // Get author's membership for company info
     let authorCompany = ''
-    if (author && currentSite) {
-      const authorMembership = await fetchAuthorMembership(payload, author.id, currentSite.id)
+    if (author && settings) {
+      const authorMembership = await fetchAuthorMembership(payload, author.id, settings.id)
       authorCompany = authorMembership?.company || ''
     }
 
@@ -115,20 +109,20 @@ export default async function SuccessStoryPage({ params }: { params: Promise<{ i
   const { user } = await payload.auth({ headers })
   const isLoggedIn = user && isUserActive(user as UserWithContext)
 
-  const currentSite = await getCurrentSite()
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const settings = await getSettings()
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
-  if (!currentSite) {
+  if (!settings) {
     notFound()
   }
 
   // Check if success stories feature is enabled
-  if (currentSite.enableSuccessStories === false) {
+  if (settings.enableSuccessStories === false) {
     redirect('/')
   }
 
-  const story = await fetchSuccessStory(payload, id, currentSite.id)
+  const story = await fetchSuccessStory(payload, id, settings.id)
   if (!story) {
     notFound()
   }
@@ -139,14 +133,14 @@ export default async function SuccessStoryPage({ params }: { params: Promise<{ i
   }
 
   // Get author's membership for profile data
-  const authorMembership = await fetchAuthorMembership(payload, author.id, currentSite.id)
+  const authorMembership = await fetchAuthorMembership(payload, author.id, settings.id)
   const authorProfileImage = getProfileImage(authorMembership)
   const authorLogo = getLogo(authorMembership)
 
   // Get partner member's membership for profile data
   const partnerMember = extractUser(story.partnerMember)
   const partnerMembership = partnerMember
-    ? await fetchAuthorMembership(payload, partnerMember.id, currentSite.id)
+    ? await fetchAuthorMembership(payload, partnerMember.id, settings.id)
     : null
 
   const formattedDate = new Date(story.createdAt).toLocaleDateString(

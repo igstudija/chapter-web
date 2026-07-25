@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { getSettings } from '@/lib/getSiteSettings'
 import Image from 'next/image'
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
@@ -6,27 +7,20 @@ import config from '@/payload.config'
 import { EventCard, BlogCard } from '@/components'
 import { ArrowRight } from 'lucide-react'
 import type { Media } from '@/payload-types'
-import { isSuperadminHost, getSiteFromHost } from '@/lib/getSiteFromHost'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import { SuperadminDashboard } from '@/components/superadmin/SuperadminDashboard'
-import { SuperadminLoginForm } from '@/components/superadmin/SuperadminLoginForm'
 import {
   generateMetadata as generateSeoMetadata,
   generateOrganizationSchema,
 } from '@/lib/seoHelpers'
 import { JsonLd } from '@/components/JsonLd'
-import { DEFAULT_ORG_NAME, SUPERADMIN_TITLE } from '@/lib/branding'
+import { DEFAULT_ORG_NAME } from '@/lib/branding'
 
 export async function generateMetadata() {
   const headersList = await headers()
   const host = headersList.get('host')
 
-  // Skip for superadmin
-  if (host && isSuperadminHost(host)) {
-    return { title: SUPERADMIN_TITLE }
-  }
 
-  const currentSite = await getSiteFromHost(host)
+  const currentSite = await getSettings()
   const siteId = currentSite?.id
 
   if (!currentSite) {
@@ -43,7 +37,7 @@ export async function generateMetadata() {
       depth: 1,
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: siteId ? { site: { equals: siteId } } : {},
       limit: 1,
       depth: 1,
@@ -72,48 +66,7 @@ export default async function HomePage() {
   const host = headersList.get('host')
   const payload = await getPayload({ config })
 
-  // === SUPERADMIN HOST: Show login or dashboard ===
-  if (host && isSuperadminHost(host)) {
-    const { user } = await payload.auth({ headers: headersList })
-
-    // Not logged in or not superadmin - show login form
-    if (!user || !user.isSuperadmin) {
-      return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
-          <div className="max-w-md w-full">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                {SUPERADMIN_TITLE}
-              </h1>
-              <p className="mt-2 text-gray-600 dark:text-gray-400">
-                Sign in to manage all organisations
-              </p>
-            </div>
-            <SuperadminLoginForm />
-          </div>
-        </div>
-      )
-    }
-
-    // Logged in as superadmin - show dashboard
-    const [sitesResult, usersResult, membershipsResult] = await Promise.all([
-      payload.find({ collection: 'sites', limit: 1000, sort: 'name' }),
-      payload.find({ collection: 'users', limit: 1000, sort: 'email' }),
-      payload.find({ collection: 'site-memberships', limit: 2000, sort: '-createdAt', depth: 1 }),
-    ])
-
-    return (
-      <SuperadminDashboard
-        sites={sitesResult.docs}
-        users={usersResult.docs}
-        memberships={membershipsResult.docs}
-        currentUser={user}
-      />
-    )
-  }
-
-  // === CHAPTER SITE: Show homepage ===
-  const currentSite = await getSiteFromHost(host)
+  const currentSite = await getSettings()
   const siteId = currentSite?.id
 
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
@@ -130,7 +83,7 @@ export default async function HomePage() {
       depth: 1,
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: siteId ? { site: { equals: siteId } } : {},
       limit: 1,
       depth: 1,

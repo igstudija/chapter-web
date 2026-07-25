@@ -36,7 +36,6 @@ export async function getSlideshowData(
 ): Promise<SlideshowDataResult | null> {
   const membershipsWhere: Where = {
     and: [
-      { site: { equals: site.id } },
       { status: { equals: 'active' } },
       { role: { in: ['member', 'member-admin'] } },
     ],
@@ -63,7 +62,7 @@ export async function getSlideshowData(
       limit: 100,
     }),
     payload.find({
-      collection: 'site-memberships',
+      collection: 'members',
       where: membershipsWhere,
       // depth: 1 populates user/powerGroup/profileImage/logo/slideImage in
       // one query plan (avoiding N+1 findByID per membership).
@@ -77,7 +76,7 @@ export async function getSlideshowData(
       sort: ['sortOrder', '-createdAt'],
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: { site: { equals: site.id } },
       limit: 1,
       depth: 1,
@@ -210,7 +209,7 @@ export async function getSlideshowData(
       } else if (typeof membership === 'string') {
         try {
           const membershipDoc = await payload.findByID({
-            collection: 'site-memberships',
+            collection: 'members',
             id: membership,
             depth: 1,
           })

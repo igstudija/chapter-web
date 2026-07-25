@@ -1,22 +1,10 @@
 import type { CollectionConfig, Where } from 'payload'
-import { activeMember } from '../access'
-import {
-  isUserSuperadmin,
-  createSiteScopedAdminOrOwner,
-  siteFieldAccess,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  getSiteIdFromHostname,
-  filterUsersBySiteMemberships,
-} from '../access/multisite'
-import { hideActivitiesCollection } from '../access/adminVisibility'
-import { getHostnameFromRequest } from '../lib/hostname'
+import { activeMember, activeUsersFilter, createAdminOrOwner, isAdmin } from '../access'
 
 /**
  * Referrals Collection
  *
- * SECURITY: All site detection is hostname-based only.
- * No JWT fallback to prevent cross-site data access.
+ * Business referrals passed from one member to another.
  */
 export const Referrals: CollectionConfig = {
   slug: 'referrals',
@@ -24,60 +12,31 @@ export const Referrals: CollectionConfig = {
     useAsTitle: 'description',
     defaultColumns: ['description', 'date', 'status', 'value'],
     group: 'Internal',
-    hidden: hideActivitiesCollection,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
-    // Site-scoped read access - hostname only, no JWT fallback
-    read: async ({ req }) => {
-      const { user } = req
+    // Administrators see every referral; a member sees the ones they are part of.
+    //
+    // This was a database lookup per check: resolve the host to an
+    // organisation, then load the caller's membership in it to read their role.
+    // Role is on the user record now.
+    read: ({ req: { user } }) => {
       if (!user) return false
-      if (isUserSuperadmin(user)) return true
-      if (!req.payload) return false
-
-      // SECURITY: Always use hostname for site detection
-      const hostname = getHostnameFromRequest(req)
-      const siteId = await getSiteIdFromHostname(hostname, req.payload)
-
-      // No site context = no access (don't fall back to JWT)
-      if (!siteId) return false
-
-      // Check user's role in this site via membership
-      const memberships = await req.payload.find({
-        collection: 'site-memberships',
-        where: {
-          and: [{ user: { equals: user.id } }, { site: { equals: siteId } }],
-        },
-        limit: 1,
-      })
-
-      const membership = memberships.docs[0]
-      if (!membership) return false
-
-      // Admin can see all referrals in their site
-      if (membership.role === 'member-admin') {
-        return { site: { equals: siteId } } as Where
-      }
-
-      // Regular members can only see their own referrals
+      if (isAdmin(user)) return true
       return {
-        and: [
-          { site: { equals: siteId } },
-          { or: [{ fromUser: { equals: user.id } }, { toUser: { equals: user.id } }] },
-        ],
+        or: [{ fromUser: { equals: user.id } }, { toUser: { equals: user.id } }],
       } as Where
     },
     create: activeMember,
-    update: createSiteScopedAdminOrOwner('createdBy'),
-    delete: createSiteScopedAdminOrOwner('createdBy'),
+    update: createAdminOrOwner('createdBy'),
+    delete: createAdminOrOwner('createdBy'),
   },
   hooks: {
     beforeChange: [
-      async (args) => autoAssignSiteHook(args),
-      // Validate that toUser has membership in the same site
+      // The counterpart must be an active member. The check used to be
+      // "a member of this site"; there is one membership list now.
       async ({ data, req, operation }) => {
         if (operation !== 'create' && operation !== 'update') return data
         if (!data?.toUser) return data
@@ -85,24 +44,15 @@ export const Referrals: CollectionConfig = {
 
         const toUserId = typeof data.toUser === 'object' ? data.toUser.id : data.toUser
 
-        // SECURITY: Hostname-only site detection
-        const hostname = getHostnameFromRequest(req)
-        const currentSiteId = await getSiteIdFromHostname(hostname, req.payload)
-
-        if (!currentSiteId) return data
-
-        // Check if toUser has membership in the current site
         const toUserMembership = await req.payload.find({
-          collection: 'site-memberships',
-          where: {
-            user: { equals: toUserId },
-            site: { equals: currentSiteId },
-          },
+          collection: 'members',
+          where: { user: { equals: toUserId } },
           limit: 1,
+          depth: 0,
         })
 
         if (toUserMembership.docs.length === 0) {
-          throw new Error('Cannot create referral with user who is not a member of this site')
+          throw new Error('Cannot create a referral for someone who is not a member')
         }
 
         return data
@@ -111,27 +61,11 @@ export const Referrals: CollectionConfig = {
   },
   fields: [
     {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this referral belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
-    {
       name: 'fromUser',
       type: 'relationship',
       relationTo: 'users',
       required: true,
-      filterOptions: filterUsersBySiteMemberships,
+      filterOptions: activeUsersFilter,
       admin: {
         description: 'Who gave the referral',
       },
@@ -141,7 +75,7 @@ export const Referrals: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       required: true,
-      filterOptions: filterUsersBySiteMemberships,
+      filterOptions: activeUsersFilter,
       admin: {
         description: 'Who received the referral',
       },
@@ -188,7 +122,7 @@ export const Referrals: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       required: true,
-      filterOptions: filterUsersBySiteMemberships,
+      filterOptions: activeUsersFilter,
       admin: {
         position: 'sidebar',
         description: 'Referral creator (can edit/delete)',

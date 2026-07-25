@@ -3,7 +3,7 @@ import { getPayload, type Where } from 'payload'
 import config from '@/payload.config'
 import { headers as getHeaders } from 'next/headers'
 import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
 import Link from 'next/link'
@@ -27,18 +27,16 @@ export default async function WikiDetailPage({ params }: PageProps) {
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
-  const siteFilter: Where = currentSite ? { site: { equals: currentSite.id } } : {}
 
   const [wikiResult, allWikiPages, top40Data, specialRequestsData] = await Promise.all([
     payload.find({
       collection: 'wiki',
       where: {
         slug: { equals: slug },
-        ...siteFilter,
       },
       limit: 1,
       depth: 2,
@@ -48,23 +46,26 @@ export default async function WikiDetailPage({ params }: PageProps) {
       where: {
         and: [
           { _status: { equals: 'published' } },
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 100,
       sort: 'title',
     }),
+    // Counted per member below, nothing else read. See the same pair in
+    // members/page.tsx for why depth 0 + select rather than depth 1.
     payload.find({
       collection: 'top40',
-      where: siteFilter,
+      where: {},
       limit: 5000,
-      depth: 1,
+      depth: 0,
+      select: { submittedBy: true },
     }),
     payload.find({
       collection: 'special-requests',
-      where: siteFilter,
+      where: {},
       limit: 5000,
-      depth: 1,
+      depth: 0,
+      select: { requestedBy: true },
     }),
   ])
 
@@ -312,7 +313,7 @@ export async function generateMetadata({ params }: PageProps) {
   const headersList = await getHeaders()
   const host = headersList.get('host')
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
 
   try {
     const [wikiData, siteSettingsData] = await Promise.all([
@@ -327,7 +328,7 @@ export async function generateMetadata({ params }: PageProps) {
       }),
       currentSite
         ? payload.find({
-            collection: 'site-settings-collection',
+            collection: 'settings',
             where: { site: { equals: currentSite.id } },
             limit: 1,
             depth: 1,

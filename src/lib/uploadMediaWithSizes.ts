@@ -109,7 +109,6 @@ export async function uploadMediaWithSizes(
       collection: 'media',
       data: {
         alt: alt,
-        site: siteId,
         url: originalUrl,
         filename: sanitizedFilename,
         mimeType: mimeType,

@@ -111,7 +111,7 @@ export async function POST(
     }
 
     // Enforce tenant scoping by applying the collection's baseListFilter — the
-    // same filter that scopes the admin list view. Without this, a superadmin
+    // same filter that scopes the admin list view. Without this, an admin
     // request would export rows from every site.
     const baseListFilter = (collectionConfig.admin as { baseListFilter?: unknown })
       ?.baseListFilter

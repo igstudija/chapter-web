@@ -6,11 +6,12 @@ import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 import { ADMIN_TITLE_SUFFIX } from './lib/branding'
+import { IS_SERVERLESS } from './lib/runtime'
+import { MAX_UPLOAD_BYTES } from './lib/uploadLimits'
 
 import {
-  Sites,
   Users,
-  SiteMemberships,
+  Members,
   Media,
   PowerGroups,
   Events,
@@ -26,13 +27,12 @@ import {
   Referrals,
   AuditLogs,
   PolicyTemplates,
-  AiSettings,
   // Site-scoped content collections
   HomepageSettings,
   ContactsPageSettings,
   AboutUsSettings,
   FAQSettings,
-  SiteSettingsCollection,
+  Settings,
   SlideshowSettingsCollection,
   ListingPagesSeo,
   CompaniesPageSettings,
@@ -40,6 +40,16 @@ import {
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+/**
+ * Per-query ceiling, in ms. `pg` sends this in the connection startup packet as
+ * `options=-c statement_timeout=…`, and a connection pooler in front of
+ * Postgres may reject startup parameters it does not recognise — every
+ * connection then fails with "unsupported startup parameter" rather than
+ * anything about timeouts. `PG_STATEMENT_TIMEOUT=0` drops the parameter
+ * entirely, which is the fix if you meet that error.
+ */
+const STATEMENT_TIMEOUT_MS = Number(process.env.PG_STATEMENT_TIMEOUT ?? 30_000)
 
 
 export default buildConfig({
@@ -52,21 +62,11 @@ export default buildConfig({
       titleSuffix: ADMIN_TITLE_SUFFIX,
     },
     theme: 'dark',
-    components: {
-      afterNavLinks: ['@/components/admin/SharedRequestsNavLink#SharedRequestsNavLink'],
-      views: {
-        sharedRequestsLink: {
-          Component: '@/components/admin/SharedRequestsLinkView#SharedRequestsLinkView',
-          path: '/shared-requests',
-        },
-      },
-    },
   },
   collections: [
-    Sites,
     PowerGroups,
     Users,
-    SiteMemberships,
+    Members,
     Media,
     Events,
     Blog,
@@ -81,13 +81,12 @@ export default buildConfig({
     Wiki,
     AuditLogs,
     PolicyTemplates,
-    AiSettings,
     // Site-scoped content (one per site)
     HomepageSettings,
     ContactsPageSettings,
     AboutUsSettings,
     FAQSettings,
-    SiteSettingsCollection,
+    Settings,
     SlideshowSettingsCollection,
     ListingPagesSeo,
     CompaniesPageSettings,
@@ -100,9 +99,16 @@ export default buildConfig({
   db: postgresAdapter({
     pool: {
       connectionString: process.env.POSTGRESS_DATABASE_URL || '',
-      // Sized for multi-tenant admin load: several admin sessions can each
-      // hold 4-8 connections during a list view render.
-      max: Number(process.env.PG_POOL_MAX) || 50,
+      // One server, one pool: sized for multi-tenant admin load, where several
+      // admin sessions can each hold 4-8 connections during a list view render.
+      //
+      // Serverless inverts that arithmetic. Every concurrent function instance
+      // builds its own pool, so the ceiling is `max × instances` — a handful of
+      // visitors at once is enough to exhaust the database's connection limit
+      // with 50. A small pool per instance, in front of a connection pooler
+      // that does the real multiplexing, is the shape that scales there.
+      // Override with PG_POOL_MAX if your host or plan says otherwise.
+      max: Number(process.env.PG_POOL_MAX) || (IS_SERVERLESS ? 1 : 50),
       // `min: 0` lets the pool drain fully when idle. Holding warm
       // connections across long idle periods (>5min) provokes
       // "Connection terminated unexpectedly" from managed Postgres
@@ -111,7 +117,7 @@ export default buildConfig({
       min: Number(process.env.PG_POOL_MIN) || 0,
       idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 5_000,
-      statement_timeout: 30_000,
+      ...(STATEMENT_TIMEOUT_MS > 0 ? { statement_timeout: STATEMENT_TIMEOUT_MS } : {}),
       // TCP keepalive keeps NAT / load balancer / pgBouncer from
       // dropping the socket while we hold a connection in the pool.
       keepAlive: true,
@@ -162,10 +168,11 @@ export default buildConfig({
   },
   sharp,
   // Hard backstop for ALL uploads: bodies above this are rejected before the
-  // file is buffered in memory. Per-type limits (15MB images / 50MB audio)
-  // are enforced in the Media collection's beforeOperation hook.
+  // file is buffered in memory. Per-type limits (images / audio) are enforced
+  // in the Media collection's beforeOperation hook, which is where a user-facing
+  // message comes from.
   upload: {
-    limits: { fileSize: 50 * 1024 * 1024 },
+    limits: { fileSize: MAX_UPLOAD_BYTES },
     abortOnLimit: true,
   },
   plugins: [

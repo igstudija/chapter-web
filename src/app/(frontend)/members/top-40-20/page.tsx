@@ -5,7 +5,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { TopListSwitch } from '@/components/TopListSwitch'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 
 export const metadata = {
@@ -22,25 +22,25 @@ export default async function Top4020Page() {
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     redirect('/login')
   }
 
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   const [top40Data, top20Data] = await Promise.all([
     payload.find({
       collection: 'top40',
-      where: { site: { equals: currentSite.id } },
+      where: { site: { equals: settings.id } },
       limit: 0,
       sort: '-createdAt',
       depth: 1,
     }),
     payload.find({
       collection: 'top20',
-      where: { site: { equals: currentSite.id } },
+      where: { site: { equals: settings.id } },
       limit: 0,
       sort: '-createdAt',
       depth: 1,

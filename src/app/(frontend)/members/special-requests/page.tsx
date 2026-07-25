@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { SpecialRequestsGrid } from '@/components/SpecialRequestsGrid'
 
@@ -22,27 +22,26 @@ export default async function SpecialRequestsPage() {
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     redirect('/login')
   }
 
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   // Fetch requests and memberships in parallel
   const [requestsData, membershipsData] = await Promise.all([
     payload.find({
       collection: 'special-requests',
-      where: { site: { equals: currentSite.id } },
+      where: { site: { equals: settings.id } },
       limit: 1000,
       sort: '-createdAt',
       depth: 2,
     }),
     payload.find({
-      collection: 'site-memberships',
+      collection: 'members',
       where: {
-        site: { equals: currentSite.id },
         status: { equals: 'active' },
       },
       limit: 500,

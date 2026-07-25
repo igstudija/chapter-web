@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
 
 /**
  * POST /api/success-stories
@@ -23,15 +22,6 @@ export async function POST(request: Request) {
   try {
     const { title, story, businessValue, partnerMember } = await request.json()
 
-    // SECURITY: Always use hostname for site detection - never accept siteId from client
-    const host = headers.get('host')
-    const currentSite = await getSiteFromHost(host)
-    const currentSiteId = currentSite?.id || null
-
-    if (!currentSiteId) {
-      return NextResponse.json({ error: 'Site not found' }, { status: 400 })
-    }
-
     if (!title || !story) {
       return NextResponse.json({ error: 'Title and story are required' }, { status: 400 })
     }
@@ -44,7 +34,6 @@ export async function POST(request: Request) {
         businessValue: businessValue || undefined,
         partnerMember: partnerMember || undefined,
         author: user.id,
-        site: currentSiteId,
         isPublic: true,
       },
     })
@@ -102,7 +91,7 @@ export async function DELETE(request: Request) {
         }
 
         const isOwner = String(existing.author) === String(user.id)
-        const isAdmin = (user as UserWithContext).currentRole === 'member-admin'
+        const isAdmin = (user as UserWithContext).role === 'member-admin'
 
         if (!isOwner && !isAdmin) {
           errors.push({ id, error: 'Not authorized' })

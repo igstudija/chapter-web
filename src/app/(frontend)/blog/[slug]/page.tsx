@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import config from '@/payload.config'
 import { Breadcrumb } from '@/components'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { Calendar, MapPin, ArrowRight, FileText } from 'lucide-react'
 import { headers } from 'next/headers'
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props) {
   const headersList = await headers()
   const host = headersList.get('host')
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
 
   const [postData, siteSettingsData] = await Promise.all([
     payload.find({
@@ -29,14 +29,13 @@ export async function generateMetadata({ params }: Props) {
       where: {
         and: [
           { slug: { equals: slug } },
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 1,
       depth: 1,
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: { site: { equals: currentSite?.id } },
       limit: 1,
       depth: 1,
@@ -64,7 +63,7 @@ export async function generateMetadata({ params }: Props) {
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
 
   const [postData, recentPostsData, eventsData] = await Promise.all([
     payload.find({
@@ -72,7 +71,6 @@ export default async function BlogPostPage({ params }: Props) {
       where: {
         and: [
           { slug: { equals: slug } },
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 1,
@@ -83,7 +81,6 @@ export default async function BlogPostPage({ params }: Props) {
       where: {
         and: [
           { _status: { equals: 'published' } },
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 5,
@@ -95,7 +92,6 @@ export default async function BlogPostPage({ params }: Props) {
       where: {
         and: [
           { date: { greater_than_equal: new Date().toISOString() } },
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 5,

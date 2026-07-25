@@ -67,10 +67,9 @@ export interface Config {
   };
   blocks: {};
   collections: {
-    sites: Site;
     'power-groups': PowerGroup;
     users: User;
-    'site-memberships': SiteMembership;
+    members: Member;
     media: Media;
     events: Event;
     blog: Blog;
@@ -85,12 +84,11 @@ export interface Config {
     wiki: Wiki;
     'audit-logs': AuditLog;
     'policy-templates': PolicyTemplate;
-    'ai-settings': AiSetting;
     'homepage-settings': HomepageSetting;
     'contacts-page-settings': ContactsPageSetting;
     'about-us-settings': AboutUsSetting;
     'faq-settings': FaqSetting;
-    'site-settings-collection': SiteSettingsCollection;
+    settings: Setting;
     'slideshow-settings-collection': SlideshowSettingsCollection;
     'listing-pages-seo': ListingPagesSeo;
     'companies-page-settings': CompaniesPageSetting;
@@ -101,10 +99,9 @@ export interface Config {
   };
   collectionsJoins: {};
   collectionsSelect: {
-    sites: SitesSelect<false> | SitesSelect<true>;
     'power-groups': PowerGroupsSelect<false> | PowerGroupsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
-    'site-memberships': SiteMembershipsSelect<false> | SiteMembershipsSelect<true>;
+    members: MembersSelect<false> | MembersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     events: EventsSelect<false> | EventsSelect<true>;
     blog: BlogSelect<false> | BlogSelect<true>;
@@ -119,12 +116,11 @@ export interface Config {
     wiki: WikiSelect<false> | WikiSelect<true>;
     'audit-logs': AuditLogsSelect<false> | AuditLogsSelect<true>;
     'policy-templates': PolicyTemplatesSelect<false> | PolicyTemplatesSelect<true>;
-    'ai-settings': AiSettingsSelect<false> | AiSettingsSelect<true>;
     'homepage-settings': HomepageSettingsSelect<false> | HomepageSettingsSelect<true>;
     'contacts-page-settings': ContactsPageSettingsSelect<false> | ContactsPageSettingsSelect<true>;
     'about-us-settings': AboutUsSettingsSelect<false> | AboutUsSettingsSelect<true>;
     'faq-settings': FaqSettingsSelect<false> | FaqSettingsSelect<true>;
-    'site-settings-collection': SiteSettingsCollectionSelect<false> | SiteSettingsCollectionSelect<true>;
+    settings: SettingsSelect<false> | SettingsSelect<true>;
     'slideshow-settings-collection': SlideshowSettingsCollectionSelect<false> | SlideshowSettingsCollectionSelect<true>;
     'listing-pages-seo': ListingPagesSeoSelect<false> | ListingPagesSeoSelect<true>;
     'companies-page-settings': CompaniesPageSettingsSelect<false> | CompaniesPageSettingsSelect<true>;
@@ -167,64 +163,11 @@ export interface UserAuthOperations {
   };
 }
 /**
- * Manage the organisations hosted on this install
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "sites".
- */
-export interface Site {
-  id: number;
-  /**
-   * Organisation name, e.g., "Riga Business Club"
-   */
-  name: string;
-  /**
-   * URL-friendly identifier, e.g., "vivaldi"
-   */
-  slug: string;
-  /**
-   * Primary domain, e.g., "riga.example.org"
-   */
-  domain: string;
-  status?: ('active' | 'inactive') | null;
-  /**
-   * Enable 1-2-1 meetings, referrals tracking
-   */
-  enableActivities?: boolean | null;
-  /**
-   * Enable onsite/online attendance tracking in slideshow
-   */
-  enableAttendance?: boolean | null;
-  /**
-   * Enable success stories feature in profile and global pages
-   */
-  enableSuccessStories?: boolean | null;
-  /**
-   * Enable AI chatbot for this chapter (requires global AI Settings to be enabled)
-   */
-  enableAiChat?: boolean | null;
-  /**
-   * Show this chapter as a section on the brand-free, token-gated combined special requests page
-   */
-  includeInSharedRequests?: boolean | null;
-  locale?: ('en' | 'lv') | null;
-  /**
-   * IANA timezone identifier (e.g., Europe/Riga, Europe/London)
-   */
-  timezone?: string | null;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "power-groups".
  */
 export interface PowerGroup {
   id: number;
-  /**
-   * The organisation this power group belongs to
-   */
-  site?: (number | null) | Site;
   title: string;
   /**
    * URL-friendly identifier (auto-generated from title if left empty)
@@ -235,7 +178,7 @@ export interface PowerGroup {
   createdAt: string;
 }
 /**
- * Global user accounts (login credentials)
+ * Login accounts. Profile details live under Members.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users".
@@ -244,10 +187,8 @@ export interface User {
   id: number;
   name: string;
   surname: string;
-  /**
-   * Global administrator with access to all sites
-   */
-  isSuperadmin?: boolean | null;
+  role: 'member' | 'member-admin';
+  status: 'active' | 'blocked';
   customResetToken?: string | null;
   customResetExpiry?: string | null;
   magicLinkToken?: string | null;
@@ -255,12 +196,6 @@ export interface User {
   pendingEmail?: string | null;
   emailChangeToken?: string | null;
   emailChangeExpiry?: string | null;
-  adminHostname?: string | null;
-  currentSiteId?: string | null;
-  currentMembershipId?: string | null;
-  currentRole?: string | null;
-  currentStatus?: string | null;
-  siteEnableActivities?: boolean | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -283,9 +218,9 @@ export interface User {
  * Member profiles for each site
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "site-memberships".
+ * via the `definition` "members".
  */
-export interface SiteMembership {
+export interface Member {
   id: number;
   /**
    * Check to create a new user instead of selecting existing
@@ -301,10 +236,6 @@ export interface SiteMembership {
    * Select existing user or check "Create New User" above
    */
   user?: (number | null) | User;
-  /**
-   * The organisation this membership is for
-   */
-  site?: (number | null) | Site;
   role: 'member' | 'member-admin';
   status: 'active' | 'blocked';
   /**
@@ -398,7 +329,6 @@ export interface SiteMembership {
  */
 export interface Media {
   id: number;
-  site?: (number | null) | Site;
   alt?: string | null;
   prefix?: string | null;
   updatedAt: string;
@@ -419,10 +349,6 @@ export interface Media {
  */
 export interface Event {
   id: number;
-  /**
-   * The organisation this event belongs to
-   */
-  site?: (number | null) | Site;
   title: string;
   slug?: string | null;
   date: string;
@@ -487,10 +413,6 @@ export interface Event {
  */
 export interface Blog {
   id: number;
-  /**
-   * The organisation this blog post belongs to
-   */
-  site?: (number | null) | Site;
   title: string;
   slug?: string | null;
   /**
@@ -555,10 +477,6 @@ export interface Blog {
 export interface SpecialRequest {
   id: number;
   /**
-   * The organisation this request belongs to
-   */
-  site?: (number | null) | Site;
-  /**
    * What are you looking for?
    */
   request: string;
@@ -589,10 +507,6 @@ export interface SpecialRequest {
  */
 export interface Top40 {
   id: number;
-  /**
-   * The organisation this entry belongs to
-   */
-  site?: (number | null) | Site;
   companyName: string;
   contactPerson: string;
   /**
@@ -618,10 +532,6 @@ export interface Top40 {
  */
 export interface Top20 {
   id: number;
-  /**
-   * The organisation this entry belongs to
-   */
-  site?: (number | null) | Site;
   companyName: string;
   contactPerson?: string | null;
   /**
@@ -647,10 +557,6 @@ export interface Top20 {
  */
 export interface SuccessStory {
   id: number;
-  /**
-   * The organisation this story belongs to
-   */
-  site?: (number | null) | Site;
   /**
    * Success story title
    */
@@ -681,10 +587,6 @@ export interface SuccessStory {
  */
 export interface OneToOneMeeting {
   id: number;
-  /**
-   * The organisation this meeting belongs to
-   */
-  site?: (number | null) | Site;
   /**
    * The member you met with
    */
@@ -727,10 +629,6 @@ export interface OneToOneMeeting {
 export interface Referral {
   id: number;
   /**
-   * The organisation this referral belongs to
-   */
-  site?: (number | null) | Site;
-  /**
    * Who gave the referral
    */
   fromUser: number | User;
@@ -764,10 +662,6 @@ export interface Referral {
  */
 export interface ContactSubmission {
   id: number;
-  /**
-   * The organisation this submission belongs to
-   */
-  site?: (number | null) | Site;
   name: string;
   email: string;
   phone?: string | null;
@@ -783,10 +677,6 @@ export interface ContactSubmission {
  */
 export interface EventSubmission {
   id: number;
-  /**
-   * The organisation this submission belongs to
-   */
-  site?: (number | null) | Site;
   /**
    * Cleared automatically if the event is deleted
    */
@@ -826,10 +716,6 @@ export interface EventSubmission {
  */
 export interface Wiki {
   id: number;
-  /**
-   * The organisation this page belongs to
-   */
-  site?: (number | null) | Site;
   title: string;
   slug: string;
   content?: {
@@ -855,7 +741,7 @@ export interface Wiki {
           }
         | {
             heading?: string | null;
-            members?: (number | SiteMembership)[] | null;
+            members?: (number | Member)[] | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'team-grid';
@@ -946,12 +832,10 @@ export interface AuditLog {
     | 'user_deleted'
     | 'user_created'
     | 'user_updated'
-    | 'superadmin_login'
-    | 'superadmin_login_failed'
-    | 'membership_created'
-    | 'membership_deleted'
-    | 'site_created'
-    | 'site_deleted';
+    | 'admin_login'
+    | 'admin_login_failed'
+    | 'member_created'
+    | 'member_deleted';
   /**
    * User who performed the action
    */
@@ -963,7 +847,7 @@ export interface AuditLog {
   /**
    * Type of entity affected
    */
-  targetType?: ('user' | 'site' | 'membership') | null;
+  targetType?: ('user' | 'member') | null;
   /**
    * ID of the affected entity
    */
@@ -1031,66 +915,6 @@ export interface PolicyTemplate {
   createdAt: string;
 }
 /**
- * Configure AI chatbot settings (OpenAI API key, model, system prompt)
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ai-settings".
- */
-export interface AiSetting {
-  id: number;
-  /**
-   * Internal label for this configuration
-   */
-  label: string;
-  /**
-   * Master switch to enable/disable the AI chatbot across all sites
-   */
-  enabled?: boolean | null;
-  /**
-   * OpenAI API key (stored in database, never exposed to client)
-   */
-  openaiApiKey: string;
-  /**
-   * Perplexity API key for Top40 business tag generation
-   */
-  perplexityApiKey?: string | null;
-  /**
-   * Perplexity model for tag generation
-   */
-  perplexityModel?: ('sonar-pro' | 'sonar') | null;
-  /**
-   * Default OpenAI model for chat (price: input/output per 1M tokens)
-   */
-  model:
-    | 'gpt-4.1-nano'
-    | 'gpt-4o-mini'
-    | 'gpt-4.1-mini'
-    | 'o3-mini'
-    | 'o4-mini'
-    | 'gpt-5'
-    | 'o3'
-    | 'gpt-4.1'
-    | 'gpt-4o';
-  /**
-   * System prompt defining the assistant behaviour and which topics it will answer
-   */
-  systemPrompt: string;
-  /**
-   * Maximum tokens in AI response (100-4096)
-   */
-  maxTokens: number;
-  /**
-   * Response creativity (0 = deterministic, 2 = very creative). Recommended: 0.7
-   */
-  temperature: number;
-  /**
-   * Default AI credit balance in USD for members (e.g., 10.00 = $10). Set on each site-membership manually.
-   */
-  defaultAiCreditUsd: number;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
  * Edit the homepage hero section, statistics, and call-to-action.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1098,7 +922,6 @@ export interface AiSetting {
  */
 export interface HomepageSetting {
   id: number;
-  site: number | Site;
   internalTitle?: string | null;
   hero: {
     /**
@@ -1199,7 +1022,6 @@ export interface HomepageSetting {
  */
 export interface ContactsPageSetting {
   id: number;
-  site: number | Site;
   title: string;
   /**
    * Select members to display as contact persons
@@ -1209,7 +1031,7 @@ export interface ContactsPageSetting {
         /**
          * Select a member from your chapter
          */
-        member: number | SiteMembership;
+        member: number | Member;
         id?: string | null;
       }[]
     | null;
@@ -1269,7 +1091,6 @@ export interface ContactsPageSetting {
  */
 export interface AboutUsSetting {
   id: number;
-  site: number | Site;
   title: string;
   /**
    * General description of your organisation
@@ -1389,7 +1210,6 @@ export interface AboutUsSetting {
  */
 export interface FaqSetting {
   id: number;
-  site: number | Site;
   pageTitle: string;
   pageDescription?: string | null;
   faqs?:
@@ -1454,12 +1274,25 @@ export interface FaqSetting {
  * Configure site-wide settings including branding, contact information, and social media.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "site-settings-collection".
+ * via the `definition` "settings".
  */
-export interface SiteSettingsCollection {
+export interface Setting {
   id: number;
-  site: number | Site;
   internalTitle?: string | null;
+  /**
+   * Language used for the member portal and outgoing email
+   */
+  locale: 'en' | 'lv';
+  /**
+   * IANA timezone name, e.g. Europe/Riga
+   */
+  timezone?: string | null;
+  /**
+   * Referrals and one-to-one meetings
+   */
+  enableActivities?: boolean | null;
+  enableAttendance?: boolean | null;
+  enableSuccessStories?: boolean | null;
   /**
    * The name of your site displayed in the browser and header
    */
@@ -1626,7 +1459,6 @@ export interface SiteSettingsCollection {
  */
 export interface SlideshowSettingsCollection {
   id: number;
-  site: number | Site;
   internalTitle?: string | null;
   /**
    * How long each slide is displayed
@@ -1666,7 +1498,7 @@ export interface SlideshowSettingsCollection {
             /**
              * Member to display with crown icon. Default duration uses speechMasterMultiplier.
              */
-            member: number | SiteMembership;
+            member: number | Member;
             /**
              * Override slide duration (leave empty to use default)
              */
@@ -1680,7 +1512,7 @@ export interface SlideshowSettingsCollection {
              * Override the default "Runas Meistars" title shown above the photo
              */
             title?: string | null;
-            member: number | SiteMembership;
+            member: number | Member;
             /**
              * Override slide duration (leave empty to use default)
              */
@@ -1740,7 +1572,7 @@ export interface SlideshowSettingsCollection {
   /**
    * Members to skip from slideshow (e.g., absent members)
    */
-  skipMembers?: (number | SiteMembership)[] | null;
+  skipMembers?: (number | Member)[] | null;
   /**
    * MP3 file that plays on the last second of each member slide
    */
@@ -1756,7 +1588,6 @@ export interface SlideshowSettingsCollection {
  */
 export interface ListingPagesSeo {
   id: number;
-  site: number | Site;
   title?: string | null;
   blogPage?: {
     /**
@@ -1971,7 +1802,6 @@ export interface ListingPagesSeo {
  */
 export interface CompaniesPageSetting {
   id: number;
-  site: number | Site;
   title: string;
   /**
    * Heading displayed above the description text
@@ -2058,10 +1888,6 @@ export interface PayloadLockedDocument {
   id: number;
   document?:
     | ({
-        relationTo: 'sites';
-        value: number | Site;
-      } | null)
-    | ({
         relationTo: 'power-groups';
         value: number | PowerGroup;
       } | null)
@@ -2070,8 +1896,8 @@ export interface PayloadLockedDocument {
         value: number | User;
       } | null)
     | ({
-        relationTo: 'site-memberships';
-        value: number | SiteMembership;
+        relationTo: 'members';
+        value: number | Member;
       } | null)
     | ({
         relationTo: 'media';
@@ -2130,10 +1956,6 @@ export interface PayloadLockedDocument {
         value: number | PolicyTemplate;
       } | null)
     | ({
-        relationTo: 'ai-settings';
-        value: number | AiSetting;
-      } | null)
-    | ({
         relationTo: 'homepage-settings';
         value: number | HomepageSetting;
       } | null)
@@ -2150,8 +1972,8 @@ export interface PayloadLockedDocument {
         value: number | FaqSetting;
       } | null)
     | ({
-        relationTo: 'site-settings-collection';
-        value: number | SiteSettingsCollection;
+        relationTo: 'settings';
+        value: number | Setting;
       } | null)
     | ({
         relationTo: 'slideshow-settings-collection';
@@ -2209,29 +2031,9 @@ export interface PayloadMigration {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "sites_select".
- */
-export interface SitesSelect<T extends boolean = true> {
-  name?: T;
-  slug?: T;
-  domain?: T;
-  status?: T;
-  enableActivities?: T;
-  enableAttendance?: T;
-  enableSuccessStories?: T;
-  enableAiChat?: T;
-  includeInSharedRequests?: T;
-  locale?: T;
-  timezone?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "power-groups_select".
  */
 export interface PowerGroupsSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   slug?: T;
   description?: T;
@@ -2245,7 +2047,8 @@ export interface PowerGroupsSelect<T extends boolean = true> {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   surname?: T;
-  isSuperadmin?: T;
+  role?: T;
+  status?: T;
   customResetToken?: T;
   customResetExpiry?: T;
   magicLinkToken?: T;
@@ -2253,12 +2056,6 @@ export interface UsersSelect<T extends boolean = true> {
   pendingEmail?: T;
   emailChangeToken?: T;
   emailChangeExpiry?: T;
-  adminHostname?: T;
-  currentSiteId?: T;
-  currentMembershipId?: T;
-  currentRole?: T;
-  currentStatus?: T;
-  siteEnableActivities?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -2278,15 +2075,14 @@ export interface UsersSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "site-memberships_select".
+ * via the `definition` "members_select".
  */
-export interface SiteMembershipsSelect<T extends boolean = true> {
+export interface MembersSelect<T extends boolean = true> {
   createNewUser?: T;
   newUserEmail?: T;
   newUserName?: T;
   newUserSurname?: T;
   user?: T;
-  site?: T;
   role?: T;
   status?: T;
   name?: T;
@@ -2331,7 +2127,6 @@ export interface SiteMembershipsSelect<T extends boolean = true> {
  * via the `definition` "media_select".
  */
 export interface MediaSelect<T extends boolean = true> {
-  site?: T;
   alt?: T;
   prefix?: T;
   updatedAt?: T;
@@ -2351,7 +2146,6 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "events_select".
  */
 export interface EventsSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   slug?: T;
   date?: T;
@@ -2382,7 +2176,6 @@ export interface EventsSelect<T extends boolean = true> {
  * via the `definition` "blog_select".
  */
 export interface BlogSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   slug?: T;
   excerpt?: T;
@@ -2412,7 +2205,6 @@ export interface BlogSelect<T extends boolean = true> {
  * via the `definition` "special-requests_select".
  */
 export interface SpecialRequestsSelect<T extends boolean = true> {
-  site?: T;
   request?: T;
   registrationNumber?: T;
   isPublic?: T;
@@ -2428,7 +2220,6 @@ export interface SpecialRequestsSelect<T extends boolean = true> {
  * via the `definition` "top40_select".
  */
 export interface Top40Select<T extends boolean = true> {
-  site?: T;
   companyName?: T;
   contactPerson?: T;
   position?: T;
@@ -2444,7 +2235,6 @@ export interface Top40Select<T extends boolean = true> {
  * via the `definition` "top20_select".
  */
 export interface Top20Select<T extends boolean = true> {
-  site?: T;
   companyName?: T;
   contactPerson?: T;
   position?: T;
@@ -2460,7 +2250,6 @@ export interface Top20Select<T extends boolean = true> {
  * via the `definition` "success-stories_select".
  */
 export interface SuccessStoriesSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   story?: T;
   businessValue?: T;
@@ -2475,7 +2264,6 @@ export interface SuccessStoriesSelect<T extends boolean = true> {
  * via the `definition` "one-to-one-meetings_select".
  */
 export interface OneToOneMeetingsSelect<T extends boolean = true> {
-  site?: T;
   metWith?: T;
   invitedBy?: T;
   location?: T;
@@ -2498,7 +2286,6 @@ export interface OneToOneMeetingsSelect<T extends boolean = true> {
  * via the `definition` "referrals_select".
  */
 export interface ReferralsSelect<T extends boolean = true> {
-  site?: T;
   fromUser?: T;
   toUser?: T;
   date?: T;
@@ -2514,7 +2301,6 @@ export interface ReferralsSelect<T extends boolean = true> {
  * via the `definition` "contact-submissions_select".
  */
 export interface ContactSubmissionsSelect<T extends boolean = true> {
-  site?: T;
   name?: T;
   email?: T;
   phone?: T;
@@ -2529,7 +2315,6 @@ export interface ContactSubmissionsSelect<T extends boolean = true> {
  * via the `definition` "event-submissions_select".
  */
 export interface EventSubmissionsSelect<T extends boolean = true> {
-  site?: T;
   event?: T;
   eventTitle?: T;
   name?: T;
@@ -2547,7 +2332,6 @@ export interface EventSubmissionsSelect<T extends boolean = true> {
  * via the `definition` "wiki_select".
  */
 export interface WikiSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   slug?: T;
   content?: T;
@@ -2653,28 +2437,9 @@ export interface PolicyTemplatesSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "ai-settings_select".
- */
-export interface AiSettingsSelect<T extends boolean = true> {
-  label?: T;
-  enabled?: T;
-  openaiApiKey?: T;
-  perplexityApiKey?: T;
-  perplexityModel?: T;
-  model?: T;
-  systemPrompt?: T;
-  maxTokens?: T;
-  temperature?: T;
-  defaultAiCreditUsd?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "homepage-settings_select".
  */
 export interface HomepageSettingsSelect<T extends boolean = true> {
-  site?: T;
   internalTitle?: T;
   hero?:
     | T
@@ -2731,7 +2496,6 @@ export interface HomepageSettingsSelect<T extends boolean = true> {
  * via the `definition` "contacts-page-settings_select".
  */
 export interface ContactsPageSettingsSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   contactPersons?:
     | T
@@ -2768,7 +2532,6 @@ export interface ContactsPageSettingsSelect<T extends boolean = true> {
  * via the `definition` "about-us-settings_select".
  */
 export interface AboutUsSettingsSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   introduction?: T;
   chapterLeaders?:
@@ -2833,7 +2596,6 @@ export interface AboutUsSettingsSelect<T extends boolean = true> {
  * via the `definition` "faq-settings_select".
  */
 export interface FaqSettingsSelect<T extends boolean = true> {
-  site?: T;
   pageTitle?: T;
   pageDescription?: T;
   faqs?:
@@ -2863,11 +2625,15 @@ export interface FaqSettingsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "site-settings-collection_select".
+ * via the `definition` "settings_select".
  */
-export interface SiteSettingsCollectionSelect<T extends boolean = true> {
-  site?: T;
+export interface SettingsSelect<T extends boolean = true> {
   internalTitle?: T;
+  locale?: T;
+  timezone?: T;
+  enableActivities?: T;
+  enableAttendance?: T;
+  enableSuccessStories?: T;
   siteName?: T;
   siteLogo?: T;
   favicon16?: T;
@@ -2942,7 +2708,6 @@ export interface SiteSettingsCollectionSelect<T extends boolean = true> {
  * via the `definition` "slideshow-settings-collection_select".
  */
 export interface SlideshowSettingsCollectionSelect<T extends boolean = true> {
-  site?: T;
   internalTitle?: T;
   slideSeconds?: T;
   speechMasterMultiplier?: T;
@@ -3015,7 +2780,6 @@ export interface SlideshowSettingsCollectionSelect<T extends boolean = true> {
  * via the `definition` "listing-pages-seo_select".
  */
 export interface ListingPagesSeoSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   blogPage?:
     | T
@@ -3101,7 +2865,6 @@ export interface ListingPagesSeoSelect<T extends boolean = true> {
  * via the `definition` "companies-page-settings_select".
  */
 export interface CompaniesPageSettingsSelect<T extends boolean = true> {
-  site?: T;
   title?: T;
   subtitle?: T;
   description?: T;

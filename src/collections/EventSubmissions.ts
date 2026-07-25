@@ -1,11 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScopedAdmin,
-  siteFieldAccess,
-  siteBasedListFilter,
-  autoAssignSiteHook,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { adminOnly } from '../access'
 import { sendEmail } from '../lib/sendEmail'
 import { generateEmailTemplate } from '../lib/emailTemplate'
 import {
@@ -27,20 +21,17 @@ export const EventSubmissions: CollectionConfig = {
     useAsTitle: 'name',
     defaultColumns: ['name', 'email', 'eventTitle', 'createdAt'],
     group: 'Submissions',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
-    read: siteScopedAdmin,
-    create: siteScopedAdmin, // Public submissions go through /api/event-submissions with overrideAccess
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
+    read: adminOnly,
+    create: adminOnly, // Public submissions go through /api/event-submissions with overrideAccess
+    update: adminOnly,
+    delete: adminOnly,
   },
   hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
     beforeChange: [
       // Snapshot the event title so the registration keeps a readable
       // reference after the event itself is deleted.
@@ -67,32 +58,15 @@ export const EventSubmissions: CollectionConfig = {
         if (operation === 'create') {
           const { payload } = req
 
-          // Get site settings from collection by site ID
-          const siteId = typeof doc.site === 'object' ? doc.site?.id : doc.site
-          let siteSettings = null
-          let site = null
-
-          if (siteId) {
-            // Get site for locale
-            site = await payload.findByID({
-              collection: 'sites',
-              id: siteId,
-            })
-
-            const settingsResult = await payload.find({
-              collection: 'site-settings-collection',
-              where: { site: { equals: siteId } },
-              limit: 1,
-            })
-            siteSettings = settingsResult.docs[0] || null
-          }
+          const settingsResult = await payload.find({ collection: 'settings', limit: 1 })
+          const siteSettings = settingsResult.docs[0] || null
 
           const adminEmails = siteSettings?.adminEmails || []
           const chapterName = siteSettings?.siteName || DEFAULT_ORG_NAME
-          const locale: EmailLocale = (site?.locale as EmailLocale) || DEFAULT_LOCALE
+          const locale: EmailLocale = (siteSettings?.locale as EmailLocale) || DEFAULT_LOCALE
           const t = getEmailTranslations(locale)
           const dateLocale = locale === 'lv' ? 'lv-LV' : 'en-US'
-          const timezone = site?.timezone || DEFAULT_EMAIL_TIMEZONE
+          const timezone = siteSettings?.timezone || DEFAULT_EMAIL_TIMEZONE
 
           // Get event details
           if (!doc.event) return
@@ -124,7 +98,6 @@ export const EventSubmissions: CollectionConfig = {
               'CALSCALE:GREGORIAN',
               'METHOD:REQUEST',
               'BEGIN:VEVENT',
-              `UID:${doc.id}@${site?.domain || 'localhost'}`,
               `DTSTAMP:${formatICSDate(new Date())}`,
               `DTSTART:${formatICSDate(eventDate)}`,
               `DTEND:${formatICSDate(eventEndDate)}`,
@@ -150,7 +123,6 @@ export const EventSubmissions: CollectionConfig = {
                 await sendEmail({
                   to: adminEmailObj.email,
                   subject: `${t.event.adminSubject}: ${eventTitle}`,
-                  siteId,
                   html: generateEmailTemplate({
                     title: t.event.adminTitle,
                     chapterName,
@@ -183,7 +155,6 @@ export const EventSubmissions: CollectionConfig = {
               await sendEmail({
                 to: doc.email,
                 subject: `${t.event.userSubject}: ${eventTitle}`,
-                siteId,
                 html: generateEmailTemplate({
                   title: t.event.userTitle,
                   chapterName,
@@ -226,22 +197,6 @@ export const EventSubmissions: CollectionConfig = {
     ],
   },
   fields: [
-    {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this submission belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
     {
       name: 'event',
       type: 'relationship',

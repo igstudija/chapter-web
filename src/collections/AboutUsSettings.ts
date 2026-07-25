@@ -1,13 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScoped,
-  siteScopedAdmin,
-  siteField,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  filterUsersBySiteMemberships,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { authenticated, adminOnly, activeUsersFilter } from '../access'
 import { htmlEditorField } from '../fields/HtmlEditor'
 import { createSeoFields } from '../fields/seoFields'
 
@@ -20,8 +12,6 @@ export const AboutUsSettings: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     group: 'Content',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       views: {
         list: {
@@ -31,16 +21,12 @@ export const AboutUsSettings: CollectionConfig = {
     },
   },
   access: {
-    read: siteScoped,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: authenticated,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    siteField({ required: true }),
     {
       name: 'title',
       type: 'text',
@@ -69,7 +55,7 @@ export const AboutUsSettings: CollectionConfig = {
           type: 'relationship',
           relationTo: 'users',
           required: true,
-          filterOptions: filterUsersBySiteMemberships,
+          filterOptions: activeUsersFilter,
           admin: {
             description: 'Select a member from your chapter',
           },

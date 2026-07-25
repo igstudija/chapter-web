@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { BlogCard } from '@/components'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
@@ -11,7 +11,7 @@ import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
 export async function generateMetadata() {
   const headersList = await headers()
   const host = headersList.get('host')
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   const siteId = currentSite?.id
 
   if (!currentSite) {
@@ -28,7 +28,7 @@ export async function generateMetadata() {
       depth: 1,
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: { site: { equals: siteId } },
       limit: 1,
       depth: 1,
@@ -52,7 +52,7 @@ export async function generateMetadata() {
 
 export default async function BlogPage() {
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
@@ -63,7 +63,6 @@ export default async function BlogPage() {
     where: {
       and: [
         { _status: { equals: 'published' } },
-        ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
       ],
     },
   })

@@ -1,3 +1,5 @@
+import { IS_SERVERLESS } from './runtime'
+
 type LogLevel = 'error' | 'warn' | 'info'
 
 interface LogEntry {
@@ -10,6 +12,17 @@ interface LogEntry {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
 const MAX_ROTATED_FILES = 5
+
+/**
+ * Serverless hosts have a read-only filesystem outside `/tmp`, and `/tmp` dies
+ * with the instance — so a log file there is unreadable by definition. Console
+ * output is what those platforms collect and show, and it is already written
+ * for every entry, so file logging is simply skipped rather than attempted and
+ * swallowed. Set LOG_TO_FILE=1 to force it back on, LOG_TO_FILE=0 to force it
+ * off (e.g. a container with a read-only root filesystem).
+ */
+const FILE_LOGGING =
+  process.env.LOG_TO_FILE === '1' || (process.env.LOG_TO_FILE !== '0' && !IS_SERVERLESS)
 
 // Use globalThis.__non_webpack_require__ or Function constructor to bypass webpack static analysis
 // eslint-disable-next-line @typescript-eslint/no-implied-eval, no-new-func
@@ -67,6 +80,7 @@ function rotateIfNeeded(): void {
 }
 
 function writeToFile(entry: LogEntry): void {
+  if (!FILE_LOGGING) return
   try {
     ensureLogDir()
     rotateIfNeeded()
@@ -132,12 +146,18 @@ export const logger = {
   },
 }
 
-/** Read log entries from the log file (newest first) */
+/**
+ * Read log entries from the log file (newest first).
+ *
+ * Empty when file logging is off — on a serverless host the platform's own log
+ * viewer is the only place entries exist.
+ */
 export function readLogs(options?: {
   limit?: number
   level?: LogLevel
   search?: string
 }): LogEntry[] {
+  if (!FILE_LOGGING) return []
   const limit = options?.limit ?? 100
   const level = options?.level
   const search = options?.search?.toLowerCase()
@@ -184,6 +204,7 @@ export function readLogs(options?: {
 
 /** Get list of available log files (for reading rotated logs) */
 export function getLogFiles(): { name: string; size: number; modified: string }[] {
+  if (!FILE_LOGGING) return []
   try {
     const fs = getFs()
     const { logDir, path: pathModule } = getLogPaths()

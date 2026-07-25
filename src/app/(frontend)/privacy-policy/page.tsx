@@ -2,14 +2,14 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import Link from 'next/link'
 import { ChevronRight } from 'lucide-react'
-import { getCurrentSite, getSiteSettings } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { replacePolicyPlaceholders, buildPlaceholders } from '@/lib/policyUtils'
 
 export default async function PrivacyPolicyPage() {
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
-  const siteSettings = await getSiteSettings()
+  const currentSite = await getSettings()
+  const siteSettings = await getSettings()
 
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
@@ -28,7 +28,7 @@ export default async function PrivacyPolicyPage() {
   const pageTitle = template?.title || t('footer', 'privacyPolicy')
 
   // Build placeholders and replace in content
-  const placeholders = buildPlaceholders(currentSite, siteSettings, template?.lastUpdated, locale)
+  const placeholders = buildPlaceholders(siteSettings, template?.lastUpdated, locale)
   const processedContent = template?.content
     ? replacePolicyPlaceholders(template.content, placeholders)
     : ''

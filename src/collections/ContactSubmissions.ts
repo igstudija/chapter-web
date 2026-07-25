@@ -1,11 +1,5 @@
 import type { CollectionConfig, Payload } from 'payload'
-import {
-  siteScopedAdmin,
-  siteFieldAccess,
-  siteBasedListFilter,
-  autoAssignSiteHook,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { adminOnly, adminFieldAccess } from '../access'
 import { sendEmail } from '../lib/sendEmail'
 import { generateEmailTemplate } from '../lib/emailTemplate'
 import {
@@ -18,7 +12,6 @@ import { DEFAULT_LOCALE } from '../lib/i18n'
 
 interface SiteData {
   siteSettings: any
-  site: any
   adminEmails: any[]
   chapterName: string
   locale: EmailLocale
@@ -26,31 +19,20 @@ interface SiteData {
   timezone: string
 }
 
-async function getSiteData(payload: Payload, siteId: string): Promise<SiteData | null> {
-  if (!siteId) return null
-
-  const site = await payload.findByID({
-    collection: 'sites',
-    id: siteId,
-  })
-
-  const settingsResult = await payload.find({
-    collection: 'site-settings-collection',
-    where: { site: { equals: siteId } },
-    limit: 1,
-  })
+async function getSiteData(payload: Payload): Promise<SiteData | null> {
+  const settingsResult = await payload.find({ collection: 'settings', limit: 1 })
   const siteSettings = settingsResult.docs[0] || null
 
   const adminEmails = siteSettings?.adminEmails || []
   const chapterName = siteSettings?.siteName || DEFAULT_ORG_NAME
-  const locale: EmailLocale = (site?.locale as EmailLocale) || DEFAULT_LOCALE
+  const locale: EmailLocale = (siteSettings?.locale as EmailLocale) || DEFAULT_LOCALE
   const dateLocale = locale === 'lv' ? 'lv-LV' : 'en-US'
-  const timezone = site?.timezone || DEFAULT_EMAIL_TIMEZONE
+  const timezone = siteSettings?.timezone || DEFAULT_EMAIL_TIMEZONE
 
-  return { siteSettings, site, adminEmails, chapterName, locale, dateLocale, timezone }
+  return { siteSettings, adminEmails, chapterName, locale, dateLocale, timezone }
 }
 
-async function sendAdminNotifications(doc: any, siteData: SiteData, siteId: string): Promise<void> {
+async function sendAdminNotifications(doc: any, siteData: SiteData): Promise<void> {
   const { adminEmails, chapterName, locale, dateLocale, timezone } = siteData
   const t = getEmailTranslations(locale)
 
@@ -58,7 +40,6 @@ async function sendAdminNotifications(doc: any, siteData: SiteData, siteId: stri
     await sendEmail({
       to: adminEmailObj.email,
       subject: `${t.contact.adminSubject}: ${doc.subject}`,
-      siteId,
       html: generateEmailTemplate({
         title: t.contact.adminTitle,
         chapterName,
@@ -91,7 +72,6 @@ async function sendUserConfirmation(doc: any, siteData: SiteData, siteId: string
   await sendEmail({
     to: doc.email,
     subject: t.contact.userSubject,
-    siteId,
     html: generateEmailTemplate({
       title: t.contact.userTitle,
       chapterName,
@@ -119,20 +99,17 @@ export const ContactSubmissions: CollectionConfig = {
     useAsTitle: 'name',
     defaultColumns: ['name', 'email', 'subject', 'createdAt'],
     group: 'Submissions',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
-    read: siteScopedAdmin,
+    read: adminOnly,
     create: () => true,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
+    update: adminOnly,
+    delete: adminOnly,
   },
   hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
     afterChange: [
       async ({ operation, doc, req }) => {
         if (operation !== 'create') return
@@ -141,10 +118,10 @@ export const ContactSubmissions: CollectionConfig = {
         if (!siteId) return
 
         try {
-          const siteData = await getSiteData(req.payload, siteId)
+          const siteData = await getSiteData(req.payload)
           if (!siteData || siteData.adminEmails.length === 0) return
 
-          await sendAdminNotifications(doc, siteData, siteId)
+          await sendAdminNotifications(doc, siteData)
           await sendUserConfirmation(doc, siteData, siteId)
         } catch (error) {
           console.error('Failed to send contact submission notification emails:', error)
@@ -153,22 +130,6 @@ export const ContactSubmissions: CollectionConfig = {
     ],
   },
   fields: [
-    {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this submission belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
     {
       name: 'name',
       type: 'text',

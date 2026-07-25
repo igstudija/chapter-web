@@ -4,8 +4,7 @@ import config from '@/payload.config'
 import { HeaderClient } from './HeaderClient'
 import type { Media } from '@/payload-types'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
-import { getSiteSettings } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { isUserAdmin, type UserWithContext } from '@/lib/userHelpers'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 
@@ -16,7 +15,7 @@ export async function Header() {
   // Get current site from hostname
   const headersList = await headers()
   const host = headersList.get('host')
-  const currentSite = await getSiteFromHost(host)
+  const currentSite = await getSettings()
 
   const payload = await getPayload({ config })
 
@@ -33,10 +32,10 @@ export async function Header() {
   }
 
   // Get site settings from collection (site-scoped)
-  const siteSettings = await getSiteSettings()
+  const siteSettings = await getSettings()
 
   // Use site-specific values from settings collection
-  const siteName = siteSettings?.siteName || currentSite?.name || DEFAULT_ORG_NAME
+  const siteName = siteSettings?.siteName || currentSite?.siteName || DEFAULT_ORG_NAME
   const siteLogo = siteSettings?.siteLogo as Media | undefined
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)

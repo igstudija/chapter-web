@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { isUserSuperadmin } from '../access/multisite'
+import { isAdmin } from '../access'
 
 /**
  * Audit Logs Collection
@@ -7,7 +7,7 @@ import { isUserSuperadmin } from '../access/multisite'
  * Stores security-relevant actions for monitoring and compliance.
  * Data retention: 1 month (cleaned up via scheduled job)
  *
- * Only superadmins can view logs. No one can modify or delete through API.
+ * Only administrators can view logs. No one can modify or delete through the API.
  */
 export const AuditLogs: CollectionConfig = {
   slug: 'audit-logs',
@@ -24,7 +24,7 @@ export const AuditLogs: CollectionConfig = {
     read: ({ req }) => {
       const { user } = req
       if (!user) return false
-      return isUserSuperadmin(user)
+      return isAdmin(user)
     },
     create: () => false, // Only created programmatically
     update: () => false, // Immutable
@@ -39,12 +39,10 @@ export const AuditLogs: CollectionConfig = {
         { label: 'User Deleted', value: 'user_deleted' },
         { label: 'User Created', value: 'user_created' },
         { label: 'User Updated', value: 'user_updated' },
-        { label: 'Superadmin Login', value: 'superadmin_login' },
-        { label: 'Superadmin Login Failed', value: 'superadmin_login_failed' },
-        { label: 'Membership Created', value: 'membership_created' },
-        { label: 'Membership Deleted', value: 'membership_deleted' },
-        { label: 'Site Created', value: 'site_created' },
-        { label: 'Site Deleted', value: 'site_deleted' },
+        { label: 'Admin Login', value: 'admin_login' },
+        { label: 'Admin Login Failed', value: 'admin_login_failed' },
+        { label: 'Member Created', value: 'member_created' },
+        { label: 'Member Deleted', value: 'member_deleted' },
       ],
       admin: {
         description: 'Type of action performed',
@@ -70,8 +68,7 @@ export const AuditLogs: CollectionConfig = {
       type: 'select',
       options: [
         { label: 'User', value: 'user' },
-        { label: 'Site', value: 'site' },
-        { label: 'Membership', value: 'membership' },
+        { label: 'Member', value: 'member' },
       ],
       admin: {
         description: 'Type of entity affected',

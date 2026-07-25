@@ -10,8 +10,6 @@ import { default as default_832c11fe0d04d582cadd45e1b296f508 } from '@/component
 import { default as default_b09e7671e8fbecd6e8409ae1dfe4aea9 } from '@/components/admin/SiteSettingsList'
 import { default as default_a0fa20022f54a7b015db062199402b0c } from '@/components/admin/SlideshowSettingsList'
 import { default as default_338f6ac5afc767383c68b6a5312e1092 } from '@/components/admin/CompaniesPageList'
-import { SharedRequestsNavLink as SharedRequestsNavLink_26bfa8f85dafc33ecb44100981e9f07a } from '@/components/admin/SharedRequestsNavLink'
-import { SharedRequestsLinkView as SharedRequestsLinkView_c2acac709d9736ad92958dd9c2a4940f } from '@/components/admin/SharedRequestsLinkView'
 import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
 
 export const importMap = {
@@ -27,7 +25,5 @@ export const importMap = {
   "@/components/admin/SiteSettingsList#default": default_b09e7671e8fbecd6e8409ae1dfe4aea9,
   "@/components/admin/SlideshowSettingsList#default": default_a0fa20022f54a7b015db062199402b0c,
   "@/components/admin/CompaniesPageList#default": default_338f6ac5afc767383c68b6a5312e1092,
-  "@/components/admin/SharedRequestsNavLink#SharedRequestsNavLink": SharedRequestsNavLink_26bfa8f85dafc33ecb44100981e9f07a,
-  "@/components/admin/SharedRequestsLinkView#SharedRequestsLinkView": SharedRequestsLinkView_c2acac709d9736ad92958dd9c2a4940f,
   "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a
 }

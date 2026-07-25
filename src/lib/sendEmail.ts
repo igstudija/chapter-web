@@ -34,7 +34,7 @@ export async function sendEmail({
       try {
         const payload = await getPayload({ config })
         const siteSettings = await payload.find({
-          collection: 'site-settings-collection',
+          collection: 'settings',
           where: { site: { equals: siteId } },
           limit: 1,
         })

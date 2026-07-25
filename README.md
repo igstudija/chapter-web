@@ -4,12 +4,13 @@ A self-hostable member portal for professional networking organisations — the
 kind that meet regularly, pass business referrals to each other, and want their
 own site rather than a seat in someone else's platform.
 
-Built on [Payload CMS 3](https://payloadcms.com) and Next.js 15. One install can
-serve a single organisation or many, each on its own domain with its own
-members, content and branding.
+Built on [Payload CMS 3](https://payloadcms.com) and Next.js 15. One install
+serves one organisation: its members, its content, its branding, administered
+from the standard Payload admin panel.
 
 > **Status: early.** Extracted from a production system that has been running
-> for several organisations, then generalised. The feature set is mature; the
+> for several organisations, then generalised and reduced to a single-organisation
+> install. The feature set is mature; the
 > packaging for outside installs is new, and rough edges are likely. Issues
 > welcome.
 
@@ -19,7 +20,7 @@ members, content and branding.
 
 **Members**
 Member directory with profiles, companies, photos and contact details. Profiles
-are member-editable; visibility is controlled per organisation.
+are member-editable; visibility is controlled under Settings.
 
 **Referrals and one-to-ones**
 Members log referrals passed to each other and one-to-one meetings held, with
@@ -32,9 +33,7 @@ help. Optional AI tagging classifies entries by industry so the search works on
 meaning rather than exact company names.
 
 **Special requests**
-Short-lived "I'm looking for X" posts. Includes a token-gated, brand-free page
-that combines requests across several organisations — shareable outside the
-platform without exposing member data or requiring a login.
+Short-lived "I'm looking for X" posts, visible to the membership.
 
 **Events**
 Event pages with registration, guest submissions and calendar invites.
@@ -45,12 +44,7 @@ photos, business figures, what each member is looking for.
 
 **Content**
 Blog, wiki, FAQ, success stories, static pages, and a policy-template system
-with per-organisation placeholder substitution.
-
-**AI assistant** (optional, off by default)
-A chat widget that answers questions about members and their business using
-function-calling against your own data. Requires an OpenAI key, configured from
-the superadmin panel.
+with placeholder substitution.
 
 ---
 
@@ -90,41 +84,35 @@ render broken rather than protected.
 Then:
 
 ```bash
-pnpm migrate          # create the schema (~70 tables)
-pnpm setup            # create your organisation + superadmin account
+pnpm migrate:create   # generate the schema from the collections
+pnpm migrate          # apply it
+pnpm setup            # create your settings + administrator account
 pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
 pnpm dev
 ```
 
-- Organisation site — <http://localhost:3050>
+- Member portal — <http://localhost:3050>
 - Admin panel — <http://localhost:3050/admin>
-- Superadmin console — <http://admin.localhost:3050/admin>
 
-`*.localhost` resolves to `127.0.0.1` in every current browser, so the
-superadmin host needs no `/etc/hosts` entry.
-
----
-
-## How hosts map to organisations
-
-Each organisation has a `domain`. An incoming request resolves like this:
-
-1. Host is in `NEXT_PUBLIC_SUPERADMIN_HOSTS` → superadmin console, no
-   organisation context.
-2. Host matches an active organisation's `domain` → that organisation.
-3. Otherwise, if the install has exactly **one** active organisation → that one.
-
-Rule 3 is why a single-organisation install works without configuration: it
-covers `localhost`, a bare IP, a platform preview URL, and a custom domain you
-have not typed into the record yet. It stops applying the moment a second
-organisation is activated, so it can never serve the wrong tenant.
-
-To add a second organisation, create it in the superadmin console with its own
-domain and point DNS at the same install.
+Administration is the standard Payload admin panel. A user with the
+`member-admin` role can reach it; a plain member cannot.
 
 ---
 
 ## Deploy
+
+### Vercel + Supabase
+
+No server to maintain: Supabase provides the database and the file storage,
+Vercel runs the app. About 30 minutes end to end.
+
+**→ [docs/deploy-vercel-supabase.md](docs/deploy-vercel-supabase.md)**
+
+The app adapts itself when it detects a serverless host — a small database pool
+per instance, console-only logging, thumbnails held open with `after()` instead
+of detached. One limitation is the platform's rather than ours: Vercel rejects
+request bodies over 4.5MB, so uploads are capped well below the 15MB/50MB a
+normal server allows. The guide covers that and the rest of the sharp edges.
 
 ### Docker
 
@@ -140,17 +128,18 @@ docker compose exec app pnpm migrate
 docker compose exec app pnpm setup
 ```
 
-Set `SETUP_ORG_NAME`, `SETUP_ORG_DOMAIN`, `SETUP_ADMIN_EMAIL` and
-`SETUP_ADMIN_PASSWORD` to run setup without a terminal.
+Set `SETUP_ORG_NAME`, `SETUP_ADMIN_EMAIL` and `SETUP_ADMIN_PASSWORD` to run
+setup without a terminal.
 
 ### Anywhere that runs Node
 
 `pnpm build && pnpm start`. The build produces a standalone Next.js output.
 
-One caveat on **serverless** platforms: thumbnail generation is fire-and-forget
-after upload, and serverless runtimes kill work once the response is sent. Set
-`DISABLE_THUMBNAIL_GENERATION=1` there and generate thumbnails another way, or
-deploy to a long-running host.
+On a **serverless** host other than Vercel, Netlify or Lambda — which are
+detected automatically — set `SERVERLESS=1`. It switches the same three
+behaviours: one database connection per instance instead of fifty, logging to
+the console instead of a file that the platform discards, and no memory
+watchdog restarting a process that has no supervisor to restart it.
 
 ---
 
@@ -169,12 +158,12 @@ through it.
 name and default. Colours are theme tokens in
 [`src/app/(frontend)/styles.css`](src/app/(frontend)/styles.css) — `brand`,
 `ink`, `surface`, `accent` — each reading a CSS custom property so they can be
-overridden per organisation at runtime.
+overridden at runtime.
 
 **Another language.** Add `src/messages/<code>.json` alongside `en.json`, add the
 code to `Locale` in [`src/lib/i18n.ts`](src/lib/i18n.ts), and register it.
 `Messages` is derived from `en.json`, so TypeScript will list every key you are
-missing. Each organisation picks its language in its own settings.
+missing. The active language is set under Settings.
 
 ---
 
@@ -209,10 +198,9 @@ Collections live in `src/collections/` and are registered in
 `migrate:create`.
 
 Access control is centralised in `src/access/` — most collections use the
-`siteScoped` helpers from `src/access/multisite.ts` rather than hand-rolled
-rules. Host-to-organisation resolution has exactly one implementation, in
-`src/lib/resolveSite.ts`; four call sites share it precisely because earlier
-copies drifted apart.
+helpers from `src/access/index.ts` rather than hand-rolled rules. `role` and
+`status` live on the User record and travel in the JWT, so an access check is a
+field comparison rather than a database lookup.
 
 ---
 

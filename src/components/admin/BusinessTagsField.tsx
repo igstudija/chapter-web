@@ -31,7 +31,7 @@ export const BusinessTagsField: TextareaFieldClientComponent = (props) => {
         return
       }
 
-      const response = await fetch('/api/superadmin/generate-single-tags', {
+      const response = await fetch('/api/admin/generate-tags', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

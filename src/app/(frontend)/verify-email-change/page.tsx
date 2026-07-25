@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { CheckCircle2, XCircle } from 'lucide-react'
 
@@ -18,8 +18,8 @@ interface PageProps {
 export default async function VerifyEmailChangePage({ searchParams }: PageProps) {
   const { token } = await searchParams
 
-  const currentSite = await getCurrentSite()
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const settings = await getSettings()
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   if (!token) {

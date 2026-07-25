@@ -5,7 +5,7 @@
 // - ContactsPage -> ContactsPageSettings
 // - AboutUs -> AboutUsSettings
 // - FAQ -> FAQSettings
-// - SiteSettings -> SiteSettingsCollection
+// - SiteSettings -> Settings
 // - SlideshowSettings -> SlideshowSettingsCollection
 
 // No globals exported - all are now collections

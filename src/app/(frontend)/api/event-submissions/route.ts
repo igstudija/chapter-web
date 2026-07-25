@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { headers as getHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { checkRateLimit } from '@/lib/rateLimit'
-import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
+import { isUserActive, type UserWithContext, isUserAdmin } from '@/lib/userHelpers'
 
 const EVENT_RATE_LIMIT = {
   identifier: 'event-submission',
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Get current site
-    const currentSite = await getCurrentSite()
+    const settings = await getSettings()
 
     // Create submission with overrideAccess
     const submission = await payload.create({
@@ -82,7 +82,6 @@ export async function POST(req: NextRequest) {
         invitedBy: sanitize(invitedBy),
         message: sanitize(message),
         status: 'pending',
-        site: currentSite?.id || undefined,
       },
     })
 
@@ -108,8 +107,8 @@ export async function DELETE(request: Request) {
   }
 
   const isAdmin =
-    (user as UserWithContext).currentRole === 'member-admin' ||
-    (user as any).isSuperadmin === true
+    (user as UserWithContext).role === 'member-admin' ||
+    isUserAdmin(user as UserWithContext)
   if (!isAdmin) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
   }

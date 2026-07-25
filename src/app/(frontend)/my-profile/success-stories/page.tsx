@@ -14,26 +14,26 @@ export const metadata = {
 
 export default async function MySuccessStoriesPage() {
   const baseData = await getMyProfileBaseData()
-  const { user, membership, currentSite, t, payload, profileImage, logo, memberForHeader, previewLink } =
+  const { user, membership, settings, t, payload, profileImage, logo, memberForHeader, previewLink } =
     baseData
 
   // Check if success stories feature is enabled
-  if (currentSite.enableSuccessStories === false) {
+  if (settings.enableSuccessStories === false) {
     redirect('/my-profile')
   }
 
   const [tabCounts, successStoriesData, members] = await Promise.all([
-    getProfileTabCounts(payload, user.id, currentSite.id),
+    getProfileTabCounts(payload, user.id, settings.id),
     payload.find({
       collection: 'success-stories',
       where: {
-        and: [{ author: { equals: user.id } }, { site: { equals: currentSite.id } }],
+        and: [{ author: { equals: user.id } }, { site: { equals: settings.id } }],
       },
       limit: 100,
       sort: '-createdAt',
       depth: 1,
     }),
-    getSiteMembers(payload, String(currentSite.id), String(user.id)),
+    getSiteMembers(payload, String(settings.id), String(user.id)),
   ])
 
   const successStories = successStoriesData.docs.map((s) => ({
@@ -65,10 +65,10 @@ export default async function MySuccessStoriesPage() {
       previewLink={previewLink}
       activeTab="success-stories"
       tabCounts={tabCounts}
-      enableActivities={currentSite.enableActivities || false}
-      enableSuccessStories={currentSite.enableSuccessStories === true}
+      enableActivities={settings.enableActivities || false}
+      enableSuccessStories={settings.enableSuccessStories === true}
       isPowerGroupLead={membership?.powerGroupLead || false}
-      siteId={currentSite.id}
+      siteId={settings.id}
       successStories={successStories}
       members={members}
     />

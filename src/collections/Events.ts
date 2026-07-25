@@ -1,16 +1,7 @@
 import type { CollectionConfig } from 'payload'
+import { adminOnly, createUniqueSlugValidation } from '../access'
 
 import { tinyEditor } from '../lib/tinyEditor'
-import {
-  siteScopedAdmin,
-  siteFieldAccess,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  createSiteScopedSlugValidation,
-  getSiteIdFromHostname,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
-import { getHostnameFromRequest, isSuperadminHost } from '../lib/hostname'
 import slugify from 'slugify'
 import { createSeoFields } from '../fields/seoFields'
 
@@ -20,8 +11,6 @@ export const Events: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'date', 'location', '_status'],
     group: 'Content',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
@@ -34,37 +23,24 @@ export const Events: CollectionConfig = {
         isPublic: { equals: true },
       }
     },
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   versions: {
     drafts: true,
   },
   hooks: {
     beforeChange: [
-      async (args) => autoAssignSiteHook(args),
       async ({ data, req, operation, originalDoc }) => {
         if (data?.title && !data?.slug) {
           const baseSlug = slugify(data.title, { lower: true, strict: true })
           let slug = baseSlug
           let counter = 1
 
-          let siteId = data?.site
-          if (!siteId) {
-            const hostname = getHostnameFromRequest(req)
-            if (!isSuperadminHost(hostname)) {
-              siteId = await getSiteIdFromHostname(hostname, req.payload)
-            }
-          }
-          const siteIdValue = typeof siteId === 'object' ? siteId.id : siteId
-
           while (true) {
             const whereClause: any = {
               slug: { equals: slug },
-            }
-            if (siteIdValue) {
-              whereClause.site = { equals: siteIdValue }
             }
             if (operation === 'update' && originalDoc?.id) {
               whereClause.id = { not_equals: originalDoc.id }
@@ -94,22 +70,6 @@ export const Events: CollectionConfig = {
   },
   fields: [
     {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this event belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
-    {
       name: 'title',
       type: 'text',
       required: true,
@@ -121,7 +81,7 @@ export const Events: CollectionConfig = {
       admin: {
         position: 'sidebar',
       },
-      validate: createSiteScopedSlugValidation('events'),
+      validate: createUniqueSlugValidation('events'),
     },
     {
       type: 'row',

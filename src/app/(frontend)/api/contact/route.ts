@@ -3,7 +3,7 @@ import { headers as getHeaders } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { checkRateLimit } from '@/lib/rateLimit'
 
 const CONTACT_RATE_LIMIT = {
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     const payload = await getPayload({ config })
 
     // Get current site from hostname
-    const currentSite = await getCurrentSite()
+    const settings = await getSettings()
 
     // Create submission with overrideAccess since this is a public form
     await payload.create({
@@ -60,7 +60,6 @@ export async function POST(req: NextRequest) {
         subject: sanitize(subject),
         message: sanitize(message),
         status: 'new',
-        site: currentSite?.id || undefined,
       },
     })
 
@@ -89,7 +88,7 @@ export async function DELETE(request: Request) {
   }
 
   // Only admins can delete contact submissions
-  const isAdmin = (user as UserWithContext).currentRole === 'member-admin'
+  const isAdmin = (user as UserWithContext).role === 'member-admin'
   if (!isAdmin) {
     return NextResponse.json({ error: 'Not authorized' }, { status: 403 })
   }

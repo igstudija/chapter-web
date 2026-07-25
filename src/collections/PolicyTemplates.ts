@@ -1,13 +1,9 @@
 import type { CollectionConfig } from 'payload'
+import { isAdmin } from '../access'
 import { htmlEditorField } from '../fields/HtmlEditor'
 
-/**
- * Hide collection for non-superadmin users
- * Shows only if user.isSuperadmin === true (regardless of host)
- */
-const hideForNonSuperadmin = ({ user }: { user: any }): boolean => {
-  return user?.isSuperadmin !== true
-}
+/** Only administrators see the policy templates. */
+const hideForNonAdmin = ({ user }: { user: any }): boolean => !isAdmin(user)
 
 /**
  * PolicyTemplates Collection
@@ -34,7 +30,7 @@ export const PolicyTemplates: CollectionConfig = {
     group: 'System',
     description:
       'Universal policy templates shared across all sites. Use placeholders like {site-name}, {site-email}, {site-domain}.',
-    hidden: hideForNonSuperadmin,
+    hidden: hideForNonAdmin,
     defaultColumns: ['title', 'type', 'locale', 'updatedAt'],
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
@@ -43,9 +39,9 @@ export const PolicyTemplates: CollectionConfig = {
   access: {
     // Only superadmin can manage policy templates
     read: () => true, // Public read for frontend
-    create: ({ req: { user } }) => user?.isSuperadmin === true,
-    update: ({ req: { user } }) => user?.isSuperadmin === true,
-    delete: ({ req: { user } }) => user?.isSuperadmin === true,
+    create: ({ req: { user } }) => isAdmin(user) === true,
+    update: ({ req: { user } }) => isAdmin(user) === true,
+    delete: ({ req: { user } }) => isAdmin(user) === true,
   },
   fields: [
     {

@@ -11,16 +11,15 @@ export const metadata = {
 
 export default async function MyTop40Page() {
   const baseData = await getMyProfileBaseData()
-  const { user, membership, currentSite, t, payload, profileImage, logo, memberForHeader, previewLink } = baseData
+  const { user, membership, settings, t, payload, profileImage, logo, memberForHeader, previewLink } = baseData
 
   const [tabCounts, top40Data] = await Promise.all([
-    getProfileTabCounts(payload, user.id, currentSite.id),
+    getProfileTabCounts(payload, user.id, settings.id),
     payload.find({
       collection: 'top40',
       where: {
         and: [
           { submittedBy: { equals: user.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
       limit: 100,
@@ -51,10 +50,10 @@ export default async function MyTop40Page() {
       previewLink={previewLink}
       activeTab="top40"
       tabCounts={tabCounts}
-      enableActivities={currentSite.enableActivities || false}
-      enableSuccessStories={currentSite.enableSuccessStories !== false}
+      enableActivities={settings.enableActivities || false}
+      enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
-      siteId={currentSite.id}
+      siteId={settings.id}
       top40Entries={top40Entries}
     />
   )

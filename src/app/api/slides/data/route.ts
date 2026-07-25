@@ -1,8 +1,8 @@
 import { getPayload } from 'payload'
+import { getSettings } from '@/lib/getSiteSettings'
 import config from '@payload-config'
 import { NextResponse } from 'next/server'
 import { headers as getHeaders } from 'next/headers'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
 import { getMessages, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSlideshowData } from '@/lib/getSlideshowData'
 
@@ -14,7 +14,7 @@ export async function GET() {
     const headers = await getHeaders()
     const host = headers.get('host')
 
-    const site = await getSiteFromHost(host)
+    const site = await getSettings()
 
     if (!site) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 })

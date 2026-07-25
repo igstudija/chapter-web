@@ -31,7 +31,7 @@ export function getMessages(locale: Locale): Messages {
 }
 
 // Note: getLocale() was removed as it relied on globals which are now site-scoped collections.
-// Use getSiteSettings() from '@/lib/getSiteSettings' to get locale for the current site.
+// Use getSettings() from '@/lib/getSiteSettings' to get locale for the current site.
 
 export function getTranslations(locale: Locale) {
   const m = messages[locale]

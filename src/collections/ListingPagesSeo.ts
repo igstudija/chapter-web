@@ -1,12 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScoped,
-  siteScopedAdmin,
-  siteField,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { authenticated, adminOnly } from '../access'
 import { createSeoFields } from '../fields/seoFields'
 
 export const ListingPagesSeo: CollectionConfig = {
@@ -18,21 +11,15 @@ export const ListingPagesSeo: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     group: 'SEO',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     description: 'Configure SEO settings for listing pages (Blog, Events, Companies, Success Stories)',
   },
   access: {
-    read: siteScoped,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: authenticated,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    siteField({ required: true }),
     {
       name: 'title',
       type: 'text',

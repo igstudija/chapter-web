@@ -1,13 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScopedActiveMember,
-  createSiteScopedAdminOrOwner,
-  siteFieldAccess,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  filterUsersBySiteMemberships,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { activeMember, createAdminOrOwner, activeUsersFilter } from '../access'
 
 export const SpecialRequests: CollectionConfig = {
   slug: 'special-requests',
@@ -15,38 +7,17 @@ export const SpecialRequests: CollectionConfig = {
     useAsTitle: 'request',
     defaultColumns: ['request', 'isPublic', 'createdAt'],
     group: 'Internal',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
-    read: siteScopedActiveMember,
-    create: siteScopedActiveMember,
-    update: createSiteScopedAdminOrOwner('requestedBy'),
-    delete: createSiteScopedAdminOrOwner('requestedBy'),
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: activeMember,
+    create: activeMember,
+    update: createAdminOrOwner('requestedBy'),
+    delete: createAdminOrOwner('requestedBy'),
   },
   fields: [
-    {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this request belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
     {
       name: 'request',
       type: 'text',
@@ -75,7 +46,7 @@ export const SpecialRequests: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       required: true,
-      filterOptions: filterUsersBySiteMemberships,
+      filterOptions: activeUsersFilter,
       admin: {
         position: 'sidebar',
       },

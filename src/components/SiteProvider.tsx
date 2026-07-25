@@ -6,13 +6,11 @@ import { DEFAULT_ORG_NAME } from '../lib/branding'
 interface SiteContextValue {
   siteId: string | null
   siteName: string
-  siteSlug: string | null
 }
 
 const SiteContext = createContext<SiteContextValue>({
   siteId: null,
   siteName: DEFAULT_ORG_NAME,
-  siteSlug: null,
 })
 
 export function useSite() {
@@ -23,11 +21,10 @@ interface SiteProviderProps {
   children: ReactNode
   siteId: string | null
   siteName: string
-  siteSlug: string | null
 }
 
-export function SiteProvider({ children, siteId, siteName, siteSlug }: SiteProviderProps) {
+export function SiteProvider({ children, siteId, siteName }: SiteProviderProps) {
   return (
-    <SiteContext.Provider value={{ siteId, siteName, siteSlug }}>{children}</SiteContext.Provider>
+    <SiteContext.Provider value={{ siteId, siteName }}>{children}</SiteContext.Provider>
   )
 }

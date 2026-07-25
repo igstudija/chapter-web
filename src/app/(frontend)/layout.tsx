@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react'
+import React from 'react'
 import { headers } from 'next/headers'
 import './styles.css'
 import { Header } from '@/components/Header'
@@ -9,16 +9,27 @@ import { TranslationsProvider } from '@/components/TranslationsProvider'
 import { SiteProvider } from '@/components/SiteProvider'
 import type { Media } from '@/payload-types'
 import { getMessages, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import { getSiteFromHost, isSuperadminHost } from '@/lib/getSiteFromHost'
-import { getSiteSettings } from '@/lib/getSiteSettings'
-import { ChatBotWrapper } from '@/components/ChatBotWrapper'
+import { getSettings } from '@/lib/getSiteSettings'
 import { VersionCheck } from '@/components/VersionCheck'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 
 /**
- * Fallback metadata only. Per-organisation title and description come from
- * `SiteSettings` / `ListingPagesSeo` and override this on every real page; what
- * remains here is what a fresh install serves before any content exists.
+ * Every page here is database-backed and most are per-member, so none may be
+ * frozen into the build.
+ *
+ * This used to be implicit: resolving the request's host to an organisation
+ * read `headers()`, and that alone opted every route out of static generation.
+ * Settings are read without touching headers now, so Next.js would happily
+ * prerender these pages at build time and serve whatever the database held at
+ * deploy — including, on pages that render a member's own data, nothing at all.
+ * Saying it outright is what that side effect was doing by accident.
+ */
+export const dynamic = 'force-dynamic'
+
+/**
+ * Fallback metadata only. Title and description come from `Settings` /
+ * `ListingPagesSeo` and override this on every real page; what remains here is
+ * what a fresh install serves before any content exists.
  */
 export const metadata = {
   title: {
@@ -31,21 +42,17 @@ export const metadata = {
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
-  // Get current site from hostname
-  const headersList = await headers()
-  const host = headersList.get('host')
-  const currentSite = await getSiteFromHost(host)
+  const settings = await getSettings()
 
   // Get site settings from collection (site-scoped)
-  const siteSettings = await getSiteSettings()
 
-  const favicon16 = siteSettings?.favicon16 as Media | undefined
-  const favicon32 = siteSettings?.favicon32 as Media | undefined
-  const appleTouchIcon = siteSettings?.appleTouchIcon as Media | undefined
-  const favicon192 = siteSettings?.favicon192 as Media | undefined
-  const favicon512 = siteSettings?.favicon512 as Media | undefined
+  const favicon16 = settings?.favicon16 as Media | undefined
+  const favicon32 = settings?.favicon32 as Media | undefined
+  const appleTouchIcon = settings?.appleTouchIcon as Media | undefined
+  const favicon192 = settings?.favicon192 as Media | undefined
+  const favicon512 = settings?.favicon512 as Media | undefined
 
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const messages = getMessages(locale)
 
   return (
@@ -67,9 +74,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           <link rel="icon" type="image/png" sizes="512x512" href={favicon512.url} />
         )}
         <Analytics
-          googleAnalyticsId={siteSettings?.googleAnalyticsId || undefined}
-          googleTagManagerId={siteSettings?.googleTagManagerId || undefined}
-          facebookPixelId={siteSettings?.facebookPixelId || undefined}
+          googleAnalyticsId={settings?.googleAnalyticsId || undefined}
+          googleTagManagerId={settings?.googleTagManagerId || undefined}
+          facebookPixelId={settings?.facebookPixelId || undefined}
         />
       </head>
       <body className="min-h-screen flex flex-col bg-neutral-50 dark:bg-surface dark:text-surface-text transition-colors">
@@ -100,24 +107,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         <ThemeProvider>
           <TranslationsProvider messages={messages}>
             <SiteProvider
-              siteId={currentSite?.id ? String(currentSite.id) : null}
-              siteName={siteSettings?.siteName || currentSite?.name || DEFAULT_ORG_NAME}
-              siteSlug={currentSite?.slug || null}
+              siteId={settings?.id ? String(settings.id) : null}
+              siteName={settings?.siteName || DEFAULT_ORG_NAME}
             >
-              {host && isSuperadminHost(host) ? (
-                // Superadmin panel - no header/footer
-                <main className="flex-1">{children}</main>
-              ) : (
-                // Chapter sites - full layout
-                <>
-                  <Header />
-                  <main className="flex-1">{children}</main>
-                  <Footer />
-                  <Suspense fallback={null}>
-                    <ChatBotWrapper />
-                  </Suspense>
-                </>
-              )}
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
             </SiteProvider>
           </TranslationsProvider>
         </ThemeProvider>

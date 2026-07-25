@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { notifyReferralCreated } from '@/lib/activityNotifications'
-import { getCurrentSite, getSiteSettings } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 import { DEFAULT_LOCALE } from '@/lib/i18n'
@@ -43,11 +43,11 @@ export async function POST(request: Request) {
   }
 
   // Check if activities feature is enabled
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   if (!currentSite?.enableActivities) {
     return NextResponse.json({ error: 'Activities feature is disabled' }, { status: 403 })
   }
-  const siteSettings = await getSiteSettings()
+  const siteSettings = await getSettings()
 
   try {
     const { fromUser, toUser, date, description, status, value } = await request.json()
@@ -74,7 +74,6 @@ export async function POST(request: Request) {
         status: (status as 'pending' | 'success' | 'failed') || 'pending',
         createdBy: user.id,
         value: value !== undefined && value !== null ? Number(value) : undefined,
-        site: currentSite.id,
       },
       // Override access since we already verified user is authenticated and active
       overrideAccess: true,
@@ -152,7 +151,7 @@ export async function DELETE(request: Request) {
   }
 
   // Check if activities feature is enabled
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   if (!currentSite?.enableActivities) {
     return NextResponse.json({ error: 'Activities feature is disabled' }, { status: 403 })
   }
@@ -192,7 +191,7 @@ export async function DELETE(request: Request) {
 
         // Check if user is creator or admin
         const isCreator = String(existing.createdBy) === String(user.id)
-        const isAdmin = (user as UserWithContext).currentRole === 'member-admin'
+        const isAdmin = (user as UserWithContext).role === 'member-admin'
 
         if (!isCreator && !isAdmin) {
           errors.push({ id, error: 'Not authorized' })

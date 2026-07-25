@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { isUserAdmin } from '@/lib/userHelpers'
 import { getPayload, getFieldsToSign, jwtSign } from 'payload'
 import { addSessionToUser } from 'payload/shared'
 import config from '@/payload.config'
@@ -79,10 +80,10 @@ export async function GET(request: Request) {
       )
     }
 
-    // Check if user has any active membership (if not superadmin)
-    if (!user.isSuperadmin) {
+    // Administrators can always sign in; everyone else needs a member profile
+    if (!isUserAdmin(user)) {
       const memberships = await payload.find({
-        collection: 'site-memberships',
+        collection: 'members',
         where: {
           user: { equals: user.id },
           status: { equals: 'active' },

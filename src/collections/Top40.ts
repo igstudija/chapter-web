@@ -1,13 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScopedActiveMember,
-  createSiteScopedAdminOrOwner,
-  siteFieldAccess,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  filterUsersBySiteMemberships,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { activeMember, createAdminOrOwner, activeUsersFilter } from '../access'
 
 export const Top40: CollectionConfig = {
   slug: 'top40',
@@ -15,38 +7,17 @@ export const Top40: CollectionConfig = {
     useAsTitle: 'companyName',
     defaultColumns: ['companyName', 'createdAt'],
     group: 'Internal',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
-    read: siteScopedActiveMember,
-    create: siteScopedActiveMember,
-    update: createSiteScopedAdminOrOwner('submittedBy'),
-    delete: createSiteScopedAdminOrOwner('submittedBy'),
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: activeMember,
+    create: activeMember,
+    update: createAdminOrOwner('submittedBy'),
+    delete: createAdminOrOwner('submittedBy'),
   },
   fields: [
-    {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this entry belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
     {
       name: 'companyName',
       type: 'text',
@@ -91,7 +62,7 @@ export const Top40: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       required: true,
-      filterOptions: filterUsersBySiteMemberships,
+      filterOptions: activeUsersFilter,
       admin: {
         position: 'sidebar',
       },

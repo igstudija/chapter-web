@@ -3,7 +3,6 @@ import readline from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
 import { getPayload } from 'payload'
 import config from '../payload.config'
-import { PRIMARY_SUPERADMIN_HOST, SUPERADMIN_HOSTS } from '../lib/constants'
 import { PRODUCT_NAME } from '../lib/branding'
 
 /**
@@ -22,14 +21,6 @@ import { PRODUCT_NAME } from '../lib/branding'
  *
  * Run with: pnpm setup
  */
-
-const slugify = (value: string): string =>
-  value
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '') // strip diacritics so slugs stay URL-safe
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
 
 const isEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
@@ -60,89 +51,86 @@ async function main() {
 
   const payload = await getPayload({ config })
 
-  // --- Organisation ---------------------------------------------------------
-  const existingSites = await payload.find({ collection: 'sites', limit: 1 })
+  // --- Settings -------------------------------------------------------------
+  // A single settings document carries the organisation's name, language and
+  // module switches. This used to create a `Sites` record with a domain, since
+  // one install could serve several organisations and the domain is what
+  // decided which one a request belonged to.
+  const existingSettings = await payload.find({ collection: 'settings', limit: 1 })
 
-  let siteId: string | number
-  if (existingSites.docs.length > 0) {
-    siteId = existingSites.docs[0].id
-    console.log(`✓ Organisation already exists: ${existingSites.docs[0].name} — skipping.`)
+  if (existingSettings.docs.length > 0) {
+    console.log(`✓ Settings already exist: ${existingSettings.docs[0].siteName} — skipping.`)
   } else {
     const name = await value('SETUP_ORG_NAME', 'Organisation name:')
     if (!name) throw new Error('An organisation name is required.')
 
-    // The domain is what maps an incoming request to this organisation. A
-    // single-organisation install also matches on the sole-active-site
-    // fallback, so getting this wrong now is recoverable from the admin panel.
-    const domain = await value(
-      'SETUP_ORG_DOMAIN',
-      'Primary domain (no protocol, e.g. riga.example.org):',
-      'localhost',
-    )
-
-    const site = await payload.create({
-      collection: 'sites',
+    await payload.create({
+      collection: 'settings',
       data: {
-        name,
-        slug: slugify(name) || 'main',
-        domain: domain.replace(/^https?:\/\//, '').replace(/\/.*$/, ''),
-        status: 'active',
+        siteName: name,
+        locale: 'lv',
+        // Required on the collection; both are editable in the admin panel and
+        // fall back to the EMAIL_FROM environment variable until they are.
+        emailFrom: process.env.EMAIL_FROM || 'noreply@example.org',
+        emailFromName: name,
       },
+      overrideAccess: true,
     })
-    siteId = site.id
-    console.log(`✓ Created organisation: ${name}`)
+    console.log(`✓ Created settings for: ${name}`)
   }
 
-  // --- Superadmin -----------------------------------------------------------
-  const existingSuperadmins = await payload.find({
+  // --- Administrator --------------------------------------------------------
+  const existingAdmins = await payload.find({
     collection: 'users',
-    where: { isSuperadmin: { equals: true } },
+    where: { role: { equals: 'member-admin' } },
     limit: 1,
   })
 
-  if (existingSuperadmins.docs.length > 0) {
-    console.log(`✓ Superadmin already exists: ${existingSuperadmins.docs[0].email} — skipping.`)
+  if (existingAdmins.docs.length > 0) {
+    console.log(`✓ Administrator already exists: ${existingAdmins.docs[0].email} — skipping.`)
   } else {
-    const email = (await value('SETUP_ADMIN_EMAIL', 'Superadmin email:')).toLowerCase()
+    const email = (await value('SETUP_ADMIN_EMAIL', 'Administrator email:')).toLowerCase()
     if (!isEmail(email)) throw new Error(`"${email}" is not a valid email address.`)
 
-    const password = await value('SETUP_ADMIN_PASSWORD', 'Superadmin password (min 8 chars):')
+    const password = await value('SETUP_ADMIN_PASSWORD', 'Administrator password (min 8 chars):')
     if (password.length < 8) throw new Error('Password must be at least 8 characters.')
 
     // Both are required on User and appear throughout the UI, so they are
     // prompted rather than defaulted to something the operator would have to
     // hunt down and correct later.
-    const firstName = await value('SETUP_ADMIN_FIRST_NAME', 'Superadmin first name:', 'Admin')
-    const lastName = await value('SETUP_ADMIN_LAST_NAME', 'Superadmin last name:', 'User')
+    const firstName = await value('SETUP_ADMIN_FIRST_NAME', 'Administrator first name:', 'Admin')
+    const lastName = await value('SETUP_ADMIN_LAST_NAME', 'Administrator last name:', 'User')
 
     const user = await payload.create({
       collection: 'users',
-      data: { email, password, name: firstName, surname: lastName, isSuperadmin: true },
-      // The Users beforeChange hook blocks creating superadmins from a
-      // non-superadmin host; a CLI run has no host at all, so it must opt out
-      // of that check explicitly.
+      data: {
+        email,
+        password,
+        name: firstName,
+        surname: lastName,
+        role: 'member-admin',
+        status: 'active',
+      },
       overrideAccess: true,
-      context: { overrideAccess: true },
     })
 
-    // An admin membership is what gives the superadmin a profile and admin
-    // rights inside the organisation itself; the isSuperadmin flag alone only
-    // grants cross-organisation access.
-    const existingMembership = await payload.find({
-      collection: 'site-memberships',
-      where: { and: [{ user: { equals: user.id } }, { site: { equals: siteId } }] },
+    // The member profile is what gives them a presence in the directory; the
+    // role on the user record is what grants the rights.
+    const existingProfile = await payload.find({
+      collection: 'members',
+      where: { user: { equals: user.id } },
       limit: 1,
     })
 
-    if (existingMembership.docs.length === 0) {
+    if (existingProfile.docs.length === 0) {
       await payload.create({
-        collection: 'site-memberships',
-        data: { user: user.id, site: siteId, role: 'member-admin', status: 'active' },
+        collection: 'members',
+        data: { user: user.id, role: 'member-admin', status: 'active' },
         overrideAccess: true,
       })
     }
 
-    console.log(`✓ Created superadmin: ${email}`)
+    console.log(`✓ Created administrator: ${email}`)
   }
 
   await rl?.close()
@@ -151,13 +139,8 @@ async function main() {
   console.log(`
 Setup complete.
 
-  Organisation site   http://localhost:${port}
-  Admin panel         http://localhost:${port}/admin
-  Superadmin console  http://${PRIMARY_SUPERADMIN_HOST}:${port}/admin
-
-The superadmin console is served on these hosts: ${SUPERADMIN_HOSTS.join(', ')}
-Change them with NEXT_PUBLIC_SUPERADMIN_HOSTS. Hosts not on that list resolve to
-an organisation instead.
+  Member portal   http://localhost:${port}
+  Admin panel     http://localhost:${port}/admin
 
 Next:
   pnpm seed:policies   add Terms/Privacy/Cookie skeletons (they need editing)

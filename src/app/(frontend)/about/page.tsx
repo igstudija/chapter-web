@@ -3,7 +3,7 @@ import config from '@/payload.config'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Mail, Phone, ChevronRight } from 'lucide-react'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { headers } from 'next/headers'
 import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
@@ -11,7 +11,7 @@ import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
 export async function generateMetadata() {
   const headersList = await headers()
   const host = headersList.get('host')
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   const siteId = currentSite?.id
 
   if (!currentSite) {
@@ -27,7 +27,7 @@ export async function generateMetadata() {
       limit: 1,
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: { site: { equals: siteId } },
       limit: 1,
       depth: 1,
@@ -51,7 +51,7 @@ export async function generateMetadata() {
 
 export default async function AboutPage() {
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   const siteId = currentSite?.id
 
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE

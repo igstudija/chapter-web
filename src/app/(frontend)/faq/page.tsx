@@ -1,6 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import FAQClient from './FAQClient'
 import Link from 'next/link'
@@ -13,7 +13,7 @@ import { JsonLd } from '@/components/JsonLd'
 export async function generateMetadata() {
   const headersList = await headers()
   const host = headersList.get('host')
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   const siteId = currentSite?.id
 
   if (!currentSite) {
@@ -29,7 +29,7 @@ export async function generateMetadata() {
       limit: 1,
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: { site: { equals: siteId } },
       limit: 1,
       depth: 1,
@@ -53,7 +53,7 @@ export async function generateMetadata() {
 
 export default async function FaqPage() {
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   const siteId = currentSite?.id
 
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE

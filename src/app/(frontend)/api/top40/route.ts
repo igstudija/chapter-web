@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
 
 /**
  * POST /api/top40
@@ -23,15 +22,6 @@ export async function POST(request: Request) {
   try {
     const { contactPerson, position, companyName, registrationNumber, notes, businessTags } = await request.json()
 
-    // SECURITY: Always use hostname for site detection - never accept siteId from client
-    const host = headers.get('host')
-    const currentSite = await getSiteFromHost(host)
-    const currentSiteId = currentSite?.id || null
-
-    if (!currentSiteId) {
-      return NextResponse.json({ error: 'Site not found' }, { status: 400 })
-    }
-
     if (!contactPerson || !companyName) {
       return NextResponse.json(
         { error: 'Contact person and company name are required' },
@@ -49,7 +39,6 @@ export async function POST(request: Request) {
         notes: notes || undefined,
         businessTags: businessTags || undefined,
         submittedBy: user.id,
-        site: currentSiteId,
       },
       // Override access since we already verified user is authenticated and active
       overrideAccess: true,
@@ -110,7 +99,7 @@ export async function DELETE(request: Request) {
         }
 
         const isOwner = String(existing.submittedBy) === String(user.id)
-        const isAdmin = (user as UserWithContext).currentRole === 'member-admin'
+        const isAdmin = (user as UserWithContext).role === 'member-admin'
 
         if (!isOwner && !isAdmin) {
           errors.push({ id, error: 'Not authorized' })

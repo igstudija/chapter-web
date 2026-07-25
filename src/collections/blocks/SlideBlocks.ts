@@ -1,27 +1,12 @@
-import type { Block, FilterOptionsProps, Where } from 'payload'
-import { getHostnameFromRequest, isSuperadminHost } from '../../lib/hostname'
-import { getSiteIdFromHostname } from '../../access/multisite'
+import type { Block } from 'payload'
 
-const getSiteFilterOptions = async ({ req }: FilterOptionsProps): Promise<boolean | Where> => {
-  if (!req) return false
-  const hostname = getHostnameFromRequest(req)
-  if (isSuperadminHost(hostname)) return true
-  const siteId = await getSiteIdFromHostname(hostname, req.payload)
-  if (!siteId) return { id: { equals: '' } }
-  return { site: { equals: String(siteId) } }
-}
-
-const getMembershipFilterOptions = async ({ req }: FilterOptionsProps): Promise<boolean | Where> => {
-  if (!req) return false
-  const hostname = getHostnameFromRequest(req)
-  if (isSuperadminHost(hostname)) return true
-  const siteId = await getSiteIdFromHostname(hostname, req.payload)
-  if (!siteId) return { id: { equals: '' } }
-  return {
-    site: { equals: String(siteId) },
-    status: { equals: 'active' },
-  }
-}
+/**
+ * Member pickers on slides list active members.
+ *
+ * They used to resolve the request's host to an organisation and list that
+ * organisation's active memberships; the organisation half of that is gone.
+ */
+const activeMembersOnly = () => ({ status: { equals: 'active' } })
 
 const customSlideSecondsField = {
   name: 'customSlideSeconds',
@@ -63,13 +48,13 @@ export const SpeechMasterBlock: Block = {
     {
       name: 'member',
       type: 'relationship',
-      relationTo: 'site-memberships',
+      relationTo: 'members',
       required: true,
       label: 'Speech Master',
       admin: {
         description: 'Member to display with crown icon. Default duration uses speechMasterMultiplier.',
       },
-      filterOptions: getMembershipFilterOptions,
+      filterOptions: () => ({ status: { equals: 'active' } }),
     },
     customSlideSecondsField,
   ],
@@ -94,10 +79,10 @@ export const SpeechMasterCeremonyBlock: Block = {
     {
       name: 'member',
       type: 'relationship',
-      relationTo: 'site-memberships',
+      relationTo: 'members',
       required: true,
       label: 'Speech Master',
-      filterOptions: getMembershipFilterOptions,
+      filterOptions: () => ({ status: { equals: 'active' } }),
     },
     customSlideSecondsField,
   ],
@@ -116,7 +101,6 @@ export const PowerGroupBlock: Block = {
       type: 'relationship',
       relationTo: 'power-groups',
       required: true,
-      filterOptions: getSiteFilterOptions,
     },
     {
       name: 'disableTimer',

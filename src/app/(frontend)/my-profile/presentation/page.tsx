@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { isUserAdmin } from '@/lib/userHelpers'
 import { MyProfilePageWrapper } from '@/components/MyProfilePageWrapper'
 import { PresentationPageClient } from '@/components/PresentationPageClient'
 import { getMyProfileBaseData, getProfileTabCounts, extractMediaImage } from '@/lib/myProfileData'
@@ -13,7 +14,7 @@ export default async function PresentationPage() {
   const {
     user,
     membership,
-    currentSite,
+    settings,
     t,
     payload,
     profileImage,
@@ -23,19 +24,19 @@ export default async function PresentationPage() {
   } = baseData
 
   // Check if blocked
-  const isActive = baseData.userWithContext.isSuperadmin || membership?.status === 'active'
+  const isActive = isUserAdmin(baseData.userWithContext) || membership?.status === 'active'
   if (!isActive) {
     redirect('/my-profile')
   }
 
-  const tabCounts = await getProfileTabCounts(payload, String(user.id), String(currentSite.id))
+  const tabCounts = await getProfileTabCounts(payload, String(user.id), String(settings.id))
 
   const slideImage = extractMediaImage(membership?.slideImage)
 
   // Minimum thresholds from slideshow settings — shown as "min:" hints under the inputs
   const slideshowSettingsResult = await payload.find({
     collection: 'slideshow-settings-collection',
-    where: { site: { equals: currentSite.id } },
+    where: { site: { equals: settings.id } },
     limit: 1,
     depth: 0,
   })
@@ -56,10 +57,10 @@ export default async function PresentationPage() {
       previewLink={previewLink}
       activeTab="presentation"
       tabCounts={tabCounts}
-      enableActivities={currentSite.enableActivities || false}
-      enableSuccessStories={currentSite.enableSuccessStories !== false}
+      enableActivities={settings.enableActivities || false}
+      enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
-      siteId={String(currentSite.id)}
+      siteId={String(settings.id)}
     >
       <PresentationPageClient
         initialData={{
@@ -78,7 +79,7 @@ export default async function PresentationPage() {
           surname: user.surname,
           company: membership?.company || '',
         }}
-        siteId={String(currentSite.id)}
+        siteId={String(settings.id)}
         memberId={String(user.id)}
         slidePreviewTitle={t('profile', 'slidePreview')}
         businessGivenMin={businessGivenMin}

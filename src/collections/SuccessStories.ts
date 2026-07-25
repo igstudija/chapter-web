@@ -1,13 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScopedActiveMember,
-  siteScopedAdmin,
-  siteFieldAccess,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  filterUsersBySiteMemberships,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { activeMember, adminOnly, activeUsersFilter } from '../access'
 
 export const SuccessStories: CollectionConfig = {
   slug: 'success-stories',
@@ -15,38 +7,17 @@ export const SuccessStories: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'isPublic', 'createdAt'],
     group: 'Internal',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
-    read: siteScopedActiveMember,
-    create: siteScopedActiveMember,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: activeMember,
+    create: activeMember,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this story belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
     {
       name: 'title',
       type: 'text',
@@ -74,7 +45,7 @@ export const SuccessStories: CollectionConfig = {
       name: 'partnerMember',
       type: 'relationship',
       relationTo: 'users',
-      filterOptions: filterUsersBySiteMemberships,
+      filterOptions: activeUsersFilter,
       admin: {
         description: 'The member who helped with this success',
       },
@@ -92,7 +63,7 @@ export const SuccessStories: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       required: true,
-      filterOptions: filterUsersBySiteMemberships,
+      filterOptions: activeUsersFilter,
       admin: {
         position: 'sidebar',
       },

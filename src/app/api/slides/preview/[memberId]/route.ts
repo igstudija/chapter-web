@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { NextResponse } from 'next/server'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getMessages, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSlideshowData } from '@/lib/getSlideshowData'
 
@@ -9,25 +9,25 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mem
   await params
   try {
     const payload = await getPayload({ config })
-    const currentSite = await getCurrentSite()
+    const settings = await getSettings()
 
-    if (!currentSite) {
+    if (!settings) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 })
     }
 
-    const data = await getSlideshowData(payload, currentSite)
+    const data = await getSlideshowData(payload, settings)
     if (!data) {
       return NextResponse.json({ error: 'Settings not found' }, { status: 404 })
     }
 
-    const locale = (currentSite.locale || DEFAULT_LOCALE) as Locale
+    const locale = (settings.locale || DEFAULT_LOCALE) as Locale
     const messages = getMessages(locale)
     const slideshowTranslations = messages.slideshow
 
     return NextResponse.json({
       ...data,
       locale,
-      enableActivities: currentSite.enableActivities || false,
+      enableActivities: settings.enableActivities || false,
       translations: slideshowTranslations,
     })
   } catch (error) {

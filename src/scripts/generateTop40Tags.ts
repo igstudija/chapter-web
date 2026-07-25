@@ -1,7 +1,6 @@
 import 'dotenv/config'
 import { getPayload } from 'payload'
 import config from '../payload.config'
-import { PRIMARY_SUPERADMIN_HOST } from '../lib/constants'
 import OpenAI from 'openai'
 
 const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY
@@ -182,7 +181,6 @@ async function generateTop40Tags() {
         req: {
           user: { id: 0, isSuperadmin: true },
           payload,
-          headers: new Headers({ host: PRIMARY_SUPERADMIN_HOST }),
         } as any,
       })
       console.log(`  ✅ Updated successfully`)

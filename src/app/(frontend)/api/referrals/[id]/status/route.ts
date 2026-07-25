@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { notifyReferralStatusUpdated } from '@/lib/activityNotifications'
-import { getCurrentSite, getSiteSettings } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, isUserAdmin, type UserWithContext } from '@/lib/userHelpers'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 import { DEFAULT_LOCALE } from '@/lib/i18n'
@@ -24,11 +24,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   // Check if activities feature is enabled
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   if (!currentSite?.enableActivities) {
     return NextResponse.json({ error: 'Activities feature is disabled' }, { status: 403 })
   }
-  const siteSettings = await getSiteSettings()
+  const siteSettings = await getSettings()
 
   const { id } = await params
 

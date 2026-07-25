@@ -1,12 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScoped,
-  siteScopedAdmin,
-  siteField,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { authenticated, adminOnly } from '../access'
 import { createSeoFields } from '../fields/seoFields'
 
 export const CompaniesPageSettings: CollectionConfig = {
@@ -18,8 +11,6 @@ export const CompaniesPageSettings: CollectionConfig = {
   admin: {
     useAsTitle: 'title',
     group: 'Content',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       views: {
         list: {
@@ -29,16 +20,12 @@ export const CompaniesPageSettings: CollectionConfig = {
     },
   },
   access: {
-    read: siteScoped,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: authenticated,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    siteField({ required: true }),
     {
       name: 'title',
       type: 'text',

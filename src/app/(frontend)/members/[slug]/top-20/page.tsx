@@ -5,7 +5,7 @@ import config from '@/payload.config'
 import slugify from 'slugify'
 import { Top40Table, MemberProfileHeader, MemberProfileTabs, Breadcrumb } from '@/components'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 
 function generateSlug(name: string, surname: string): string {
@@ -15,13 +15,12 @@ function generateSlug(name: string, surname: string): string {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
-  if (!currentSite) return { title: 'Member Not Found' }
+  const settings = await getSettings()
+  if (!settings) return { title: 'Member Not Found' }
 
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     limit: 100,
@@ -55,18 +54,17 @@ export default async function MemberTop20Page({ params }: { params: Promise<{ sl
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     redirect('/login')
   }
 
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     limit: 100,
@@ -91,31 +89,28 @@ export default async function MemberTop20Page({ params }: { params: Promise<{ sl
     payload.find({
       collection: 'top20',
       where: {
-        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: currentSite.id } }],
+        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: settings.id } }],
       },
       limit: 100,
       sort: '-createdAt',
     }),
-    payload.find({
+    payload.count({
       collection: 'top40',
       where: {
-        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: currentSite.id } }],
+        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: settings.id } }],
       },
-      limit: 0,
     }),
-    payload.find({
+    payload.count({
       collection: 'special-requests',
       where: {
-        and: [{ requestedBy: { equals: memberUser.id } }, { site: { equals: currentSite.id } }],
+        and: [{ requestedBy: { equals: memberUser.id } }, { site: { equals: settings.id } }],
       },
-      limit: 0,
     }),
-    payload.find({
+    payload.count({
       collection: 'success-stories',
       where: {
-        and: [{ author: { equals: memberUser.id } }, { site: { equals: currentSite.id } }],
+        and: [{ author: { equals: memberUser.id } }, { site: { equals: settings.id } }],
       },
-      limit: 0,
     }),
   ])
 
@@ -166,7 +161,7 @@ export default async function MemberTop20Page({ params }: { params: Promise<{ sl
           top40Count={top40CountData.totalDocs}
           top20Count={top20Data.totalDocs}
           successStoriesCount={successStoriesData.totalDocs}
-          enableSuccessStories={currentSite.enableSuccessStories !== false}
+          enableSuccessStories={settings.enableSuccessStories !== false}
           labels={{
             about: t('profile', 'about'),
             specialRequests: t('members', 'specialRequests'),

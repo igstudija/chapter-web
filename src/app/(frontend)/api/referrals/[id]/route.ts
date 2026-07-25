@@ -2,7 +2,7 @@ import { headers as getHeaders } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
 
 // Extract ID from relationship field (can be string, number, or object with id)
@@ -35,8 +35,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   // Check if activities feature is enabled
-  const currentSite = await getCurrentSite()
-  if (!currentSite?.enableActivities) {
+  const settings = await getSettings()
+  if (!settings?.enableActivities) {
     return NextResponse.json({ error: 'Activities feature is disabled' }, { status: 403 })
   }
 
@@ -110,7 +110,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   // Check if activities feature is enabled
-  const currentSite2 = await getCurrentSite()
+  const currentSite2 = await getSettings()
   if (!currentSite2?.enableActivities) {
     return NextResponse.json({ error: 'Activities feature is disabled' }, { status: 403 })
   }

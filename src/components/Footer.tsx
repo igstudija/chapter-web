@@ -2,11 +2,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Facebook, Instagram, Twitter, Linkedin } from 'lucide-react'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import { getSiteSettings, getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 
 export async function Footer() {
-  const [siteSettings, currentSite] = await Promise.all([getSiteSettings(), getCurrentSite()])
+  const [siteSettings, currentSite] = await Promise.all([getSettings(), getSettings()])
 
   const siteName = siteSettings?.siteName || DEFAULT_ORG_NAME
   const logoUrl = typeof siteSettings?.siteLogo === 'object' ? siteSettings?.siteLogo?.url : null

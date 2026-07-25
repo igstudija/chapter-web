@@ -1,17 +1,10 @@
 import type { CollectionConfig } from 'payload'
-import {
-  siteScoped,
-  siteScopedAdmin,
-  siteField,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
+import { authenticated, adminOnly } from '../access'
 import { siteSeoFields } from '../fields/seoFields'
 import { DEFAULT_ORG_NAME } from '../lib/branding'
 
-export const SiteSettingsCollection: CollectionConfig = {
-  slug: 'site-settings-collection',
+export const Settings: CollectionConfig = {
+  slug: 'settings',
   labels: {
     singular: 'Site',
     plural: 'Site',
@@ -21,8 +14,6 @@ export const SiteSettingsCollection: CollectionConfig = {
     group: 'Settings',
     description:
       'Configure site-wide settings including branding, contact information, and social media.',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       views: {
         list: {
@@ -32,17 +23,12 @@ export const SiteSettingsCollection: CollectionConfig = {
     },
   },
   access: {
-    read: siteScoped,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: authenticated,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    // Site field - auto-assigned, hidden from non-superadmin
-    siteField({ required: true }),
     {
       name: 'internalTitle',
       type: 'text',
@@ -50,29 +36,63 @@ export const SiteSettingsCollection: CollectionConfig = {
         hidden: true,
       },
       hooks: {
-        beforeChange: [
-          async ({ data, req }) => {
-            // Auto-generate title from site name
-            if (data?.site) {
-              const siteId = typeof data.site === 'object' ? data.site.id : data.site
-              try {
-                const site = await req.payload.findByID({
-                  collection: 'sites',
-                  id: siteId,
-                })
-                return `Site - ${site.name}`
-              } catch {
-                return 'Site'
-              }
-            }
-            return 'Site'
-          },
-        ],
+        beforeChange: [({ data }) => data?.siteName || 'Site'],
       },
     },
     {
       type: 'tabs',
       tabs: [
+        {
+          label: 'Organisation',
+          description: 'Language, timezone, and which modules members can use',
+          fields: [
+            // These lived on the Sites record while one install could serve
+            // several organisations. There is one organisation now, so they
+            // are simply settings.
+            {
+              name: 'locale',
+              type: 'select',
+              defaultValue: 'lv',
+              required: true,
+              options: [
+                { label: 'English', value: 'en' },
+                { label: 'Latvian', value: 'lv' },
+              ],
+              admin: {
+                description: 'Language used for the member portal and outgoing email',
+              },
+            },
+            {
+              name: 'timezone',
+              type: 'text',
+              defaultValue: 'Europe/Riga',
+              admin: {
+                description: 'IANA timezone name, e.g. Europe/Riga',
+              },
+            },
+            {
+              name: 'enableActivities',
+              type: 'checkbox',
+              defaultValue: true,
+              label: 'Enable Activities Module',
+              admin: {
+                description: 'Referrals and one-to-one meetings',
+              },
+            },
+            {
+              name: 'enableAttendance',
+              type: 'checkbox',
+              defaultValue: false,
+              label: 'Enable Attendance Tracking',
+            },
+            {
+              name: 'enableSuccessStories',
+              type: 'checkbox',
+              defaultValue: true,
+              label: 'Enable Success Stories',
+            },
+          ],
+        },
         {
           label: 'Branding',
           description: 'Site logo, name, and visual identity',

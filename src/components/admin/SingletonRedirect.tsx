@@ -3,8 +3,6 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import type { CollectionSlug } from 'payload'
 import configPromise from '@payload-config'
-import { getSiteIdFromHostname } from '../../access/multisite'
-import { getHostnameFromRequest, isSuperadminHost } from '../../lib/hostname'
 
 interface Props {
   collectionSlug: CollectionSlug
@@ -24,13 +22,10 @@ interface Props {
  * Doing it as a server component performs one find + one 307 redirect.
  * No double fetch, no client mount, no intermediate list render.
  *
- * Auth + multi-tenant safety:
- *   - We re-authenticate via payload.auth(headers) and bail to login if
- *     there's no session — so this never leaks data.
- *   - Site filtering by hostname is applied explicitly (the access
- *     functions can't run reliably from a synthetic server-component
- *     req, so we mirror their logic here and overrideAccess for the
- *     find call itself).
+ * It re-authenticates via `payload.auth(headers)` and bails to login when there
+ * is no session, so it never leaks data. It used to also resolve the request's
+ * host to an organisation and filter by it — these collections held one
+ * document *per organisation*. Now they hold one document, full stop.
  */
 export const SingletonRedirect = async ({ collectionSlug }: Props) => {
   const headers = await nextHeaders()
@@ -41,23 +36,10 @@ export const SingletonRedirect = async ({ collectionSlug }: Props) => {
     redirect('/admin/login')
   }
 
-  const hostname = getHostnameFromRequest({ headers })
-
-  // On the superadmin panel singleton settings have no site context.
-  if (isSuperadminHost(hostname)) {
-    redirect('/admin')
-  }
-
-  const siteId = await getSiteIdFromHostname(hostname, payload)
-  if (!siteId) {
-    redirect('/admin')
-  }
-
   const result = await payload.find({
     collection: collectionSlug,
     limit: 1,
     depth: 0,
-    where: { site: { equals: siteId } },
     overrideAccess: true,
   })
 

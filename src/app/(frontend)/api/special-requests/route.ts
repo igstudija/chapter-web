@@ -3,8 +3,6 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
-import { isSessionValidForCurrentSite } from '@/lib/validateSessionSite'
 
 /**
  * POST /api/special-requests
@@ -21,26 +19,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // SECURITY: Validate that user's session site matches current hostname
-  const host = headers.get('host')
-  const isValidSession = await isSessionValidForCurrentSite(user, host)
-  if (!isValidSession) {
-    return NextResponse.json(
-      { error: 'Session invalid for this site. Please log in again.' },
-      { status: 401 },
-    )
-  }
-
   try {
     const { request: requestText, registrationNumber } = await request.json()
-
-    // SECURITY: Always use hostname for site detection - never accept siteId from client
-    const currentSite = await getSiteFromHost(host)
-    const currentSiteId = currentSite?.id || null
-
-    if (!currentSiteId) {
-      return NextResponse.json({ error: 'Site not found' }, { status: 400 })
-    }
 
     if (!requestText) {
       return NextResponse.json({ error: 'Request content is required' }, { status: 400 })
@@ -63,7 +43,6 @@ export async function POST(request: Request) {
         request: requestText,
         registrationNumber: registrationNumber || undefined,
         requestedBy: user.id,
-        site: currentSiteId,
         status: 'open',
         sortOrder,
       },
@@ -92,16 +71,6 @@ export async function DELETE(request: Request) {
 
   if (!user || !isUserActive(user as UserWithContext)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
-
-  // SECURITY: Validate that user's session site matches current hostname
-  const host = headers.get('host')
-  const isValidSession = await isSessionValidForCurrentSite(user, host)
-  if (!isValidSession) {
-    return NextResponse.json(
-      { error: 'Session invalid for this site. Please log in again.' },
-      { status: 401 },
-    )
   }
 
   try {
@@ -136,7 +105,7 @@ export async function DELETE(request: Request) {
         }
 
         const isOwner = String(existing.requestedBy) === String(user.id)
-        const isAdmin = (user as UserWithContext).currentRole === 'member-admin'
+        const isAdmin = (user as UserWithContext).role === 'member-admin'
 
         if (!isOwner && !isAdmin) {
           errors.push({ id, error: 'Not authorized' })

@@ -3,6 +3,14 @@
  *
  * Tracks requests per IP address with sliding window.
  * Automatically cleans up old entries.
+ *
+ * The store is per-process. On one long-running server that is the whole
+ * picture; on a serverless host each concurrent instance keeps its own counters,
+ * so the effective limit is roughly `maxRequests × instances` and an attacker
+ * with enough parallelism gets proportionally more attempts. It still stops
+ * casual abuse and accidental loops, which is most of the value, but a install
+ * that needs a hard guarantee wants a shared store (Postgres, Redis) or the
+ * platform's own firewall/rate-limiting in front of these routes.
  */
 
 interface RateLimitEntry {
@@ -138,15 +146,15 @@ export function getClientIp(headers: Headers): string {
  * Predefined rate limit configurations
  */
 export const RATE_LIMITS = {
-  /** Superadmin delete operations: 10 per minute */
-  SUPERADMIN_DELETE: {
-    identifier: 'superadmin-delete',
+  /** Destructive admin operations: 10 per minute */
+  ADMIN_DELETE: {
+    identifier: 'admin-delete',
     maxRequests: 10,
     windowMs: 60 * 1000, // 1 minute
   },
-  /** Superadmin login: 5 attempts per 15 minutes */
-  SUPERADMIN_LOGIN: {
-    identifier: 'superadmin-login',
+  /** Login: 5 attempts per 15 minutes */
+  LOGIN: {
+    identifier: 'login',
     maxRequests: 5,
     windowMs: 15 * 60 * 1000, // 15 minutes
   },
@@ -156,10 +164,18 @@ export const RATE_LIMITS = {
     maxRequests: 100,
     windowMs: 60 * 1000, // 1 minute
   },
-  /** AI Chat: 20 messages per minute per user */
-  AI_CHAT: {
-    identifier: 'ai-chat',
-    maxRequests: 20,
-    windowMs: 60 * 1000, // 1 minute
+  /**
+   * Unauthenticated endpoints that send mail — password resets, magic links.
+   *
+   * These are reachable by anyone who knows a member's address, and each call
+   * puts a message in that person's inbox. Without a limit they are a way to
+   * flood a member with mail, burn the SMTP provider's quota, and get the
+   * sending domain reported as spam. 5 per 15 minutes is well above what a
+   * person retrying a login does and far below what makes flooding worthwhile.
+   */
+  EMAIL_TRIGGER: {
+    identifier: 'email-trigger',
+    maxRequests: 5,
+    windowMs: 15 * 60 * 1000, // 15 minutes
   },
 } as const

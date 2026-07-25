@@ -1,108 +1,57 @@
 /**
- * User Helper Functions
+ * User helpers.
  *
- * Helper functions for working with the new User + SiteMembership structure.
- * These helpers work with the JWT token data set during login.
+ * `role` and `status` are fields on the User record and travel in the JWT, so
+ * these are plain reads. They used to be `currentRole` / `currentStatus`:
+ * per-request copies of the membership the user held in whichever organisation
+ * the hostname resolved to, written into the token at login. With one
+ * organisation there is nothing to resolve and nothing to cache.
  */
 
 import type { User } from '@/payload-types'
 
-// Extended user type with JWT context fields
-export interface UserWithContext extends User {
-  currentSiteId?: string | null
-  currentMembershipId?: string | null
-  currentRole?: 'member-admin' | 'member' | 'superadmin' | null
-  currentStatus?: 'active' | 'blocked' | null
-  siteEnableActivities?: boolean
-}
-
 /**
- * Check if user is a superadmin
+ * Kept as a distinct name because most of the app imports it, but a user now
+ * carries its own role and status — there is no separate request context.
  */
-export const isUserSuperadmin = (user: UserWithContext | null | undefined): boolean => {
-  return user?.isSuperadmin === true
-}
+export type UserWithContext = User
 
-/**
- * Check if user is admin in current site (superadmin or member-admin)
- */
-export const isUserAdmin = (user: UserWithContext | null | undefined): boolean => {
-  if (!user) return false
-  if (user.isSuperadmin) return true
-  return user.currentRole === 'member-admin'
-}
+/** Administers the install. */
+export const isUserAdmin = (user: UserWithContext | null | undefined): boolean =>
+  user?.role === 'member-admin'
 
-/**
- * Check if user is active member in current site
- */
+/** A member in good standing. Administrators always count as active. */
 export const isUserActive = (user: UserWithContext | null | undefined): boolean => {
   if (!user) return false
-  if (user.isSuperadmin) return true
-  return user.currentStatus === 'active'
+  return isUserAdmin(user) || user.status === 'active'
 }
 
-/**
- * Get user's current site ID from JWT
- */
-export const getCurrentSiteId = (user: UserWithContext | null | undefined): string | null => {
-  return user?.currentSiteId || null
-}
-
-/**
- * Get user's current membership ID from JWT
- */
-export const getCurrentMembershipId = (user: UserWithContext | null | undefined): string | null => {
-  return user?.currentMembershipId || null
-}
-
-/**
- * Get user's full name
- */
-export const getUserFullName = (user: { name?: string | null; surname?: string | null } | null | undefined): string => {
+/** Get user's full name */
+export const getUserFullName = (
+  user: { name?: string | null; surname?: string | null } | null | undefined,
+): string => {
   if (!user) return ''
   return [user.name, user.surname].filter(Boolean).join(' ')
 }
 
 /**
- * Get user's membership for a specific site
- * Used in frontend pages to fetch profile data
+ * The member profile belonging to a user.
+ *
+ * One record per user now, so the lookup is by user alone; it used to need the
+ * site as well, since a person could hold one profile per organisation.
  */
-export const getUserMembership = async (
-  payload: any,
-  userId: string,
-  siteId: string,
-) => {
+export const getUserMembership = async (payload: any, userId: string | number) => {
   const memberships = await payload.find({
-    collection: 'site-memberships',
-    where: {
-      user: { equals: userId },
-      site: { equals: siteId },
-    },
+    collection: 'members',
+    where: { user: { equals: userId } },
     limit: 1,
     depth: 1,
   })
   return memberships.docs[0] || null
 }
 
-/**
- * Get current user's membership using JWT context
- * Used in frontend pages where user is already authenticated
- */
-export const getCurrentUserMembership = async (
-  payload: any,
-  user: UserWithContext,
-) => {
-  const membershipId = user.currentMembershipId
-  if (!membershipId) return null
-
-  try {
-    const membership = await payload.findByID({
-      collection: 'site-memberships',
-      id: membershipId,
-      depth: 1,
-    })
-    return membership
-  } catch {
-    return null
-  }
+/** The signed-in user's own member profile. */
+export const getCurrentUserMembership = async (payload: any, user: UserWithContext) => {
+  if (!user?.id) return null
+  return getUserMembership(payload, user.id)
 }

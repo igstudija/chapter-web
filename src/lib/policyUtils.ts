@@ -1,4 +1,4 @@
-import type { Site, SiteSettingsCollection } from '@/payload-types'
+import type { Setting } from '@/payload-types'
 import { DEFAULT_ORG_NAME } from './branding'
 
 interface PolicyPlaceholders {
@@ -25,12 +25,11 @@ export function replacePolicyPlaceholders(
 }
 
 /**
- * Build placeholders object from site data and site settings
+ * Build placeholders object from site settings
  * Email is taken from SiteSettings.adminEmails (first entry) or emailFrom
  */
 export function buildPlaceholders(
-  site: Site | null,
-  siteSettings: SiteSettingsCollection | null,
+  siteSettings: Setting | null,
   lastUpdated: string | null | undefined,
   locale: 'lv' | 'en',
 ): PolicyPlaceholders {
@@ -43,9 +42,11 @@ export function buildPlaceholders(
   const siteEmail = firstAdminEmail || siteSettings?.emailFrom || process.env.EMAIL_FROM || ''
 
   return {
-    siteName: site?.name || DEFAULT_ORG_NAME,
+    siteName: siteSettings?.siteName || DEFAULT_ORG_NAME,
     siteEmail,
-    siteDomain: site?.domain || '',
+    // The organisation's domain was a field on the tenant record; a single
+    // install knows its own address from configuration instead.
+    siteDomain: (process.env.NEXT_PUBLIC_SERVER_URL || '').replace(/^https?:\/\//, ''),
     currentDate: today,
     lastUpdated: lastUpdated ? new Date(lastUpdated).toLocaleDateString(dateLocale) : today,
   }

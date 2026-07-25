@@ -29,7 +29,10 @@ const imageHosts = () => {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // Standalone output is what the Dockerfile copies out. Vercel builds its own
+  // function bundles and ignores it, so it is left off there rather than
+  // spending build time producing an artifact nothing reads.
+  ...(process.env.VERCEL === '1' ? {} : { output: 'standalone' }),
   typescript: {
     // Ignore TypeScript errors during build (PostgreSQL migration in progress)
     ignoreBuildErrors: true,

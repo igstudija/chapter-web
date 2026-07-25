@@ -10,7 +10,7 @@
  * only the fallbacks used before an organisation has filled those in.
  */
 
-/** Name of the software itself. Shown in the admin panel and superadmin console. */
+/** Name of the software itself. Shown in the admin panel. */
 export const PRODUCT_NAME = process.env.NEXT_PUBLIC_PRODUCT_NAME?.trim() || 'ChapterOS'
 
 /** Fallback display name for an organisation that has not set its own. */
@@ -20,8 +20,6 @@ export const DEFAULT_ORG_NAME =
 /** Suffix appended to admin panel page titles, e.g. `Members | ChapterOS`. */
 export const ADMIN_TITLE_SUFFIX = ` | ${PRODUCT_NAME}`
 
-/** Heading for the cross-organisation superadmin console. */
-export const SUPERADMIN_TITLE = `${PRODUCT_NAME} Admin`
 
 /**
  * Word used for a single tenant throughout the UI.

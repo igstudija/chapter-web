@@ -11,16 +11,15 @@ export const metadata = {
 
 export default async function MyRequestsPage() {
   const baseData = await getMyProfileBaseData()
-  const { user, membership, currentSite, t, payload, profileImage, logo, memberForHeader, previewLink } = baseData
+  const { user, membership, settings, t, payload, profileImage, logo, memberForHeader, previewLink } = baseData
 
   const [tabCounts, specialRequestsData] = await Promise.all([
-    getProfileTabCounts(payload, user.id, currentSite.id),
+    getProfileTabCounts(payload, user.id, settings.id),
     payload.find({
       collection: 'special-requests',
       where: {
         and: [
           { requestedBy: { equals: user.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
       limit: 100,
@@ -49,10 +48,10 @@ export default async function MyRequestsPage() {
       previewLink={previewLink}
       activeTab="special-requests"
       tabCounts={tabCounts}
-      enableActivities={currentSite.enableActivities || false}
-      enableSuccessStories={currentSite.enableSuccessStories !== false}
+      enableActivities={settings.enableActivities || false}
+      enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
-      siteId={currentSite.id}
+      siteId={settings.id}
       specialRequests={specialRequests}
     />
   )

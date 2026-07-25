@@ -4,33 +4,32 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { MemberAboutView, MemberProfileHeader, MemberProfileTabs, Breadcrumb } from '@/components'
 import slugify from 'slugify'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import type { SiteMembership, User as PayloadUser } from '@/payload-types'
+import type { Member, User as PayloadUser } from '@/payload-types'
 
 function generateSlug(name: string, surname: string): string {
   return slugify(`${name}-${surname}`, { lower: true, strict: true })
 }
 
 // Helper type for membership with populated user
-type MembershipWithUser = SiteMembership & {
+type MembershipWithUser = Member & {
   user: PayloadUser
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const settings = await getSettings()
 
-  if (!currentSite) {
+  if (!settings) {
     return { title: 'Member Not Found' }
   }
 
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     limit: 100,
@@ -65,18 +64,17 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     notFound()
   }
 
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     limit: 100,
@@ -95,36 +93,36 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
 
   const memberUser = membership.user
 
-  const [specialRequestsData, top40Data, successStoriesData] = await Promise.all([
-    payload.find({
+  const [specialRequestsData, top40Data, successStoriesData, top20Data] = await Promise.all([
+    payload.count({
       collection: 'special-requests',
       where: {
         and: [
           { requestedBy: { equals: memberUser.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
-      limit: 0,
     }),
-    payload.find({
+    payload.count({
       collection: 'top40',
       where: {
         and: [
           { submittedBy: { equals: memberUser.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
-      limit: 0,
     }),
-    payload.find({
+    payload.count({
       collection: 'success-stories',
       where: {
         and: [
           { author: { equals: memberUser.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
-      limit: 0,
+    }),
+    payload.count({
+      collection: 'top20',
+      where: {
+        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: settings.id } }],
+      },
     }),
   ])
 
@@ -139,15 +137,10 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
       ? { url: membership.profileImage.url, alt: membership.profileImage.alt }
       : null
 
-  const memberTop20Count = (
-    await payload.find({
-      collection: 'top20',
-      where: {
-        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: currentSite.id } }],
-      },
-      limit: 0,
-    })
-  ).totalDocs
+  // Counted alongside the other three above rather than in a query of its own:
+  // it blocked render for a full extra round trip while depending on nothing
+  // that came before it.
+  const memberTop20Count = top20Data.totalDocs
 
   return (
     <div className="bg-neutral-50 dark:bg-surface min-h-screen">
@@ -183,7 +176,7 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
           top40Count={top40Data.totalDocs}
           top20Count={memberTop20Count}
           successStoriesCount={successStoriesData.totalDocs}
-          enableSuccessStories={currentSite.enableSuccessStories !== false}
+          enableSuccessStories={settings.enableSuccessStories !== false}
           labels={{
             about: t('profile', 'about'),
             specialRequests: t('members', 'specialRequests'),

@@ -1,107 +1,39 @@
 import type { CollectionConfig, Access, Where, CollectionSlug } from 'payload'
+import { adminOnly, adminFieldAccess, isAdmin } from '../access'
 import { htmlEditorField } from '../fields/HtmlEditor'
-import {
-  membershipsListFilter,
-  autoAssignSiteHook,
-  isUserSuperadmin,
-  getSiteIdFromHostname,
-  getUserMembershipForSite,
-} from '../access/multisite'
-import { isSuperadminHost, getHostnameFromRequest } from '../lib/hostname'
 import { sanitizeHtmlContent } from '../lib/sanitizeHtml'
 
 /**
- * SiteMemberships Collection
+ * Members
  *
- * SECURITY: All site detection is hostname-based only.
- * No JWT fallback to prevent cross-site data access.
+ * The member profile: everything about a person that is not their login.
+ * `Users` holds authentication and authorisation — email, password, role,
+ * status. This holds who they are in the organisation: company, position,
+ * photo, contact details, power group, presentation slide.
+ *
+ * It was `Members` when one install served several organisations and a
+ * person could hold a membership in each. With a single organisation there is
+ * one record per user, so it is named for what it stores rather than for the
+ * link it used to represent.
  */
 
-// === ACCESS FUNCTIONS ===
-
-// Condition to show fields only on chapter sites (hide on superadmin panel)
-// Used for profile-related fields that are managed by chapter admins
-const showOnlyOnChapterSites = () => {
-  if (typeof window === 'undefined') return true
-  const hostname = window.location.hostname
-  return !isSuperadminHost(hostname)
-}
-
-// Check if on superadmin panel - used to show site selector
-const isOnSuperadminPanelClient = () => {
-  if (typeof globalThis.window === 'undefined') return false
-  const hostname = globalThis.window.location.hostname
-  return isSuperadminHost(hostname)
-}
-
-// Admin or self access for memberships - hostname only
-const siteScopedAdminOrSelfMembership: Access = async ({ req }) => {
-  const { user } = req
+/**
+ * Administrators may read and edit every profile; a member only their own.
+ *
+ * Previously this resolved the request's hostname to an organisation and then
+ * looked up the caller's membership in it, on every check. Both facts now live
+ * on the user record, so it is a comparison.
+ */
+const adminOrOwnProfile: Access = ({ req: { user } }) => {
   if (!user) return false
-  if (!req.payload) return false
-
-  const hostname = getHostnameFromRequest(req)
-  if (isSuperadminHost(hostname)) return isUserSuperadmin(user)
-  if (isUserSuperadmin(user)) return true
-
-  const siteId = await getSiteIdFromHostname(hostname, req.payload)
-  if (!siteId) return false
-
-  const membership = await getUserMembershipForSite(req, siteId)
-  if (!membership) return false
-
-  if (membership.role === 'member-admin') {
-    return { site: { equals: siteId } } as Where
-  }
-  return { id: { equals: membership.id } } as Where
-}
-
-// Only admins can create memberships - hostname only
-const siteMembershipCreateAccess: Access = async ({ req }) => {
-  const { user } = req
-  if (!user) return false
-  if (!req.payload) return false
-  if (isUserSuperadmin(user)) return true
-
-  const hostname = getHostnameFromRequest(req)
-  if (isSuperadminHost(hostname)) return false
-
-  const siteId = await getSiteIdFromHostname(hostname, req.payload)
-  if (!siteId) return false
-
-  const membership = await getUserMembershipForSite(req, siteId)
-  return membership?.role === 'member-admin'
-}
-
-// Only admins can delete memberships - hostname only
-const siteMembershipAdminAccess: Access = async ({ req }) => {
-  const { user } = req
-  if (!user) return false
-  if (!req.payload) return false
-
-  const hostname = getHostnameFromRequest(req)
-  if (isSuperadminHost(hostname)) return isUserSuperadmin(user)
-  if (isUserSuperadmin(user)) return true
-
-  const siteId = await getSiteIdFromHostname(hostname, req.payload)
-  if (!siteId) return false
-
-  const membership = await getUserMembershipForSite(req, siteId)
-  if (membership?.role !== 'member-admin') return false
-
-  // Admin can only delete memberships in their site
-  return { site: { equals: siteId } } as Where
-}
-
-// Helper to check if user is admin (used for field access)
-const isUserAdmin = (user: any): boolean => {
-  return user?.isSuperadmin === true || user?.currentRole === 'member-admin'
+  if (isAdmin(user)) return true
+  return { user: { equals: user.id } } as Where
 }
 
 // === COLLECTION CONFIG ===
 
-export const SiteMemberships: CollectionConfig = {
-  slug: 'site-memberships',
+export const Members: CollectionConfig = {
+  slug: 'members',
   admin: {
     useAsTitle: 'company',
     defaultColumns: ['name', 'surname', 'company', 'role', 'status'],
@@ -118,21 +50,19 @@ export const SiteMemberships: CollectionConfig = {
     ],
     group: 'Members',
     description: 'Member profiles for each site',
-    baseListFilter: membershipsListFilter,
     // Visible on both superadmin panel (to manage all memberships) and chapter panels
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
-    read: siteScopedAdminOrSelfMembership,
-    create: siteMembershipCreateAccess,
-    update: siteScopedAdminOrSelfMembership,
-    delete: siteMembershipAdminAccess,
+    read: adminOrOwnProfile,
+    create: adminOnly,
+    update: adminOrOwnProfile,
+    delete: adminOnly,
   },
   hooks: {
     beforeChange: [
-      async (args) => autoAssignSiteHook(args),
 
       // Single synchronous sanitization pass — no DB I/O.
       // Combines website, HTML, phone, and email cleanup so the hook chain
@@ -202,6 +132,8 @@ export const SiteMemberships: CollectionConfig = {
                 name: newUserName,
                 surname: newUserSurname,
                 password: 'ChangeMe123!',
+                role: 'member',
+                status: 'active',
               },
             })
             userId = String(newUser.id)
@@ -233,7 +165,8 @@ export const SiteMemberships: CollectionConfig = {
         const needsUserFetch =
           (operation === 'create' || operation === 'update') && (!data.name || !data.surname)
 
-        const needsUniqueCheck = operation === 'create' && data.site
+        // One member record per user. This used to be "one per user per site".
+        const needsUniqueCheck = operation === 'create' && Boolean(userId)
 
         const [user, existingMembership] = await Promise.all([
           needsUserFetch
@@ -243,10 +176,8 @@ export const SiteMemberships: CollectionConfig = {
             : Promise.resolve(null),
           needsUniqueCheck
             ? req.payload.find({
-                collection: 'site-memberships',
-                where: {
-                  and: [{ user: { equals: userId } }, { site: { equals: data.site } }],
-                },
+                collection: 'members',
+                where: { user: { equals: userId } },
                 limit: 1,
                 depth: 0,
               })
@@ -254,7 +185,7 @@ export const SiteMemberships: CollectionConfig = {
         ])
 
         if (existingMembership && existingMembership.docs.length > 0) {
-          throw new Error('This user already has a membership in this site')
+          throw new Error('This user already has a member profile')
         }
 
         if (user) {
@@ -283,15 +214,14 @@ export const SiteMemberships: CollectionConfig = {
       },
     ],
     afterDelete: [
-      // Cascade-delete this user's content for this site.
+      // Cascade-delete this member's content.
       // Uses bulk `where:` deletes so each collection is one query (previously
       // a find+loop, which was O(n) round-trips). All six deletions run in
       // parallel since they target independent collections/criteria.
       async ({ doc, req }) => {
         const userId = typeof doc.user === 'string' ? doc.user : doc.user?.id
-        const siteId = typeof doc.site === 'string' ? doc.site : doc.site?.id
 
-        if (!userId || !siteId) return
+        if (!userId) return
 
         const bulkDelete = (collection: CollectionSlug, where: any) =>
           req.payload
@@ -299,16 +229,13 @@ export const SiteMemberships: CollectionConfig = {
             .then((res: any) => res?.docs?.length ?? 0)
             .catch((err: unknown) => {
               console.error(
-                `[SiteMemberships] Cascade delete failed for ${collection}:`,
+                `[Members] Cascade delete failed for ${collection}:`,
                 err instanceof Error ? err.message : err,
               )
               return 0
             })
 
-        const siteFilter = { site: { equals: siteId } }
-        const byUser = (field: string) => ({
-          and: [{ [field]: { equals: userId } }, siteFilter],
-        })
+        const byUser = (field: string) => ({ [field]: { equals: userId } })
 
         const [top40, sr, stories, meetings, refsFrom, refsTo] = await Promise.all([
           bulkDelete('top40', byUser('submittedBy')),
@@ -320,7 +247,7 @@ export const SiteMemberships: CollectionConfig = {
         ])
 
         console.log(
-          `[SiteMemberships] Cascade-deleted for user ${userId} in site ${siteId}: ` +
+          `[Members] Cascade-deleted for user ${userId}: ` +
             `Top40: ${top40}, Special Requests: ${sr}, Success Stories: ${stories}, ` +
             `Meetings: ${meetings}, Referrals: ${refsFrom + refsTo}`,
         )
@@ -392,22 +319,6 @@ export const SiteMemberships: CollectionConfig = {
             condition: (data) => data?.createNewUser !== true,
           },
         },
-        {
-          name: 'site',
-          type: 'relationship',
-          relationTo: 'sites',
-          required: true,
-          index: true,
-          admin: {
-            // Visible on superadmin panel, hidden on chapter sites (auto-assigned)
-            condition: () => {
-              if (typeof globalThis.window === 'undefined') return true
-              const hostname = globalThis.window.location.hostname
-              return isSuperadminHost(hostname)
-            },
-            description: 'The organisation this membership is for',
-          },
-        },
       ],
     },
 
@@ -427,7 +338,7 @@ export const SiteMemberships: CollectionConfig = {
           ],
           access: {
             // Only admin can change roles
-            update: ({ req: { user } }) => isUserAdmin(user),
+            update: ({ req: { user } }) => isAdmin(user),
           },
         },
         {
@@ -442,7 +353,7 @@ export const SiteMemberships: CollectionConfig = {
           ],
           access: {
             // Only admin can change status
-            update: ({ req: { user } }) => isUserAdmin(user),
+            update: ({ req: { user } }) => isAdmin(user),
           },
         },
       ],
@@ -476,7 +387,6 @@ export const SiteMemberships: CollectionConfig = {
       index: true,
       admin: {
         description: 'Contact phone number for this chapter',
-        condition: showOnlyOnChapterSites,
       },
     },
     {
@@ -485,7 +395,6 @@ export const SiteMemberships: CollectionConfig = {
       relationTo: 'media',
       admin: {
         description: 'Profile photo',
-        condition: showOnlyOnChapterSites,
       },
     },
     {
@@ -493,7 +402,6 @@ export const SiteMemberships: CollectionConfig = {
       label: 'About Me',
       type: 'textarea',
       admin: {
-        condition: showOnlyOnChapterSites,
         components: {
           Field: '@/fields/HtmlEditor/Field#HtmlEditorField',
         },
@@ -505,7 +413,6 @@ export const SiteMemberships: CollectionConfig = {
       type: 'upload',
       relationTo: 'media',
       admin: {
-        condition: showOnlyOnChapterSites,
       },
     },
     {
@@ -516,7 +423,6 @@ export const SiteMemberships: CollectionConfig = {
       admin: {
         description:
           'Image for slideshow presentation (recommended: 4:3 aspect ratio, 2000px width minimum)',
-        condition: showOnlyOnChapterSites,
       },
     },
     {
@@ -526,7 +432,6 @@ export const SiteMemberships: CollectionConfig = {
       defaultValue: '#ffffff',
       admin: {
         description: 'Background color for slide image area (default: white)',
-        condition: showOnlyOnChapterSites,
       },
     },
     {
@@ -546,7 +451,6 @@ export const SiteMemberships: CollectionConfig = {
       ],
       admin: {
         description: 'How the image should fit in the 4:3 area',
-        condition: showOnlyOnChapterSites,
       },
     },
 
@@ -554,7 +458,6 @@ export const SiteMemberships: CollectionConfig = {
     {
       type: 'tabs',
       admin: {
-        condition: showOnlyOnChapterSites,
       },
       tabs: [
         {
@@ -649,15 +552,6 @@ export const SiteMemberships: CollectionConfig = {
                   type: 'relationship',
                   relationTo: 'power-groups',
                   label: 'Power Group',
-                  filterOptions: ({ siblingData }) => {
-                    const site = (siblingData as { site?: unknown } | undefined)?.site
-                    if (site) {
-                      return {
-                        site: { equals: site },
-                      }
-                    }
-                    return true
-                  },
                 },
               ],
             },

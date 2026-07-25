@@ -6,7 +6,7 @@ import slugify from 'slugify'
 import { MemberProfileHeader, MemberProfileTabs, Breadcrumb } from '@/components'
 import { SuccessStoryCard } from '@/components/SuccessStoryCard'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 
 function generateSlug(name: string, surname: string): string {
@@ -16,13 +16,12 @@ function generateSlug(name: string, surname: string): string {
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
-  if (!currentSite) return { title: 'Member Not Found' }
+  const settings = await getSettings()
+  if (!settings) return { title: 'Member Not Found' }
 
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     limit: 100,
@@ -60,23 +59,22 @@ export default async function MemberSuccessStoriesPage({
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     redirect('/login')
   }
 
   // Check if success stories feature is enabled
-  if (currentSite.enableSuccessStories === false) {
+  if (settings.enableSuccessStories === false) {
     redirect(`/members`)
   }
 
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: currentSite.id },
       status: { equals: 'active' },
     },
     limit: 100,
@@ -97,26 +95,22 @@ export default async function MemberSuccessStoriesPage({
     notFound()
   }
 
-  const [specialRequestsData, top40Data, successStoriesData] = await Promise.all([
-    payload.find({
+  const [specialRequestsData, top40Data, successStoriesData, top20Data] = await Promise.all([
+    payload.count({
       collection: 'special-requests',
       where: {
         and: [
           { requestedBy: { equals: memberUser.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
-      limit: 0,
     }),
-    payload.find({
+    payload.count({
       collection: 'top40',
       where: {
         and: [
           { submittedBy: { equals: memberUser.id } },
-          { site: { equals: currentSite.id } },
         ],
       },
-      limit: 0,
     }),
     payload.find({
       collection: 'success-stories',
@@ -124,12 +118,17 @@ export default async function MemberSuccessStoriesPage({
         and: [
           { author: { equals: memberUser.id } },
           { isPublic: { equals: true } },
-          { site: { equals: currentSite.id } },
         ],
       },
       limit: 100,
       sort: '-createdAt',
       depth: 1,
+    }),
+    payload.count({
+      collection: 'top20',
+      where: {
+        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: settings.id } }],
+      },
     }),
   ])
 
@@ -142,15 +141,7 @@ export default async function MemberSuccessStoriesPage({
       ? { url: membership.profileImage.url, alt: membership.profileImage.alt }
       : null
 
-  const memberTop20Count = (
-    await payload.find({
-      collection: 'top20',
-      where: {
-        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: currentSite.id } }],
-      },
-      limit: 0,
-    })
-  ).totalDocs
+  const memberTop20Count = top20Data.totalDocs
 
   const memberSlug = generateSlug(memberUser.name, memberUser.surname)
 

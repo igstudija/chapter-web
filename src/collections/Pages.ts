@@ -1,14 +1,6 @@
 import type { CollectionConfig } from 'payload'
-import { publishedOrAuthenticated } from '../access'
+import { adminOnly, createUniqueSlugValidation, publishedOrAuthenticated } from '../access'
 import { tinyEditor } from '../lib/tinyEditor'
-import {
-  siteScopedAdmin,
-  siteFieldAccess,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  createSiteScopedSlugValidation,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
 import { createSeoFields } from '../fields/seoFields'
 
 const slugify = (text: string): string => {
@@ -29,24 +21,21 @@ export const Wiki: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'slug', '_status'],
     group: 'Content',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
     read: publishedOrAuthenticated,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   versions: {
     drafts: true,
   },
   hooks: {
     beforeValidate: [
-      async (args) => autoAssignSiteHook(args),
       ({ data, operation }) => {
         if (data?.title && (!data?.slug || operation === 'create')) {
           data.slug = slugify(data.title)
@@ -56,22 +45,6 @@ export const Wiki: CollectionConfig = {
     ],
   },
   fields: [
-    {
-      name: 'site',
-      type: 'relationship',
-      relationTo: 'sites',
-      required: false,
-      hasMany: false,
-      index: true,
-      admin: {
-        position: 'sidebar',
-        description: 'The organisation this page belongs to',
-        condition: (data, siblingData, { user }) => user?.isSuperadmin === true,
-      },
-      access: {
-        update: siteFieldAccess,
-      },
-    },
     {
       name: 'title',
       type: 'text',
@@ -85,7 +58,7 @@ export const Wiki: CollectionConfig = {
       admin: {
         position: 'sidebar',
       },
-      validate: createSiteScopedSlugValidation('wiki'),
+      validate: createUniqueSlugValidation('wiki'),
     },
     {
       name: 'content',
@@ -135,7 +108,7 @@ export const Wiki: CollectionConfig = {
             {
               name: 'members',
               type: 'relationship',
-              relationTo: 'site-memberships',
+              relationTo: 'members',
               hasMany: true,
             },
           ],

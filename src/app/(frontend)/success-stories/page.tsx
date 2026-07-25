@@ -4,14 +4,14 @@ import config from '@/payload.config'
 import { SuccessStoryBlogCard } from '@/components/SuccessStoryBlogCard'
 import { Breadcrumb } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { headers } from 'next/headers'
 import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
 
 export async function generateMetadata() {
   const headersList = await headers()
   const host = headersList.get('host')
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
   const siteId = currentSite?.id
 
   if (!currentSite) {
@@ -28,7 +28,7 @@ export async function generateMetadata() {
       depth: 1,
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: { site: { equals: siteId } },
       limit: 1,
       depth: 1,
@@ -57,7 +57,7 @@ function stripHtml(html: string): string {
 export default async function SuccessStoriesPage() {
   const payload = await getPayload({ config })
 
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
 
   // Check if success stories feature is enabled
   if (currentSite?.enableSuccessStories === false) {
@@ -74,7 +74,6 @@ export default async function SuccessStoriesPage() {
       where: {
         and: [
           { isPublic: { equals: true } },
-          { site: { equals: currentSite.id } },
         ],
       },
       limit: 50,
@@ -82,9 +81,8 @@ export default async function SuccessStoriesPage() {
       depth: 1,
     }) : Promise.resolve({ docs: [], totalDocs: 0 }),
     currentSite ? payload.find({
-      collection: 'site-memberships',
+      collection: 'members',
       where: {
-        site: { equals: currentSite.id },
         status: { equals: 'active' },
       },
       limit: 500,

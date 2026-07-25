@@ -10,9 +10,10 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import slugify from 'slugify'
 import config from '@/payload.config'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import type { User, SiteMembership, Site } from '@/payload-types'
+import { isUserAdmin } from '@/lib/userHelpers'
+import type { User, Member, Setting } from '@/payload-types'
 
 // User with JWT context fields - extends User without redefining fields that already exist
 export interface UserWithContext extends User {
@@ -30,8 +31,8 @@ export interface MediaImage {
 export interface MyProfileBaseData {
   user: User
   userWithContext: UserWithContext
-  membership: SiteMembership | null
-  currentSite: Site
+  membership: Member | null
+  settings: Setting
   locale: Locale
   t: ReturnType<typeof getTranslations>
   payload: Awaited<ReturnType<typeof getPayload>>
@@ -74,50 +75,30 @@ export async function getMyProfileBaseData(): Promise<MyProfileBaseData> {
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     redirect('/login')
   }
 
   const userWithContext = user as UserWithContext
-  const locale = (currentSite.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
-  // Get user's membership for the current site (from host header)
-  // Important: Always use currentSite.id from host, not JWT's currentSiteId
-  // This handles the case when user has multiple sites open in same browser
-  let membership: SiteMembership | null = null
+  // One member profile per user, looked up directly.
+  //
+  // This used to compare the site cached in the JWT against the site the host
+  // resolved to, use the cached membership id when they agreed, and fall back
+  // to a query when they did not — machinery for a person who could be a member
+  // of several organisations and have two of them open in one browser.
+  const memberships = await payload.find({
+    collection: 'members',
+    where: { user: { equals: user.id } },
+    limit: 1,
+    depth: 1,
+  })
+  const membership: Member | null = memberships.docs[0] || null
 
-  // Check if JWT context matches current site
-  const jwtMatchesCurrentSite = userWithContext.currentSiteId !== null &&
-    userWithContext.currentSiteId !== undefined &&
-    String(userWithContext.currentSiteId) === String(currentSite.id)
-
-  if (jwtMatchesCurrentSite && userWithContext.currentMembershipId) {
-    // JWT context matches current site - use cached membership ID
-    membership = await payload.findByID({
-      collection: 'site-memberships',
-      id: userWithContext.currentMembershipId,
-      depth: 1,
-    })
-  }
-
-  // If no membership yet (JWT mismatch or no cached ID), find it by user + site
-  if (!membership) {
-    const memberships = await payload.find({
-      collection: 'site-memberships',
-      where: {
-        and: [{ user: { equals: user.id } }, { site: { equals: currentSite.id } }],
-      },
-      limit: 1,
-      depth: 1,
-    })
-    membership = memberships.docs[0] || null
-  }
-
-  // Check active status
-  const isActive = userWithContext.isSuperadmin || membership?.status === 'active'
-  if (!isActive) {
+  if (!isUserAdmin(userWithContext) && membership?.status !== 'active') {
     redirect('/login')
   }
 
@@ -146,7 +127,7 @@ export async function getMyProfileBaseData(): Promise<MyProfileBaseData> {
     user,
     userWithContext,
     membership,
-    currentSite,
+    settings,
     locale,
     t,
     payload,
@@ -166,34 +147,34 @@ export async function getProfileTabCounts(
   userId: string | number,
   siteId: string | number,
 ): Promise<ProfileTabCounts> {
+  // `count` rather than `find({ limit: 0 })`: the latter is not "fetch nothing",
+  // it is "fetch every matching row with no limit" — and then populates two
+  // levels of relations on each one — to produce a single number. These four
+  // run on every profile page render.
   const [specialRequestsData, top40Data, top20Data, successStoriesData] = await Promise.all([
-    payload.find({
+    payload.count({
       collection: 'special-requests',
       where: {
         and: [{ requestedBy: { equals: userId } }, { site: { equals: siteId } }],
       },
-      limit: 0, // Only need count
     }),
-    payload.find({
+    payload.count({
       collection: 'top40',
       where: {
         and: [{ submittedBy: { equals: userId } }, { site: { equals: siteId } }],
       },
-      limit: 0,
     }),
-    payload.find({
+    payload.count({
       collection: 'top20',
       where: {
         and: [{ submittedBy: { equals: userId } }, { site: { equals: siteId } }],
       },
-      limit: 0,
     }),
-    payload.find({
+    payload.count({
       collection: 'success-stories',
       where: {
         and: [{ author: { equals: userId } }, { site: { equals: siteId } }],
       },
-      limit: 0,
     }),
   ])
 
@@ -215,9 +196,8 @@ export async function getSiteMembers(
   excludeUserId: string | number,
 ): Promise<Array<{ id: string | number; name: string; surname: string }>> {
   const membershipsData = await payload.find({
-    collection: 'site-memberships',
+    collection: 'members',
     where: {
-      site: { equals: siteId },
       status: { equals: 'active' },
     },
     limit: 200,
@@ -243,7 +223,7 @@ export async function getSiteMembers(
  * Extract media image from Payload media field
  */
 export function extractMediaImage(
-  media: SiteMembership['profileImage'] | SiteMembership['logo'] | undefined | null,
+  media: Member['profileImage'] | Member['logo'] | undefined | null,
 ): MediaImage | null {
   if (!media || typeof media !== 'object' || !media.url) {
     return null

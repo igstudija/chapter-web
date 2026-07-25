@@ -1,4 +1,5 @@
 import { MyProfilePageWrapper } from '@/components/MyProfilePageWrapper'
+import { isUserAdmin } from '@/lib/userHelpers'
 import { getMyProfileBaseData, getProfileTabCounts } from '@/lib/myProfileData'
 
 export const metadata = {
@@ -11,7 +12,7 @@ export default async function MyProfilePage() {
   const {
     user,
     membership,
-    currentSite,
+    settings,
     t,
     payload,
     profileImage,
@@ -21,7 +22,7 @@ export default async function MyProfilePage() {
   } = baseData
 
   // Check if blocked (special case for about page - show message)
-  const isActive = baseData.userWithContext.isSuperadmin || membership?.status === 'active'
+  const isActive = isUserAdmin(baseData.userWithContext) || membership?.status === 'active'
   if (!isActive) {
     return (
       <div className="py-16">
@@ -35,12 +36,12 @@ export default async function MyProfilePage() {
     )
   }
 
-  const tabCounts = await getProfileTabCounts(payload, user.id, currentSite.id)
+  const tabCounts = await getProfileTabCounts(payload, user.id, settings.id)
 
   // Fetch power groups for the current site
   const powerGroupsData = await payload.find({
     collection: 'power-groups',
-    where: { site: { equals: currentSite.id } },
+    where: { site: { equals: settings.id } },
     limit: 100,
     sort: 'title',
   })
@@ -93,10 +94,10 @@ export default async function MyProfilePage() {
       previewLink={previewLink}
       activeTab="about"
       tabCounts={tabCounts}
-      enableActivities={currentSite.enableActivities || false}
-      enableSuccessStories={currentSite.enableSuccessStories !== false}
+      enableActivities={settings.enableActivities || false}
+      enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
-      siteId={currentSite.id}
+      siteId={settings.id}
       userData={userData}
       powerGroups={powerGroups}
       userEmail={user.email}

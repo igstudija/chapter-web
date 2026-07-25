@@ -8,7 +8,7 @@ import { ChangePasswordModal } from './ChangePasswordModal'
 import { useTranslations } from './TranslationsProvider'
 
 interface ProfileDropdownProps {
-  userRole?: 'member-admin' | 'member' | 'superadmin' | null
+  userRole?: 'member-admin' | 'member' | null
 }
 
 export function ProfileDropdown({ userRole }: Readonly<ProfileDropdownProps>) {
@@ -67,7 +67,7 @@ export function ProfileDropdown({ userRole }: Readonly<ProfileDropdownProps>) {
               <Key className="h-4 w-4" />
               {t('profile', 'changePassword')}
             </button>
-            {(userRole === 'member-admin' || userRole === 'superadmin') && (
+            {userRole === 'member-admin' && (
               <>
                 <hr className="my-1 border-neutral-100 dark:border-neutral-700" />
                 <Link

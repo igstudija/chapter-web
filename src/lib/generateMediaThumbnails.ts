@@ -8,6 +8,7 @@ import {
   splitFilename,
   uploadObject,
 } from './storage'
+import { IS_SERVERLESS } from './runtime'
 
 /**
  * Background thumbnail generation for uploaded images.
@@ -76,24 +77,42 @@ const processThumbnails = async (doc: any): Promise<void> => {
   )
 }
 
-export const generateMediaThumbnails: CollectionAfterChangeHook = ({ doc, operation }) => {
+export const generateMediaThumbnails: CollectionAfterChangeHook = async ({ doc, operation }) => {
   if (operation !== 'create' && operation !== 'update') return doc
   if (!doc.mimeType?.startsWith('image/') || doc.mimeType.includes('svg')) return doc
   if (!doc.url) return doc
   if (process.env.DISABLE_THUMBNAIL_GENERATION === '1') return doc
 
-  // Fire-and-forget — the storage round-trips would otherwise add 2-10s to every
-  // media save. The hook resolves immediately so the admin save returns straight
-  // away; thumbnails materialise in the background.
-  //
-  // Requires a long-running server (Docker / Node host). On a serverless
-  // platform this needs a job queue or the platform's "waitUntil" helper.
-  void processThumbnails(doc).catch((error) => {
-    console.error(
-      `[Media] Background thumbnail generation failed:`,
-      error instanceof Error ? error.message : error,
-    )
-  })
+  const work = () =>
+    processThumbnails(doc).catch((error) => {
+      console.error(
+        `[Media] Background thumbnail generation failed:`,
+        error instanceof Error ? error.message : error,
+      )
+    })
+
+  // Long-running host: fire-and-forget. The storage round-trips would otherwise
+  // add 2-10s to every media save, so the hook resolves immediately and
+  // thumbnails materialise in the background.
+  if (!IS_SERVERLESS) {
+    void work()
+    return doc
+  }
+
+  // Serverless: the instance is frozen the moment the response is sent, so a
+  // detached promise is not "backgrounded" — it is abandoned, usually part-way
+  // through, leaving some sizes uploaded and some missing. `after()` keeps the
+  // invocation billable and alive until the work settles.
+  const promise = work()
+  try {
+    const { after } = await import('next/server')
+    after(promise)
+  } catch {
+    // No request scope to attach to — a script, a seed, a cron entrypoint.
+    // Waiting is slower than the admin panel would like but it is the only
+    // way the thumbnails actually get written.
+    await promise
+  }
 
   return doc
 }

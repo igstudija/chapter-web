@@ -1,103 +1,34 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { cache } from 'react'
-import { headers } from 'next/headers'
-import type { Site, SiteSettingsCollection, SlideshowSettingsCollection } from '@/payload-types'
-import { getSiteFromHost } from './getSiteFromHost'
+import type { Setting, SlideshowSettingsCollection } from '@/payload-types'
 
 /**
- * Get the current site (based on hostname)
- * Returns the Site object which includes enableActivities and other site-level settings
+ * The install's settings.
+ *
+ * There is one settings document, so these are plain singleton reads wrapped in
+ * React `cache` — a request rendering many server components performs one query
+ * rather than dozens.
+ *
+ * This module used to resolve the request's hostname to an organisation first
+ * and then load that organisation's settings. `getSettings` is what is left of
+ * `getCurrentSite` + `getSiteSettings` once there is only one organisation: the
+ * fields that described the tenant (locale, timezone, the module switches) now
+ * live on the settings document itself.
  */
-export const getCurrentSite = cache(async (): Promise<Site | null> => {
-  const headersList = await headers()
-  const host = headersList.get('host')
-  return getSiteFromHost(host)
-})
 
-/**
- * Get site settings for the current site (based on hostname)
- * Falls back to null if no settings exist for the site
- */
-export const getSiteSettings = cache(async (): Promise<SiteSettingsCollection | null> => {
-  const headersList = await headers()
-  const host = headersList.get('host')
-  const currentSite = await getSiteFromHost(host)
-
-  if (!currentSite) return null
-
+const loadSingleton = async <T>(collection: 'settings' | 'slideshow-settings-collection') => {
   const payload = await getPayload({ config })
+  const result = await payload.find({ collection, limit: 1 })
+  return (result.docs[0] as T | undefined) ?? null
+}
 
-  const result = await payload.find({
-    collection: 'site-settings-collection',
-    where: {
-      site: { equals: currentSite.id },
-    },
-    limit: 1,
-  })
-
-  return result.docs.length > 0 ? result.docs[0] : null
-})
-
-/**
- * Get site settings by site ID
- */
-export const getSiteSettingsById = cache(
-  async (siteId: string): Promise<SiteSettingsCollection | null> => {
-    const payload = await getPayload({ config })
-
-    const result = await payload.find({
-      collection: 'site-settings-collection',
-      where: {
-        site: { equals: siteId },
-      },
-      limit: 1,
-    })
-
-    return result.docs.length > 0 ? result.docs[0] : null
-  },
+/** Site-wide settings: branding, contact details, locale, module switches. */
+export const getSettings = cache(async (): Promise<Setting | null> =>
+  loadSingleton<Setting>('settings'),
 )
 
-/**
- * Get slideshow settings for the current site (based on hostname)
- * Falls back to null if no settings exist for the site
- */
-export const getSlideshowSettings = cache(async (): Promise<SlideshowSettingsCollection | null> => {
-  const headersList = await headers()
-  const host = headersList.get('host')
-  const currentSite = await getSiteFromHost(host)
-
-  if (!currentSite) return null
-
-  const payload = await getPayload({ config })
-
-  const result = await payload.find({
-    collection: 'slideshow-settings-collection',
-    where: {
-      site: { equals: currentSite.id },
-    },
-    limit: 1,
-    depth: 2,
-  })
-
-  return result.docs.length > 0 ? result.docs[0] : null
-})
-
-/**
- * Get slideshow settings by site ID
- */
-export const getSlideshowSettingsById = cache(
-  async (siteId: string): Promise<SlideshowSettingsCollection | null> => {
-    const payload = await getPayload({ config })
-
-    const result = await payload.find({
-      collection: 'slideshow-settings-collection',
-      where: {
-        site: { equals: siteId },
-      },
-      limit: 1,
-    })
-
-    return result.docs.length > 0 ? result.docs[0] : null
-  },
+/** Slideshow configuration for the presentation mode. */
+export const getSlideshowSettings = cache(async (): Promise<SlideshowSettingsCollection | null> =>
+  loadSingleton<SlideshowSettingsCollection>('slideshow-settings-collection'),
 )

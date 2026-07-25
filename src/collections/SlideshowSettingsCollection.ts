@@ -1,39 +1,12 @@
-import type { CollectionConfig, FilterOptionsProps } from 'payload'
-import {
-  siteScoped,
-  siteScopedAdmin,
-  siteField,
-  autoAssignSiteHook,
-  siteBasedListFilter,
-  getSiteIdFromHostname,
-} from '../access/multisite'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
-import { getHostnameFromRequest, isSuperadminHost } from '../lib/hostname'
+import type { CollectionConfig } from 'payload'
+import { authenticated, adminOnly } from '../access'
 import { SlideBlocks } from './blocks/SlideBlocks'
 
-const getMembershipFilterOptions = async ({
-  req,
-}: FilterOptionsProps): Promise<
-  | boolean
-  | { id: { equals: string } }
-  | { site: { equals: string }; status: { equals: string } }
-> => {
-  if (!req) return false
-
-  const hostname = getHostnameFromRequest(req)
-
-  if (isSuperadminHost(hostname)) {
-    return true
-  }
-
-  const siteId = await getSiteIdFromHostname(hostname, req.payload)
-  if (!siteId) return { id: { equals: '' } }
-
-  return {
-    site: { equals: String(siteId) },
-    status: { equals: 'active' },
-  }
-}
+/**
+ * Member pickers list active members. The organisation half of this filter went
+ * with multi-tenancy.
+ */
+const activeMembersOnly = () => ({ status: { equals: 'active' } })
 
 export const SlideshowSettingsCollection: CollectionConfig = {
   slug: 'slideshow-settings-collection',
@@ -44,8 +17,6 @@ export const SlideshowSettingsCollection: CollectionConfig = {
   admin: {
     useAsTitle: 'internalTitle',
     group: 'Settings',
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       views: {
         list: {
@@ -55,40 +26,17 @@ export const SlideshowSettingsCollection: CollectionConfig = {
     },
   },
   access: {
-    read: siteScoped,
-    create: siteScopedAdmin,
-    update: siteScopedAdmin,
-    delete: siteScopedAdmin,
-  },
-  hooks: {
-    beforeValidate: [async (args) => autoAssignSiteHook(args)],
+    read: authenticated,
+    create: adminOnly,
+    update: adminOnly,
+    delete: adminOnly,
   },
   fields: [
-    siteField({ required: true }),
     {
       name: 'internalTitle',
       type: 'text',
       admin: {
         hidden: true,
-      },
-      hooks: {
-        beforeChange: [
-          async ({ data, req }) => {
-            if (data?.site) {
-              const siteId = typeof data.site === 'object' ? data.site.id : data.site
-              try {
-                const site = await req.payload.findByID({
-                  collection: 'sites',
-                  id: siteId,
-                })
-                return `Slideshow - ${site.name}`
-              } catch {
-                return 'Slideshow'
-              }
-            }
-            return 'Slideshow'
-          },
-        ],
       },
     },
     {
@@ -144,7 +92,7 @@ export const SlideshowSettingsCollection: CollectionConfig = {
     {
       name: 'skipMembers',
       type: 'relationship',
-      relationTo: 'site-memberships',
+      relationTo: 'members',
       hasMany: true,
       label: 'Skip Members from Slideshow',
       admin: {
@@ -152,7 +100,7 @@ export const SlideshowSettingsCollection: CollectionConfig = {
         isSortable: true,
         allowCreate: false,
       },
-      filterOptions: getMembershipFilterOptions,
+      filterOptions: activeMembersOnly,
     },
     {
       name: 'transitionSound',

@@ -3,6 +3,7 @@ export async function register() {
   if (typeof process.on !== 'function') return
 
   const { logger } = await import('@/lib/logger')
+  const { IS_SERVERLESS } = await import('@/lib/runtime')
 
   logger.info('Application starting', {
     nodeVersion: process.version,
@@ -10,8 +11,13 @@ export async function register() {
     pid: process.pid,
   })
 
-  // Memory monitoring & watchdog — production only (PM2 restarts on exit)
-  if (process.env.NODE_ENV === 'production') {
+  // Memory monitoring & watchdog — production only (PM2 restarts on exit).
+  //
+  // Never on serverless: there is no supervisor to restart anything, so
+  // `process.exit(1)` would kill an instance that is very likely mid-request,
+  // and both timers exist to nurse a process through days of uptime that a
+  // function instance never has. The platform recycles instances itself.
+  if (process.env.NODE_ENV === 'production' && !IS_SERVERLESS) {
     const GC_THRESHOLD_MB = 600
     const RESTART_THRESHOLD_MB = 900
 

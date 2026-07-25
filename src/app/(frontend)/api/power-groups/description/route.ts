@@ -1,8 +1,8 @@
 import { getPayload } from 'payload'
+import { getSettings } from '@/lib/getSiteSettings'
 import { headers as getHeaders } from 'next/headers'
 import { NextResponse } from 'next/server'
 import config from '@/payload.config'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
 import { sanitizeHtmlContent } from '@/lib/sanitizeHtml'
 
 export async function PATCH(request: Request) {
@@ -16,7 +16,7 @@ export async function PATCH(request: Request) {
     }
 
     const host = headers.get('host')
-    const site = await getSiteFromHost(host)
+    const site = await getSettings()
     if (!site) {
       return NextResponse.json({ error: 'Site not found' }, { status: 404 })
     }
@@ -30,11 +30,10 @@ export async function PATCH(request: Request) {
 
     // Find user's membership for this site
     const memberships = await payload.find({
-      collection: 'site-memberships',
+      collection: 'members',
       where: {
         and: [
           { user: { equals: user.id } },
-          { site: { equals: site.id } },
           { status: { equals: 'active' } },
         ],
       },
@@ -67,12 +66,6 @@ export async function PATCH(request: Request) {
       id: powerGroupId,
       depth: 0,
     })
-
-    const powerGroupSiteId =
-      typeof powerGroup.site === 'object' ? (powerGroup.site as any)?.id : powerGroup.site
-    if (String(powerGroupSiteId) !== String(site.id)) {
-      return NextResponse.json({ error: 'Power group not found' }, { status: 404 })
-    }
 
     // Sanitize and update
     const sanitizedDescription = sanitizeHtmlContent(description)

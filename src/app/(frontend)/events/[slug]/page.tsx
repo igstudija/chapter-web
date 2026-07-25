@@ -5,7 +5,7 @@ import Link from 'next/link'
 import config from '@/payload.config'
 import { Calendar, MapPin, ArrowRight, ChevronRight } from 'lucide-react'
 import { EventRegistrationForm } from '@/components'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { headers } from 'next/headers'
 import { generateMetadata as generateSeoMetadata, generateEventSchema } from '@/lib/seoHelpers'
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props) {
   const headersList = await headers()
   const host = headersList.get('host')
   const payload = await getPayload({ config })
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
 
   const [eventData, siteSettingsData] = await Promise.all([
     payload.find({
@@ -29,14 +29,13 @@ export async function generateMetadata({ params }: Props) {
       where: {
         and: [
           { slug: { equals: slug } },
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 1,
       depth: 1,
     }),
     payload.find({
-      collection: 'site-settings-collection',
+      collection: 'settings',
       where: { site: { equals: currentSite?.id } },
       limit: 1,
       depth: 1,
@@ -66,7 +65,7 @@ export default async function EventPage({ params }: Props) {
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers: headersList })
   const isLoggedIn = !!user
-  const currentSite = await getCurrentSite()
+  const currentSite = await getSettings()
 
   const publicFilter = isLoggedIn ? [] : [{ isPublic: { equals: true } }]
 
@@ -78,7 +77,6 @@ export default async function EventPage({ params }: Props) {
           { slug: { equals: slug } },
           { _status: { equals: 'published' } },
           ...publicFilter,
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 1,
@@ -92,7 +90,6 @@ export default async function EventPage({ params }: Props) {
           { _status: { equals: 'published' } },
           { date: { greater_than: new Date().toISOString() } },
           ...publicFilter,
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 5,
@@ -104,7 +101,6 @@ export default async function EventPage({ params }: Props) {
       where: {
         and: [
           { _status: { equals: 'published' } },
-          ...(currentSite ? [{ site: { equals: currentSite.id } }] : []),
         ],
       },
       limit: 5,

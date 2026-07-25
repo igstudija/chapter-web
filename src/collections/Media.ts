@@ -1,32 +1,23 @@
 import type { CollectionConfig } from 'payload'
+import { activeMember, adminOnly } from '../access'
 import { APIError } from 'payload'
-import { hideOnSuperadminPanel } from '../access/adminVisibility'
-import {
-  siteField,
-  autoAssignSiteHook,
-  siteScopedAdmin,
-  siteScopedActiveMember,
-  siteBasedListFilter,
-} from '../access/multisite'
 import { generateMediaThumbnails } from '../lib/generateMediaThumbnails'
-
-const MAX_IMAGE_BYTES = 15 * 1024 * 1024 // 15MB — phone/DSLR originals fit; anything bigger is rejected
-const MAX_AUDIO_BYTES = 50 * 1024 * 1024 // 50MB
+// Defaults: 15MB images / 50MB audio, lowered automatically on serverless hosts
+// whose own request-body cap is smaller. See the module for why.
+import { MAX_AUDIO_BYTES, MAX_IMAGE_BYTES } from '../lib/uploadLimits'
 
 export const Media: CollectionConfig = {
   slug: 'media',
   admin: {
-    hidden: hideOnSuperadminPanel,
-    baseListFilter: siteBasedListFilter,
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
     },
   },
   access: {
     read: () => true, // Media needs to be publicly readable for frontend
-    create: siteScopedActiveMember,
-    update: siteScopedActiveMember,
-    delete: siteScopedAdmin,
+    create: activeMember,
+    update: activeMember,
+    delete: adminOnly,
   },
   hooks: {
     beforeOperation: [
@@ -47,7 +38,6 @@ export const Media: CollectionConfig = {
       },
     ],
     beforeValidate: [
-      async (args) => autoAssignSiteHook(args),
       async ({ data, req }) => {
         if (!data?.filename) return data
         const lastDot = data.filename.lastIndexOf('.')
@@ -85,8 +75,6 @@ export const Media: CollectionConfig = {
     afterChange: [generateMediaThumbnails],
   },
   fields: [
-    // Site field - auto-assigned, hidden from non-superadmin
-    siteField({ required: false }), // Optional for backwards compatibility with existing media
     {
       name: 'alt',
       type: 'text',

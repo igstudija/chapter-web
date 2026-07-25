@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import OpenAI from 'openai'
+import { isUserAdmin, type UserWithContext } from '@/lib/userHelpers'
 
 // Generic tags to filter out
 const BANNED_TAGS = [
@@ -35,9 +36,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check if user is admin or superadmin
-    const isAdmin = user.isSuperadmin || (user as any).currentRole === 'member-admin'
-    if (!isAdmin) {
+    if (!isUserAdmin(user as UserWithContext)) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
@@ -48,23 +47,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
     }
 
-    // Get AI settings for Perplexity API key
-    const settings = await payload.find({
-      collection: 'ai-settings',
-      limit: 1,
-    })
-
-    const aiSettings = settings.docs[0]
-    if (!aiSettings?.perplexityApiKey) {
-      return NextResponse.json({ error: 'Perplexity API key nav konfigurēts AI Settings' }, { status: 400 })
+    // The key used to be stored on an AI Settings collection that the
+    // superadmin console managed. It is an environment variable now, like
+    // every other outbound credential.
+    if (!process.env.PERPLEXITY_API_KEY) {
+      return NextResponse.json(
+        { error: 'PERPLEXITY_API_KEY is not configured' },
+        { status: 400 },
+      )
     }
 
     const perplexity = new OpenAI({
-      apiKey: aiSettings.perplexityApiKey,
+      apiKey: process.env.PERPLEXITY_API_KEY,
       baseURL: 'https://api.perplexity.ai',
     })
 
-    const model = aiSettings.perplexityModel || 'sonar-pro'
+    const model = process.env.PERPLEXITY_MODEL || 'sonar-pro'
 
     const prompt = `Search for information about this Latvian company and generate 12-20 SPECIFIC business tags that describe what they actually do.
 

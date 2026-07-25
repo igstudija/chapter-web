@@ -1,8 +1,8 @@
 import { headers as getHeaders } from 'next/headers'
+import { getSettings } from '@/lib/getSiteSettings'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { getSiteFromHost } from '@/lib/getSiteFromHost'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,16 +21,13 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-
-  // SECURITY: Always use hostname for site detection - never accept siteId from client
-  const host = headers.get('host')
-  const currentSite = await getSiteFromHost(host)
-  const currentSiteId = currentSite?.id || null
+  const settings = await getSettings()
+  const currentSiteId = settings?.id || null
 
   let membership = null
   if (currentSiteId) {
     const memberships = await payload.find({
-      collection: 'site-memberships',
+      collection: 'members',
       where: {
         and: [{ user: { equals: user.id } }, { site: { equals: currentSiteId } }],
       },
@@ -61,11 +58,8 @@ export async function PATCH(request: Request) {
 
   try {
     const data = await request.json()
-
-    // SECURITY: Always use hostname for site detection - never accept siteId from client
-    const host = headers.get('host')
-    const currentSite = await getSiteFromHost(host)
-    const currentSiteId = currentSite?.id || null
+    const settings = await getSettings()
+    const currentSiteId = settings?.id || null
 
     // Check if updating membership fields
     const membershipFields = [
@@ -98,7 +92,7 @@ export async function PATCH(request: Request) {
 
       // Find user's membership for current site
       const memberships = await payload.find({
-        collection: 'site-memberships',
+        collection: 'members',
         where: {
           and: [{ user: { equals: user.id } }, { site: { equals: currentSiteId } }],
         },
@@ -144,7 +138,7 @@ export async function PATCH(request: Request) {
       }
 
       await payload.update({
-        collection: 'site-memberships',
+        collection: 'members',
         id: membership.id,
         data: membershipUpdateData,
       })

@@ -6,7 +6,7 @@ import config from '@/payload.config'
 import { MembersSearch } from '@/components'
 import type { PowerGroup } from '@/payload-types'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
-import { getCurrentSite } from '@/lib/getSiteSettings'
+import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 
 export const dynamic = 'force-dynamic'
@@ -59,36 +59,42 @@ export default async function MembersPage() {
     redirect('/login')
   }
 
-  const currentSite = await getCurrentSite()
-  if (!currentSite) {
+  const settings = await getSettings()
+  if (!settings) {
     redirect('/login')
   }
 
-  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   // Fetch memberships, top40, and special requests in parallel
   const [membershipsData, top40Data, specialRequestsData] = await Promise.all([
     payload.find({
-      collection: 'site-memberships',
+      collection: 'members',
       limit: 100,
       where: {
-        site: { equals: currentSite.id },
         status: { equals: 'active' },
       },
       depth: 1, // Only need user.name/surname and powerGroup.title
     }),
+    // Both are reduced to a count per member below and nothing else is read
+    // from them. `depth: 0` leaves the relation as a raw id rather than
+    // fetching each related user, and `select` narrows the row to the single
+    // column that gets looked at — the difference between transferring
+    // thousands of full records and thousands of integers.
     payload.find({
       collection: 'top40',
-      where: { site: { equals: currentSite.id } },
+      where: { site: { equals: settings.id } },
       limit: 5000,
-      depth: 1, // Populate submittedBy to get user.id
+      depth: 0,
+      select: { submittedBy: true },
     }),
     payload.find({
       collection: 'special-requests',
-      where: { site: { equals: currentSite.id } },
+      where: { site: { equals: settings.id } },
       limit: 5000,
-      depth: 1, // Populate requestedBy to get user.id
+      depth: 0,
+      select: { requestedBy: true },
     }),
   ])
 
