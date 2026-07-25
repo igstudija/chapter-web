@@ -26,9 +26,7 @@ export default async function MySuccessStoriesPage() {
     getProfileTabCounts(payload, user.id, settings.id),
     payload.find({
       collection: 'success-stories',
-      where: {
-        and: [{ author: { equals: user.id } }, { site: { equals: settings.id } }],
-      },
+      where: { author: { equals: user.id } },
       limit: 100,
       sort: '-createdAt',
       depth: 1,

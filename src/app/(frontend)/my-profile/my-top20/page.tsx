@@ -17,11 +17,7 @@ export default async function MyTop20Page() {
     getProfileTabCounts(payload, user.id, settings.id),
     payload.find({
       collection: 'top20',
-      where: {
-        and: [
-          { submittedBy: { equals: user.id } },
-        ],
-      },
+      where: { submittedBy: { equals: user.id } },
       limit: 100,
       sort: '-createdAt',
     }),

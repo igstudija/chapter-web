@@ -12,7 +12,6 @@ export async function generateMetadata() {
   const headersList = await headers()
   const host = headersList.get('host')
   const currentSite = await getSettings()
-  const siteId = currentSite?.id
 
   if (!currentSite) {
     return { title: 'About Us' }
@@ -23,12 +22,12 @@ export async function generateMetadata() {
   const [pageData, siteSettingsData] = await Promise.all([
     payload.find({
       collection: 'about-us-settings',
-      where: siteId ? { site: { equals: siteId } } : {},
+      where: {},
       limit: 1,
     }),
     payload.find({
       collection: 'settings',
-      where: { site: { equals: siteId } },
+      where: {},
       limit: 1,
       depth: 1,
     }),
@@ -52,14 +51,13 @@ export async function generateMetadata() {
 export default async function AboutPage() {
   const payload = await getPayload({ config })
   const currentSite = await getSettings()
-  const siteId = currentSite?.id
 
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
   const pageData = await payload.find({
     collection: 'about-us-settings',
-    where: siteId ? { site: { equals: siteId } } : {},
+    where: {},
     limit: 1,
     depth: 2,
   })

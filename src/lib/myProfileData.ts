@@ -154,27 +154,19 @@ export async function getProfileTabCounts(
   const [specialRequestsData, top40Data, top20Data, successStoriesData] = await Promise.all([
     payload.count({
       collection: 'special-requests',
-      where: {
-        and: [{ requestedBy: { equals: userId } }, { site: { equals: siteId } }],
-      },
+      where: { requestedBy: { equals: userId } },
     }),
     payload.count({
       collection: 'top40',
-      where: {
-        and: [{ submittedBy: { equals: userId } }, { site: { equals: siteId } }],
-      },
+      where: { submittedBy: { equals: userId } },
     }),
     payload.count({
       collection: 'top20',
-      where: {
-        and: [{ submittedBy: { equals: userId } }, { site: { equals: siteId } }],
-      },
+      where: { submittedBy: { equals: userId } },
     }),
     payload.count({
       collection: 'success-stories',
-      where: {
-        and: [{ author: { equals: userId } }, { site: { equals: siteId } }],
-      },
+      where: { author: { equals: userId } },
     }),
   ])
 

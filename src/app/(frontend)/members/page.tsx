@@ -84,14 +84,14 @@ export default async function MembersPage() {
     // thousands of full records and thousands of integers.
     payload.find({
       collection: 'top40',
-      where: { site: { equals: settings.id } },
+      where: {},
       limit: 5000,
       depth: 0,
       select: { submittedBy: true },
     }),
     payload.find({
       collection: 'special-requests',
-      where: { site: { equals: settings.id } },
+      where: {},
       limit: 5000,
       depth: 0,
       select: { requestedBy: true },

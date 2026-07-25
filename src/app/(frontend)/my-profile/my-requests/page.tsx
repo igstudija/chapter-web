@@ -17,11 +17,7 @@ export default async function MyRequestsPage() {
     getProfileTabCounts(payload, user.id, settings.id),
     payload.find({
       collection: 'special-requests',
-      where: {
-        and: [
-          { requestedBy: { equals: user.id } },
-        ],
-      },
+      where: { requestedBy: { equals: user.id } },
       limit: 100,
       sort: ['sortOrder', '-createdAt'],
     }),

@@ -21,7 +21,6 @@ export async function generateMetadata() {
 
 
   const currentSite = await getSettings()
-  const siteId = currentSite?.id
 
   if (!currentSite) {
     return { title: DEFAULT_ORG_NAME }
@@ -32,13 +31,13 @@ export async function generateMetadata() {
   const [homepageData, siteSettingsData] = await Promise.all([
     payload.find({
       collection: 'homepage-settings',
-      where: siteId ? { site: { equals: siteId } } : {},
+      where: {},
       limit: 1,
       depth: 1,
     }),
     payload.find({
       collection: 'settings',
-      where: siteId ? { site: { equals: siteId } } : {},
+      where: {},
       limit: 1,
       depth: 1,
     }),
@@ -67,7 +66,6 @@ export default async function HomePage() {
   const payload = await getPayload({ config })
 
   const currentSite = await getSettings()
-  const siteId = currentSite?.id
 
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
@@ -78,13 +76,13 @@ export default async function HomePage() {
   const [homepageData, siteSettingsData] = await Promise.all([
     payload.find({
       collection: 'homepage-settings',
-      where: siteId ? { site: { equals: siteId } } : {},
+      where: {},
       limit: 1,
       depth: 1,
     }),
     payload.find({
       collection: 'settings',
-      where: siteId ? { site: { equals: siteId } } : {},
+      where: {},
       limit: 1,
       depth: 1,
     }),
@@ -109,7 +107,6 @@ export default async function HomePage() {
       where: {
         _status: { equals: 'published' },
         date: { greater_than: new Date().toISOString() },
-        ...(siteId ? { site: { equals: siteId } } : {}),
         ...(!user ? { isPublic: { equals: true } } : {}),
       },
       depth: 1,
@@ -120,7 +117,6 @@ export default async function HomePage() {
       sort: '-publishedAt',
       where: {
         _status: { equals: 'published' },
-        ...(siteId ? { site: { equals: siteId } } : {}),
       },
     }),
   ])

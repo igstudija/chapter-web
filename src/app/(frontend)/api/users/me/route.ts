@@ -21,23 +21,15 @@ export async function GET() {
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
-  const settings = await getSettings()
-  const currentSiteId = settings?.id || null
+  const memberships = await payload.find({
+    collection: 'members',
+    where: { user: { equals: user.id } },
+    limit: 1,
+    depth: 1,
+  })
+  const membership = memberships.docs[0] || null
 
-  let membership = null
-  if (currentSiteId) {
-    const memberships = await payload.find({
-      collection: 'members',
-      where: {
-        and: [{ user: { equals: user.id } }, { site: { equals: currentSiteId } }],
-      },
-      limit: 1,
-      depth: 1,
-    })
-    membership = memberships.docs[0] || null
-  }
-
-  return NextResponse.json({ user, membership, siteId: currentSiteId })
+  return NextResponse.json({ user, membership })
 }
 
 /**
@@ -58,9 +50,6 @@ export async function PATCH(request: Request) {
 
   try {
     const data = await request.json()
-    const settings = await getSettings()
-    const currentSiteId = settings?.id || null
-
     // Check if updating membership fields
     const membershipFields = [
       'tyfcbGiven',
@@ -86,16 +75,9 @@ export async function PATCH(request: Request) {
     const hasMembershipFields = membershipFields.some((field) => data[field] !== undefined)
 
     if (hasMembershipFields) {
-      if (!currentSiteId) {
-        return NextResponse.json({ error: 'Site not found' }, { status: 404 })
-      }
-
-      // Find user's membership for current site
       const memberships = await payload.find({
         collection: 'members',
-        where: {
-          and: [{ user: { equals: user.id } }, { site: { equals: currentSiteId } }],
-        },
+        where: { user: { equals: user.id } },
         limit: 1,
         depth: 0,
       })

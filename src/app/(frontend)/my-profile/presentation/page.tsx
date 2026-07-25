@@ -36,7 +36,7 @@ export default async function PresentationPage() {
   // Minimum thresholds from slideshow settings — shown as "min:" hints under the inputs
   const slideshowSettingsResult = await payload.find({
     collection: 'slideshow-settings-collection',
-    where: { site: { equals: settings.id } },
+    where: {},
     limit: 1,
     depth: 0,
   })

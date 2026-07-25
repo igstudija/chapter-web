@@ -65,7 +65,7 @@ async function sendAdminNotifications(doc: any, siteData: SiteData): Promise<voi
   }
 }
 
-async function sendUserConfirmation(doc: any, siteData: SiteData, siteId: string): Promise<void> {
+async function sendUserConfirmation(doc: any, siteData: SiteData): Promise<void> {
   const { chapterName, locale } = siteData
   const t = getEmailTranslations(locale)
 
@@ -114,15 +114,12 @@ export const ContactSubmissions: CollectionConfig = {
       async ({ operation, doc, req }) => {
         if (operation !== 'create') return
 
-        const siteId = typeof doc.site === 'object' ? doc.site?.id : doc.site
-        if (!siteId) return
-
         try {
           const siteData = await getSiteData(req.payload)
           if (!siteData || siteData.adminEmails.length === 0) return
 
           await sendAdminNotifications(doc, siteData)
-          await sendUserConfirmation(doc, siteData, siteId)
+          await sendUserConfirmation(doc, siteData)
         } catch (error) {
           console.error('Failed to send contact submission notification emails:', error)
         }

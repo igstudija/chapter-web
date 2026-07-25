@@ -14,7 +14,6 @@ export async function generateMetadata() {
   const headersList = await headers()
   const host = headersList.get('host')
   const currentSite = await getSettings()
-  const siteId = currentSite?.id
 
   if (!currentSite) {
     return { title: 'FAQ' }
@@ -25,12 +24,12 @@ export async function generateMetadata() {
   const [faqData, siteSettingsData] = await Promise.all([
     payload.find({
       collection: 'faq-settings',
-      where: siteId ? { site: { equals: siteId } } : {},
+      where: {},
       limit: 1,
     }),
     payload.find({
       collection: 'settings',
-      where: { site: { equals: siteId } },
+      where: {},
       limit: 1,
       depth: 1,
     }),
@@ -54,7 +53,6 @@ export async function generateMetadata() {
 export default async function FaqPage() {
   const payload = await getPayload({ config })
   const currentSite = await getSettings()
-  const siteId = currentSite?.id
 
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
@@ -62,7 +60,7 @@ export default async function FaqPage() {
   const [faqResult, eventsData, blogPostsData] = await Promise.all([
     payload.find({
       collection: 'faq-settings',
-      where: siteId ? { site: { equals: siteId } } : {},
+      where: {},
       limit: 1,
     }),
     payload.find({
@@ -71,7 +69,6 @@ export default async function FaqPage() {
         and: [
           { _status: { equals: 'published' } },
           { date: { greater_than: new Date().toISOString() } },
-          ...(siteId ? [{ site: { equals: siteId } }] : []),
         ],
       },
       limit: 5,
@@ -80,12 +77,7 @@ export default async function FaqPage() {
     }),
     payload.find({
       collection: 'blog',
-      where: {
-        and: [
-          { _status: { equals: 'published' } },
-          ...(siteId ? [{ site: { equals: siteId } }] : []),
-        ],
-      },
+      where: { _status: { equals: 'published' } },
       limit: 5,
       sort: '-publishedAt',
       depth: 1,

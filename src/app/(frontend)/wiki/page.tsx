@@ -38,7 +38,6 @@ export async function generateMetadata() {
   const headersList = await getHeaders()
   const host = headersList.get('host')
   const currentSite = await getSettings()
-  const siteId = currentSite?.id
 
   if (!currentSite) {
     return { title: 'Wiki' }
@@ -48,7 +47,7 @@ export async function generateMetadata() {
 
   const siteSettingsData = await payload.find({
     collection: 'settings',
-    where: { site: { equals: siteId } },
+    where: {},
     limit: 1,
     depth: 1,
   })
@@ -82,11 +81,7 @@ export default async function WikiPage() {
     collection: 'wiki',
     limit: 100,
     sort: 'title',
-    where: {
-      and: [
-        { _status: { equals: 'published' } },
-      ],
-    },
+    where: { _status: { equals: 'published' } },
   })
 
   return (

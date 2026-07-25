@@ -26,17 +26,13 @@ export async function generateMetadata({ params }: Props) {
   const [eventData, siteSettingsData] = await Promise.all([
     payload.find({
       collection: 'events',
-      where: {
-        and: [
-          { slug: { equals: slug } },
-        ],
-      },
+      where: { slug: { equals: slug } },
       limit: 1,
       depth: 1,
     }),
     payload.find({
       collection: 'settings',
-      where: { site: { equals: currentSite?.id } },
+      where: {},
       limit: 1,
       depth: 1,
     }),
@@ -98,11 +94,7 @@ export default async function EventPage({ params }: Props) {
     }),
     payload.find({
       collection: 'blog',
-      where: {
-        and: [
-          { _status: { equals: 'published' } },
-        ],
-      },
+      where: { _status: { equals: 'published' } },
       limit: 5,
       sort: '-publishedAt',
       depth: 1,

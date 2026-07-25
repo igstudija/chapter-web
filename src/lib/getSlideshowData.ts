@@ -52,13 +52,13 @@ export async function getSlideshowData(
   ] = await Promise.all([
     payload.find({
       collection: 'slideshow-settings-collection',
-      where: { site: { equals: site.id } },
+      where: {},
       limit: 1,
       depth: 2,
     }),
     payload.find({
       collection: 'power-groups',
-      where: { site: { equals: site.id } },
+      where: {},
       limit: 100,
     }),
     payload.find({
@@ -71,13 +71,13 @@ export async function getSlideshowData(
     }),
     payload.find({
       collection: 'special-requests',
-      where: { site: { equals: site.id } },
+      where: {},
       limit: 500,
       sort: ['sortOrder', '-createdAt'],
     }),
     payload.find({
       collection: 'settings',
-      where: { site: { equals: site.id } },
+      where: {},
       limit: 1,
       depth: 1,
     }),

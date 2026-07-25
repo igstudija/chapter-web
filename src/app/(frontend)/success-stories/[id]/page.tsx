@@ -17,7 +17,6 @@ import type { SuccessStory, Member, User } from '@/payload-types'
 async function fetchAuthorMembership(
   payload: Payload,
   authorId: string | number,
-  siteId: string | number,
 ) {
   const result = await payload.find({
     collection: 'members',
@@ -43,7 +42,7 @@ function getLogo(membership: Member | null) {
 }
 
 // Helper: Validate and fetch success story
-async function fetchSuccessStory(payload: Payload, id: string, currentSiteId: string | number) {
+async function fetchSuccessStory(payload: Payload, id: string) {
   let story: SuccessStory
   try {
     story = await payload.findByID({
@@ -88,8 +87,8 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 
     // Get author's membership for company info
     let authorCompany = ''
-    if (author && settings) {
-      const authorMembership = await fetchAuthorMembership(payload, author.id, settings.id)
+    if (author) {
+      const authorMembership = await fetchAuthorMembership(payload, author.id)
       authorCompany = authorMembership?.company || ''
     }
 
@@ -122,7 +121,7 @@ export default async function SuccessStoryPage({ params }: { params: Promise<{ i
     redirect('/')
   }
 
-  const story = await fetchSuccessStory(payload, id, settings.id)
+  const story = await fetchSuccessStory(payload, id)
   if (!story) {
     notFound()
   }
@@ -133,14 +132,14 @@ export default async function SuccessStoryPage({ params }: { params: Promise<{ i
   }
 
   // Get author's membership for profile data
-  const authorMembership = await fetchAuthorMembership(payload, author.id, settings.id)
+  const authorMembership = await fetchAuthorMembership(payload, author.id)
   const authorProfileImage = getProfileImage(authorMembership)
   const authorLogo = getLogo(authorMembership)
 
   // Get partner member's membership for profile data
   const partnerMember = extractUser(story.partnerMember)
   const partnerMembership = partnerMember
-    ? await fetchAuthorMembership(payload, partnerMember.id, settings.id)
+    ? await fetchAuthorMembership(payload, partnerMember.id)
     : null
 
   const formattedDate = new Date(story.createdAt).toLocaleDateString(

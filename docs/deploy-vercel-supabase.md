@@ -91,7 +91,8 @@ cp .env.example .env
 ```
 
 Fill in `.env` with the values from step 3, using the **session pooler** string
-(port 5432) for `POSTGRESS_DATABASE_URL`. Generate the secret with
+(port 5432) for `POSTGRESS_DATABASE_URL`, and cap the pool — that pooler allows
+15 clients and the app defaults to 50. Generate the secret with
 `openssl rand -base64 32`:
 
 ```bash
@@ -101,6 +102,7 @@ SUPABASE_URL=https://PROJECT.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<service_role key>
 SUPABASE_STORAGE_BUCKET=media
 NEXT_PUBLIC_SERVER_URL=http://localhost:3050
+PG_POOL_MAX=5
 ```
 
 Then:
@@ -252,6 +254,7 @@ to a paid plan or schedule your own `pg_dump`.
 | `/api/health` returns `"db":"error"`, or requests hang | Using the direct connection string (IPv6-only) instead of the transaction pooler. Switch to port 6543. |
 | `password authentication failed` | A special character in the password is not percent-encoded (`@` → `%40`), or the username is missing its `.PROJECT` suffix in the pooler string. |
 | `too many connections` under load | `PG_POOL_MAX` was raised on a serverless host. Leave it unset — it defaults to 1 per instance, which is correct behind a pooler. |
+| `max clients reached in session mode` running migrations or setup locally | The session pooler allows 15 clients; the default pool is 50. Set `PG_POOL_MAX=5` in your local `.env`. |
 | `unsupported startup parameter` | The pooler rejects `statement_timeout`. Set `PG_STATEMENT_TIMEOUT=0` and redeploy. |
 | Images broken everywhere | The `media` bucket is private. Make it public — it must be. |
 | Upload fails with no message, or 413 | The file exceeds Vercel's 4.5MB body cap. See [What this setup cannot do](#what-this-setup-cannot-do). |

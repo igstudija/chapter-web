@@ -41,7 +41,7 @@ export default async function MyProfilePage() {
   // Fetch power groups for the current site
   const powerGroupsData = await payload.find({
     collection: 'power-groups',
-    where: { site: { equals: settings.id } },
+    where: {},
     limit: 100,
     sort: 'title',
   })

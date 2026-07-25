@@ -12,7 +12,6 @@ export async function generateMetadata() {
   const headersList = await headers()
   const host = headersList.get('host')
   const currentSite = await getSettings()
-  const siteId = currentSite?.id
 
   if (!currentSite) {
     return { title: 'Blog' }
@@ -23,13 +22,13 @@ export async function generateMetadata() {
   const [listingSeoData, siteSettingsData] = await Promise.all([
     payload.find({
       collection: 'listing-pages-seo',
-      where: { site: { equals: siteId } },
+      where: {},
       limit: 1,
       depth: 1,
     }),
     payload.find({
       collection: 'settings',
-      where: { site: { equals: siteId } },
+      where: {},
       limit: 1,
       depth: 1,
     }),
@@ -60,11 +59,7 @@ export default async function BlogPage() {
     collection: 'blog',
     limit: 12,
     sort: '-publishedAt',
-    where: {
-      and: [
-        { _status: { equals: 'published' } },
-      ],
-    },
+    where: { _status: { equals: 'published' } },
   })
 
   return (

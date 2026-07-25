@@ -8,7 +8,6 @@ export async function sendEmail({
   subject,
   html,
   attachments,
-  siteId,
 }: {
   to: string
   subject: string
@@ -19,7 +18,6 @@ export async function sendEmail({
     encoding: string
     contentType: string
   }>
-  siteId?: string | number
 }) {
   try {
     // A wrong From: address is silently dropped by most providers, so an
@@ -30,22 +28,20 @@ export async function sendEmail({
     let emailFrom = process.env.EMAIL_FROM || 'noreply@localhost'
     let emailFromName = process.env.EMAIL_FROM_NAME || DEFAULT_ORG_NAME
 
-    if (siteId) {
-      try {
-        const payload = await getPayload({ config })
-        const siteSettings = await payload.find({
-          collection: 'settings',
-          where: { site: { equals: siteId } },
-          limit: 1,
-        })
+    try {
+      const payload = await getPayload({ config })
+      const siteSettings = await payload.find({
+        collection: 'settings',
+        where: {},
+        limit: 1,
+      })
 
-        if (siteSettings.docs[0]) {
-          emailFrom = siteSettings.docs[0].emailFrom || emailFrom
-          emailFromName = siteSettings.docs[0].emailFromName || emailFromName
-        }
-      } catch (error) {
-        console.warn('Failed to load site email settings, using defaults:', error)
+      if (siteSettings.docs[0]) {
+        emailFrom = siteSettings.docs[0].emailFrom || emailFrom
+        emailFromName = siteSettings.docs[0].emailFromName || emailFromName
       }
+    } catch (error) {
+      console.warn('Failed to load email settings, using defaults:', error)
     }
 
     const transporter = nodemailer.createTransport({

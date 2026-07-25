@@ -20,7 +20,6 @@ interface MeetingNotificationData {
   baseUrl: string
   chapterName: string
   locale?: EmailLocale
-  siteId?: string | number
   timezone?: string | null
 }
 
@@ -35,7 +34,6 @@ interface ReferralNotificationData {
   baseUrl: string
   chapterName: string
   locale?: EmailLocale
-  siteId?: string | number
   timezone?: string | null
 }
 
@@ -48,7 +46,6 @@ interface CommentNotificationData {
   baseUrl: string
   chapterName: string
   locale?: EmailLocale
-  siteId?: string | number
   timezone?: string | null
 }
 
@@ -62,7 +59,6 @@ interface ReferralStatusNotificationData {
   baseUrl: string
   chapterName: string
   locale?: EmailLocale
-  siteId?: string | number
   timezone?: string | null
 }
 
@@ -87,7 +83,6 @@ export async function notifyMeetingCreated(data: MeetingNotificationData): Promi
     baseUrl,
     chapterName,
     locale = 'lv',
-    siteId,
     timezone,
   } = data
 
@@ -100,7 +95,6 @@ export async function notifyMeetingCreated(data: MeetingNotificationData): Promi
     await sendEmail({
       to: metWith.email,
       subject: `${t.activity.meetingCreatedSubject} - ${chapterName}`,
-      siteId,
       html: generateEmailTemplate({
         title: t.activity.meetingCreatedTitle,
         chapterName,
@@ -144,7 +138,6 @@ export async function notifyMeetingComment(data: CommentNotificationData): Promi
     baseUrl,
     chapterName,
     locale = 'lv',
-    siteId,
     timezone,
   } = data
 
@@ -156,7 +149,6 @@ export async function notifyMeetingComment(data: CommentNotificationData): Promi
     await sendEmail({
       to: otherParticipant.email,
       subject: `${t.activity.commentSubject} - ${chapterName}`,
-      siteId,
       html: generateEmailTemplate({
         title: t.activity.commentTitle,
         chapterName,
@@ -196,7 +188,6 @@ export async function notifyReferralCreated(data: ReferralNotificationData): Pro
     baseUrl,
     chapterName,
     locale = 'lv',
-    siteId,
     timezone,
   } = data
 
@@ -208,7 +199,6 @@ export async function notifyReferralCreated(data: ReferralNotificationData): Pro
     await sendEmail({
       to: toUser.email,
       subject: `${t.activity.referralCreatedSubject} - ${chapterName}`,
-      siteId,
       html: generateEmailTemplate({
         title: t.activity.referralCreatedTitle,
         chapterName,
@@ -256,7 +246,6 @@ export async function notifyReferralStatusUpdated(
     baseUrl,
     chapterName,
     locale = 'lv',
-    siteId,
   } = data
 
   const t = getEmailTranslations(locale)
@@ -269,7 +258,6 @@ export async function notifyReferralStatusUpdated(
     await sendEmail({
       to: fromUser.email,
       subject: `${t.activity.referralStatusSubject} - ${chapterName}`,
-      siteId,
       html: generateEmailTemplate({
         title: t.activity.referralStatusTitle,
         chapterName,

@@ -33,14 +33,14 @@ export default async function Top4020Page() {
   const [top40Data, top20Data] = await Promise.all([
     payload.find({
       collection: 'top40',
-      where: { site: { equals: settings.id } },
+      where: {},
       limit: 0,
       sort: '-createdAt',
       depth: 1,
     }),
     payload.find({
       collection: 'top20',
-      where: { site: { equals: settings.id } },
+      where: {},
       limit: 0,
       sort: '-createdAt',
       depth: 1,

@@ -24,7 +24,6 @@ export async function generateMetadata() {
     const headersList = await headers()
     const host = headersList.get('host')
     const currentSite = await getSettings()
-    const siteId = currentSite?.id
 
     if (!currentSite) {
       return { title: 'Companies' }
@@ -35,19 +34,19 @@ export async function generateMetadata() {
     const [companiesSettingsData, listingSeoData, siteSettingsData] = await Promise.all([
       payload.find({
         collection: 'companies-page-settings',
-        where: { site: { equals: siteId } },
+        where: {},
         limit: 1,
         depth: 1,
       }),
       payload.find({
         collection: 'listing-pages-seo',
-        where: { site: { equals: siteId } },
+        where: {},
         limit: 1,
         depth: 1,
       }),
       payload.find({
         collection: 'settings',
-        where: { site: { equals: siteId } },
+        where: {},
         limit: 1,
         depth: 1,
       }),
@@ -115,21 +114,21 @@ export default async function CompaniesPage() {
       // members/page.tsx for why depth 0 + select rather than depth 1.
       payload.find({
         collection: 'top40',
-        where: { site: { equals: currentSite.id } },
+        where: {},
         limit: 5000,
         depth: 0,
         select: { submittedBy: true },
       }),
       payload.find({
         collection: 'special-requests',
-        where: { site: { equals: currentSite.id } },
+        where: {},
         limit: 5000,
         depth: 0,
         select: { requestedBy: true },
       }),
       payload.find({
         collection: 'companies-page-settings',
-        where: { site: { equals: currentSite.id } },
+        where: {},
         limit: 1,
         depth: 1,
       }),

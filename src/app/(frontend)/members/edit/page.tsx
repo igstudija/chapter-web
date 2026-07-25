@@ -10,7 +10,6 @@ export default function EditProfilePage() {
   const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [siteId, setSiteId] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     surname: '',
@@ -28,10 +27,6 @@ export default function EditProfilePage() {
         const res = await fetch('/api/users/me')
         if (res.ok) {
           const data = await res.json()
-          // Store siteId for later PATCH requests
-          if (data.siteId) {
-            setSiteId(data.siteId)
-          }
           // User fields come from user object, membership fields from membership object
           setFormData({
             name: data.user?.name || '',
@@ -63,7 +58,7 @@ export default function EditProfilePage() {
       const res = await fetch('/api/users/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, siteId }),
+        body: JSON.stringify(formData),
       })
 
       if (!res.ok) {

@@ -28,7 +28,6 @@ async function notifyOtherParticipant(options: {
   meetingId: string
   baseUrl: string
   siteSettings: any
-  siteId: string | number
   locale: 'lv' | 'en'
   timezone?: string | null
 }) {
@@ -43,7 +42,6 @@ async function notifyOtherParticipant(options: {
     meetingId,
     baseUrl,
     siteSettings,
-    siteId,
     locale,
     timezone,
   } = options
@@ -81,7 +79,6 @@ async function notifyOtherParticipant(options: {
     meetingId,
     baseUrl,
     chapterName: siteSettings?.siteName || DEFAULT_ORG_NAME,
-    siteId,
     locale,
     timezone,
   })
@@ -164,7 +161,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       meetingId: id,
       baseUrl,
       siteSettings,
-      siteId: currentSite.id,
       locale: (currentSite.locale as 'lv' | 'en') || DEFAULT_LOCALE,
       timezone: currentSite.timezone,
     })

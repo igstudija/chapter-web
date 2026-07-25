@@ -49,22 +49,14 @@ export default async function ActivitiesPage() {
     }),
     payload.find({
       collection: 'referrals',
-      where: {
-        and: [
-          { fromUser: { equals: user.id } },
-        ],
-      },
+      where: { fromUser: { equals: user.id } },
       limit: 100,
       sort: '-date',
       depth: 1,
     }),
     payload.find({
       collection: 'referrals',
-      where: {
-        and: [
-          { toUser: { equals: user.id } },
-        ],
-      },
+      where: { toUser: { equals: user.id } },
       limit: 100,
       sort: '-date',
       depth: 1,

@@ -44,10 +44,18 @@ export const Media: CollectionConfig = {
         if (lastDot === -1) return data
         const name = data.filename.substring(0, lastDot)
         const ext = data.filename.substring(lastDot)
+        // Object storage keys must be ASCII. Supabase rejects anything else
+        // outright — `Ekrānuzņēmums.png` comes back as InvalidKey, and the
+        // upload fails after the file has already been accepted and buffered.
+        // This list used to keep `āčēģīķļņšūž`, which was fine on the previous
+        // CDN and is not here, so diacritics are decomposed and their marks
+        // dropped: `fotogrāfija.jpg` is stored as `fotografija.jpg`.
         const sanitized =
           name
             .toLowerCase()
-            .replaceAll(/[^a-z0-9āčēģīķļņšūž_-]/g, '-')
+            .normalize('NFD')
+            .replaceAll(/[̀-ͯ]/g, '')
+            .replaceAll(/[^a-z0-9_-]/g, '-')
             .replaceAll(/-+/g, '-')
             .replaceAll(/(^-|-$)/g, '') + ext.toLowerCase()
 

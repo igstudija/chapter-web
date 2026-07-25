@@ -37,9 +37,13 @@ async function main() {
     const fromEnv = process.env[envVar]?.trim()
     if (fromEnv) return fromEnv
     if (!rl) {
+      // A value with a default does not need a terminal — the default is the
+      // answer. Only the three that genuinely have no sensible default stop a
+      // non-interactive run.
+      if (fallback) return fallback
       throw new Error(
         `${envVar} is not set and there is no terminal to prompt on. ` +
-          'Set SETUP_ORG_NAME, SETUP_ORG_DOMAIN, SETUP_ADMIN_EMAIL and SETUP_ADMIN_PASSWORD ' +
+          'Set SETUP_ORG_NAME, SETUP_ADMIN_EMAIL and SETUP_ADMIN_PASSWORD ' +
           'to run setup non-interactively.',
       )
     }

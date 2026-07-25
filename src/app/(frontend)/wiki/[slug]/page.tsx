@@ -43,11 +43,7 @@ export default async function WikiDetailPage({ params }: PageProps) {
     }),
     payload.find({
       collection: 'wiki',
-      where: {
-        and: [
-          { _status: { equals: 'published' } },
-        ],
-      },
+      where: { _status: { equals: 'published' } },
       limit: 100,
       sort: 'title',
     }),
@@ -321,7 +317,6 @@ export async function generateMetadata({ params }: PageProps) {
         collection: 'wiki',
         where: {
           slug: { equals: slug },
-          ...(currentSite ? { site: { equals: currentSite.id } } : {}),
         },
         limit: 1,
         depth: 1,
@@ -329,7 +324,7 @@ export async function generateMetadata({ params }: PageProps) {
       currentSite
         ? payload.find({
             collection: 'settings',
-            where: { site: { equals: currentSite.id } },
+            where: {},
             limit: 1,
             depth: 1,
           })

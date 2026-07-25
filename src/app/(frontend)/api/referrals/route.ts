@@ -128,7 +128,6 @@ export async function POST(request: Request) {
         referralId: doc.id,
         baseUrl,
         chapterName: siteSettings?.siteName || DEFAULT_ORG_NAME,
-        siteId: currentSite.id,
         locale: (currentSite.locale as 'lv' | 'en') || DEFAULT_LOCALE,
         timezone: currentSite.timezone,
       })

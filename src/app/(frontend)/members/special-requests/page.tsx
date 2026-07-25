@@ -34,7 +34,7 @@ export default async function SpecialRequestsPage() {
   const [requestsData, membershipsData] = await Promise.all([
     payload.find({
       collection: 'special-requests',
-      where: { site: { equals: settings.id } },
+      where: {},
       limit: 1000,
       sort: '-createdAt',
       depth: 2,

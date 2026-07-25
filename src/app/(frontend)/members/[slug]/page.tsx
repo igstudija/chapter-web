@@ -96,33 +96,19 @@ export default async function MemberProfilePage({ params }: { params: Promise<{ 
   const [specialRequestsData, top40Data, successStoriesData, top20Data] = await Promise.all([
     payload.count({
       collection: 'special-requests',
-      where: {
-        and: [
-          { requestedBy: { equals: memberUser.id } },
-        ],
-      },
+      where: { requestedBy: { equals: memberUser.id } },
     }),
     payload.count({
       collection: 'top40',
-      where: {
-        and: [
-          { submittedBy: { equals: memberUser.id } },
-        ],
-      },
+      where: { submittedBy: { equals: memberUser.id } },
     }),
     payload.count({
       collection: 'success-stories',
-      where: {
-        and: [
-          { author: { equals: memberUser.id } },
-        ],
-      },
+      where: { author: { equals: memberUser.id } },
     }),
     payload.count({
       collection: 'top20',
-      where: {
-        and: [{ submittedBy: { equals: memberUser.id } }, { site: { equals: settings.id } }],
-      },
+      where: { submittedBy: { equals: memberUser.id } },
     }),
   ])
 
