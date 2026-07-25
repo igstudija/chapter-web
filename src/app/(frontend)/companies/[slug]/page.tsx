@@ -1,0 +1,291 @@
+import { headers as getHeaders } from 'next/headers'
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import Image from 'next/image'
+import { getPayload } from 'payload'
+import config from '@/payload.config'
+import { Mail, Phone, Globe, User } from 'lucide-react'
+import slugify from 'slugify'
+import { GalleryLightbox } from '@/components'
+import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
+import { getCurrentSite } from '@/lib/getSiteSettings'
+import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
+import type { SiteMembership, User as PayloadUser } from '@/payload-types'
+
+function generateCompanySlug(company: string): string {
+  return slugify(company, { lower: true, strict: true })
+}
+
+// Helper type for membership with populated user
+type MembershipWithUser = SiteMembership & {
+  user: PayloadUser
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const payload = await getPayload({ config })
+  const currentSite = await getCurrentSite()
+
+  if (!currentSite) {
+    return { title: 'Company Not Found' }
+  }
+
+  const membershipsData = await payload.find({
+    collection: 'site-memberships',
+    where: {
+      site: { equals: currentSite.id },
+      status: { equals: 'active' },
+    },
+    limit: 100,
+    depth: 1,
+  })
+
+  const membership = membershipsData.docs.find(
+    (m) => m.company && generateCompanySlug(m.company) === slug,
+  )
+
+  if (!membership) {
+    return { title: 'Company Not Found' }
+  }
+
+  return {
+    title: membership.company,
+    description: membership.companyDescription || `Learn more about ${membership.company}`,
+  }
+}
+
+export default async function CompanyPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
+  const headers = await getHeaders()
+  const payload = await getPayload({ config })
+  const { user } = await payload.auth({ headers })
+  const isLoggedIn = user && isUserActive(user as UserWithContext)
+
+  const currentSite = await getCurrentSite()
+  if (!currentSite) {
+    notFound()
+  }
+
+  const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
+  const t = getTranslations(locale)
+
+  // Fetch memberships for current site
+  const membershipsData = await payload.find({
+    collection: 'site-memberships',
+    where: {
+      site: { equals: currentSite.id },
+      status: { equals: 'active' },
+    },
+    limit: 100,
+    depth: 2, // To get user and powerGroup data
+  })
+
+  const membership = membershipsData.docs.find(
+    (m) => m.company && generateCompanySlug(m.company) === slug,
+  ) as MembershipWithUser | undefined
+
+  if (!membership) {
+    notFound()
+  }
+
+  const memberUser = typeof membership.user === 'object' ? membership.user : null
+  const memberLogo = membership.logo && typeof membership.logo === 'object' ? membership.logo : null
+  const memberProfileImage =
+    membership.profileImage && typeof membership.profileImage === 'object'
+      ? membership.profileImage
+      : null
+  const powerGroup =
+    membership.powerGroup && typeof membership.powerGroup === 'object'
+      ? membership.powerGroup
+      : null
+
+  return (
+    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
+        <nav className="text-sm mb-6">
+          <Link href="/" className="text-neutral-500 dark:text-neutral-400 hover:text-brand">
+            {t('common', 'home')}
+          </Link>
+          <span className="mx-2 text-neutral-400">›</span>
+          <Link
+            href="/companies"
+            className="text-neutral-500 dark:text-neutral-400 hover:text-brand"
+          >
+            {t('companies', 'title')}
+          </Link>
+          <span className="mx-2 text-neutral-400">›</span>
+          <span className="text-ink dark:text-surface-text">{membership.company}</span>
+        </nav>
+
+        {/* Company Header */}
+        <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex flex-col md:flex-row gap-6 items-start">
+            {memberLogo?.url ? (
+              <div className="shrink-0 bg-white rounded-lg p-3">
+                <Image
+                  src={memberLogo.url}
+                  alt={membership.company || ''}
+                  width={200}
+                  height={100}
+                  className="object-contain max-h-24"
+                />
+              </div>
+            ) : (
+              <div className="w-24 h-24 bg-brand rounded-lg flex items-center justify-center text-white text-2xl font-bold shrink-0">
+                {membership.company?.charAt(0)}
+              </div>
+            )}
+
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold text-ink dark:text-white">
+                {membership.company}
+              </h1>
+
+              <div className="flex flex-wrap gap-2 mt-2">
+                {powerGroup && (
+                  <span className="text-xs px-2 py-1 rounded-full bg-brand/10 dark:bg-brand/20 text-brand dark:text-red-400">
+                    {powerGroup.title}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap gap-4 mt-4 text-sm text-neutral-600 dark:text-neutral-300">
+                {membership.companyEmail && (
+                  <a
+                    href={`mailto:${membership.companyEmail}`}
+                    className="flex items-center gap-1 hover:text-brand"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {membership.companyEmail}
+                  </a>
+                )}
+                {membership.companyPhone && (
+                  <a
+                    href={`tel:${membership.companyPhone}`}
+                    className="flex items-center gap-1 hover:text-brand"
+                  >
+                    <Phone className="h-4 w-4" />
+                    {membership.companyPhone}
+                  </a>
+                )}
+                {membership.website && (
+                  <a
+                    href={`https://${membership.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 hover:text-brand"
+                  >
+                    <Globe className="h-4 w-4" />
+                    {membership.website}
+                  </a>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Company Description */}
+        {membership.companyDescription && (
+          <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+              {t('companies', 'aboutCompany')}
+            </h2>
+            <div
+              className="prose prose-sm dark:prose-invert prose-headings:font-bold prose-headings:text-ink dark:prose-headings:text-surface-text prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h4:text-base prose-a:text-brand prose-a:underline hover:prose-a:text-brand-dark prose-strong:font-bold prose-strong:text-ink dark:prose-strong:text-surface-text prose-ul:list-disc prose-ul:pl-6 prose-ol:list-decimal prose-ol:pl-6 prose-li:my-1 max-w-none break-word overflow-hidden"
+              dangerouslySetInnerHTML={{ __html: membership.companyDescription }}
+            />
+          </div>
+        )}
+
+        {/* Gallery */}
+        {membership.gallery && membership.gallery.length > 0 && (
+          <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+              {t('companies', 'gallery')}
+            </h2>
+            <GalleryLightbox
+              gallery={membership.gallery
+                .filter((item) => typeof item.image === 'object' && item.image?.url)
+                .map((item) => ({
+                  id: item.id,
+                  image:
+                    typeof item.image === 'object'
+                      ? { id: String(item.image.id), url: item.image.url }
+                      : '',
+                  caption: item.caption,
+                }))}
+            />
+          </div>
+        )}
+
+        {/* Representative */}
+        {memberUser && (
+          <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6">
+            <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+              {t('companies', 'representative')}
+            </h2>
+            <div className="flex items-center gap-4">
+              {memberProfileImage?.url ? (
+                <Image
+                  src={memberProfileImage.url}
+                  alt={`${memberUser.name} ${memberUser.surname}`}
+                  width={64}
+                  height={64}
+                  className="rounded-full object-cover w-16 h-16"
+                />
+              ) : (
+                <div className="w-16 h-16 bg-brand rounded-full flex items-center justify-center text-white text-xl font-bold">
+                  {memberUser.name?.charAt(0)}
+                  {memberUser.surname?.charAt(0)}
+                </div>
+              )}
+              <div>
+                <p className="font-semibold text-ink dark:text-surface-text">
+                  {memberUser.name} {memberUser.surname}
+                </p>
+                {membership.jobPosition && (
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    {membership.jobPosition}
+                  </p>
+                )}
+                {isLoggedIn && membership.phone && (
+                  <a
+                    href={`tel:${membership.phone}`}
+                    className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-brand flex items-center gap-1 mt-1"
+                  >
+                    <Phone className="h-3 w-3" />
+                    {membership.phone}
+                  </a>
+                )}
+                {isLoggedIn && memberUser.email && (
+                  <a
+                    href={`mailto:${memberUser.email}`}
+                    className="text-sm text-neutral-500 dark:text-neutral-400 hover:text-brand flex items-center gap-1 mt-1"
+                  >
+                    <Mail className="h-3 w-3" />
+                    {memberUser.email}
+                  </a>
+                )}
+              </div>
+              {isLoggedIn && (
+                <Link
+                  href={
+                    '/members/' +
+                    slugify(memberUser.name + '-' + memberUser.surname, {
+                      lower: true,
+                      strict: true,
+                    })
+                  }
+                  className="ml-auto flex items-center gap-2 px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 text-sm"
+                >
+                  <User className="h-4 w-4" />
+                  {t('members', 'viewProfile')}
+                </Link>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

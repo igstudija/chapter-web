@@ -1,0 +1,74 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+
+@variant dark (&:where(.dark, .dark *));
+
+/**
+ * Theme tokens.
+ *
+ * Every token reads a bare custom property first and falls back to the
+ * default below. That indirection is what makes the palette themable per
+ * organisation at runtime: `<BrandStyle />` emits a `:root` block setting
+ * `--brand`, `--brand-dark`, `--accent` from the org's branding fields, and
+ * those win over the fallbacks without a rebuild. Install with no branding
+ * configured and you get the defaults.
+ */
+@theme {
+  --color-brand: var(--brand, #2563eb);
+  --color-brand-dark: var(--brand-dark, #1d4ed8);
+  --color-accent: var(--accent, #f59e0b);
+  --color-ink: var(--ink, #404040); /* neutral-700 */
+  --color-ink-light: var(--ink-light, #f5f5f5); /* neutral-100 */
+  --color-surface: var(--surface, #171717); /* neutral-900 */
+  --color-surface-raised: var(--surface-raised, #262626); /* neutral-800 */
+  --color-surface-text: var(--surface-text, #e5e5e5); /* neutral-200 */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+  }
+}
+
+/* Dark mode prose styles */
+.dark .prose {
+  --tw-prose-body: #e5e5e5; /* neutral-200 */
+  --tw-prose-headings: #ffffff;
+  --tw-prose-lead: #d4d4d4; /* neutral-300 */
+  --tw-prose-links: var(--color-brand);
+  --tw-prose-bold: #ffffff;
+  --tw-prose-counters: var(--color-brand);
+  --tw-prose-bullets: var(--color-brand);
+  --tw-prose-hr: #404040; /* neutral-700 */
+  --tw-prose-quotes: #e5e5e5; /* neutral-200 */
+  --tw-prose-quote-borders: var(--color-brand);
+  --tw-prose-captions: #a3a3a3; /* neutral-400 */
+  --tw-prose-code: #ffffff;
+  --tw-prose-pre-code: #e5e5e5; /* neutral-200 */
+  --tw-prose-pre-bg: #171717; /* neutral-900 */
+  --tw-prose-th-borders: #525252; /* neutral-600 */
+  --tw-prose-td-borders: #404040; /* neutral-700 */
+}
+
+/* Light mode prose styles - brand colour for links and bullets */
+.prose {
+  --tw-prose-links: var(--color-brand);
+  --tw-prose-counters: var(--color-brand);
+  --tw-prose-bullets: var(--color-brand);
+  --tw-prose-quote-borders: var(--color-brand);
+}
+
+/* Force light color-scheme for form inputs in light mode */
+input,
+select,
+textarea {
+  color-scheme: light;
+}
+
+/* Force dark color-scheme for form inputs in dark mode */
+.dark input,
+.dark select,
+.dark textarea {
+  color-scheme: dark;
+}
+

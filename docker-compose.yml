@@ -1,0 +1,63 @@
+# Runs the app against an external Postgres and Supabase Storage — both are
+# configured in .env, which this file reads. Nothing here provisions a database:
+# managed Postgres is what the app is built and tested against, and bundling a
+# throwaway one would invite people to run it in production.
+#
+#   docker compose up -d --build      start
+#   docker compose run --rm migrate   apply schema migrations
+#   docker compose run --rm setup     create the first organisation + superadmin
+#   docker compose logs -f app        follow logs
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # NEXT_PUBLIC_* values are inlined into the client bundle at build time,
+      # so they must be present as build args — setting them only at runtime
+      # leaves the browser with stale defaults.
+      args:
+        NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
+        NEXT_PUBLIC_SUPERADMIN_HOSTS: ${NEXT_PUBLIC_SUPERADMIN_HOSTS:-admin.localhost}
+        NEXT_PUBLIC_PRODUCT_NAME: ${NEXT_PUBLIC_PRODUCT_NAME:-}
+        NEXT_PUBLIC_DEFAULT_ORG_NAME: ${NEXT_PUBLIC_DEFAULT_ORG_NAME:-}
+        NEXT_PUBLIC_IMAGE_HOSTS: ${NEXT_PUBLIC_IMAGE_HOSTS:-}
+        SUPABASE_URL: ${SUPABASE_URL}
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3000}:3000'
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/api/health']
+      interval: 30s
+      timeout: 15s
+      start_period: 120s
+      retries: 5
+
+  # One-off tasks. The runtime image is a standalone Next.js bundle and carries
+  # neither the Payload CLI nor the TypeScript sources, so migrations and setup
+  # run from the `builder` stage, which has both. `--rm` because these exit.
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    env_file:
+      - .env
+    command: pnpm migrate
+    profiles: ['tools']
+
+  setup:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    env_file:
+      - .env
+    # Interactive unless SETUP_ORG_NAME / SETUP_ORG_DOMAIN / SETUP_ADMIN_EMAIL /
+    # SETUP_ADMIN_PASSWORD are set in .env.
+    command: pnpm setup
+    profiles: ['tools']

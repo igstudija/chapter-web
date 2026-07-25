@@ -1,0 +1,39 @@
+/* Custom Payload Admin CSS - Fix light theme */
+
+/* Fix input fields in light theme */
+:root {
+  --input-bg-light: #ffffff;
+  --input-text-light: #1f2937;
+  --input-border-light: #d1d5db;
+  --label-text-light: #374151;
+}
+
+/* Light theme input fields */
+[data-theme='light'] input[type='text'],
+[data-theme='light'] input[type='email'],
+[data-theme='light'] input[type='password'],
+[data-theme='light'] textarea,
+[data-theme='light'] select {
+  background-color: var(--input-bg-light) !important;
+  color: var(--input-text-light) !important;
+  border-color: var(--input-border-light) !important;
+}
+
+/* Light theme labels */
+[data-theme='light'] label {
+  color: var(--label-text-light) !important;
+}
+
+/* Light theme placeholder text */
+[data-theme='light'] input::placeholder,
+[data-theme='light'] textarea::placeholder {
+  color: #9ca3af !important;
+}
+
+/* Fix autofill background in light theme */
+[data-theme='light'] input:-webkit-autofill,
+[data-theme='light'] input:-webkit-autofill:hover,
+[data-theme='light'] input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #1f2937 !important;
+}
