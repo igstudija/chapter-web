@@ -117,8 +117,8 @@ export function EventRegistrationForm({
   }
 
   return (
-    <div className="bg-white dark:bg-surface-raised rounded-lg shadow-md p-6">
-      <h3 className="text-2xl font-bold text-ink dark:text-surface-text mb-4">{t.title}</h3>
+    <div className="panel p-6">
+      <h3 className="font-display mb-4 text-2xl font-bold tracking-tight text-ink dark:text-surface-text">{t.title}</h3>
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
@@ -139,7 +139,7 @@ export function EventRegistrationForm({
             id="name"
             name="name"
             required
-            className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent bg-white dark:bg-surface text-neutral-900 dark:text-neutral-100"
+            className="field"
           />
         </div>
 
@@ -155,7 +155,7 @@ export function EventRegistrationForm({
             id="email"
             name="email"
             required
-            className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent bg-white dark:bg-surface text-neutral-900 dark:text-neutral-100"
+            className="field"
           />
         </div>
 
@@ -171,7 +171,7 @@ export function EventRegistrationForm({
             id="phone"
             name="phone"
             required
-            className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent bg-white dark:bg-surface text-neutral-900 dark:text-neutral-100"
+            className="field"
           />
         </div>
 
@@ -186,7 +186,7 @@ export function EventRegistrationForm({
             type="text"
             id="company"
             name="company"
-            className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent bg-white dark:bg-surface text-neutral-900 dark:text-neutral-100"
+            className="field"
           />
         </div>
 
@@ -201,7 +201,7 @@ export function EventRegistrationForm({
             type="text"
             id="invitedBy"
             name="invitedBy"
-            className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent bg-white dark:bg-surface text-neutral-900 dark:text-neutral-100"
+            className="field"
           />
         </div>
 
@@ -216,7 +216,7 @@ export function EventRegistrationForm({
             id="message"
             name="message"
             rows={4}
-            className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent bg-white dark:bg-surface text-neutral-900 dark:text-neutral-100"
+            className="field"
           />
         </div>
 
@@ -233,7 +233,7 @@ export function EventRegistrationForm({
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-brand text-white px-6 py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSubmitting ? t.submitting : t.registerNow}
         </button>

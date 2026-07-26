@@ -3,6 +3,7 @@ import config from '@/payload.config'
 import Link from 'next/link'
 import Image from 'next/image'
 import slugify from 'slugify'
+import { PageHeader, Reveal } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
 import type { Member } from '@/payload-types'
@@ -202,7 +203,7 @@ export default async function CompaniesPage() {
       <Link
         key={membership.id}
         href={'/companies/' + slugify(membership.company || '', { lower: true, strict: true })}
-        className="bg-white border border-neutral-200 dark:border-neutral-600 rounded-lg p-4 flex items-center justify-center h-24 hover:shadow-md hover:border-brand dark:hover:border-brand transition-all"
+        className="logo-cell h-28"
       >
         {logo?.url ? (
           <Image
@@ -213,7 +214,7 @@ export default async function CompaniesPage() {
             className="max-h-14 w-auto object-contain"
           />
         ) : (
-          <span className="text-sm font-medium text-ink dark:text-surface-text text-center">
+          <span className="text-center text-sm font-medium text-neutral-900">
             {membership.company}
           </span>
         )}
@@ -229,47 +230,57 @@ export default async function CompaniesPage() {
   const ctaLink = settings?.ctaLink || '/contacts'
 
   return (
-    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <nav className="text-sm mb-6">
-          <Link href="/" className="text-neutral-500 dark:text-neutral-400 hover:text-brand">
-            {t('common', 'home')}
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <PageHeader
+        title={pageTitle}
+        eyebrow={subtitle}
+        lead={description}
+        breadcrumbs={[
+          { label: t('common', 'home'), href: '/' },
+          { label: t('companies', 'title') },
+        ]}
+        action={
+          <Link href={ctaLink} className="btn btn-primary">
+            {ctaLabel}
           </Link>
-          <span className="mx-2 text-neutral-400 dark:text-neutral-500">›</span>
-          <span className="text-ink dark:text-surface-text">{t('companies', 'title')}</span>
-        </nav>
+        }
+      />
 
-        <h1 className="text-3xl font-bold text-ink dark:text-surface-text mb-4">
-          {pageTitle.toUpperCase()}
-        </h1>
-        <h2 className="text-xl font-semibold text-ink dark:text-surface-text mb-2">
-          {subtitle}
-        </h2>
-        <p className="text-neutral-600 dark:text-neutral-300 mb-6 max-w-3xl">{description}</p>
-        <Link
-          href={ctaLink}
-          className="inline-block bg-brand text-white px-6 py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold mb-12"
-        >
-          {ctaLabel}
-        </Link>
-
-        {sortedGroups.map((group) => (
-          <section key={group.groupId} className="mb-12">
-            <h3 className="text-xl font-bold text-ink dark:text-surface-text mb-6">
-              {group.title}
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        {/*
+          The roster is grouped by power group, and each group holds one seat
+          per profession — that exclusivity is the whole membership model. The
+          count is therefore not decoration: it says how full the table is. It
+          rides in the same hairline-and-tick device the homepage uses for its
+          section marks.
+        */}
+        {sortedGroups.map((group, groupIndex) => (
+          <Reveal as="section" key={group.groupId} delay={groupIndex * 40} className="mb-14 last:mb-0">
+            <div className="mb-6 flex items-baseline gap-4">
+              <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text md:text-2xl">
+                {group.title}
+              </h2>
+              <span
+                className="tabular font-mono text-xs text-ink-soft dark:text-neutral-500"
+                aria-label={`${group.members.length}`}
+              >
+                {String(group.members.length).padStart(2, '0')}
+              </span>
+              <span
+                className="h-px flex-1 bg-line dark:bg-line-dark"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="logo-wall grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {group.members.map(renderMemberCard)}
             </div>
-          </section>
+          </Reveal>
         ))}
 
         {membershipsData.docs.length === 0 && (
-          <div className="text-center py-16">
-            <p className="text-neutral-500 dark:text-neutral-400 text-lg">
-              {t('companies', 'noMembersYet')}
-            </p>
-          </div>
+          <p className="border-t border-line py-12 text-sm text-ink-soft dark:border-line-dark dark:text-neutral-400">
+            {t('companies', 'noMembersYet')}
+          </p>
         )}
       </div>
     </div>

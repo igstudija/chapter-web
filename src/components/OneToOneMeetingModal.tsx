@@ -98,13 +98,13 @@ export function OneToOneMeetingModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
         type="button"
-        className="fixed inset-0 bg-neutral-600/50"
+        className="fixed inset-0 bg-neutral-950/55 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Close modal"
       />
       <div className="relative bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-ink dark:text-surface-text">
+          <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">
             {isEditMode ? t('activities', 'editMeeting') : t('activities', 'addMeeting')}
           </h2>
           <button
@@ -135,7 +135,7 @@ export function OneToOneMeetingModal({
               required
               value={metWith}
               onChange={(e) => setMetWith(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
             >
               <option value="">{t('activities', 'selectMember')}</option>
               {members.map((member) => (
@@ -159,7 +159,7 @@ export function OneToOneMeetingModal({
               required
               value={invitedBy}
               onChange={(e) => setInvitedBy(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
             >
               <option value="">{t('activities', 'selectMember')}</option>
               {[...members, { id: currentUserId, name: t('activities', 'me'), surname: '' }].map(
@@ -186,7 +186,7 @@ export function OneToOneMeetingModal({
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
             />
           </div>
 
@@ -204,7 +204,7 @@ export function OneToOneMeetingModal({
               required
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
               placeholder={t('activities', 'locationPlaceholder')}
             />
           </div>
@@ -223,7 +223,7 @@ export function OneToOneMeetingModal({
               rows={3}
               value={topics}
               onChange={(e) => setTopics(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
               placeholder={t('activities', 'topicsPlaceholder')}
             />
           </div>
@@ -231,7 +231,7 @@ export function OneToOneMeetingModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50"
+            className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? t('common', 'saving') : t('common', 'save')}
           </button>

@@ -116,7 +116,7 @@ export function EmailChangeModal({
       onClick={handleBackdropClick}
       className="m-auto bg-transparent p-0 backdrop:bg-black/50 open:flex"
     >
-      <div className="bg-white dark:bg-surface-raised rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div className="panel mx-4 w-full max-w-md rounded-2xl shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
           <h2 className="text-lg font-semibold text-ink dark:text-surface-text flex items-center gap-2">
@@ -228,7 +228,7 @@ export function EmailChangeModal({
               <button
                 type="submit"
                 disabled={loading || !newEmail}
-                className="w-full bg-brand text-white py-2 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
+                className="btn btn-primary w-full py-2.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t('profile', 'sendVerification')}

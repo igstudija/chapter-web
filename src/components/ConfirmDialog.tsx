@@ -34,13 +34,13 @@ export function ConfirmDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
         type="button"
-        className="fixed inset-0 bg-neutral-600/50"
+        className="fixed inset-0 bg-neutral-950/55 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Close dialog"
       />
       <div className="relative bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-ink dark:text-surface-text">{title}</h2>
+          <h2 className="font-display text-lg font-bold tracking-tight text-ink dark:text-surface-text">{title}</h2>
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"

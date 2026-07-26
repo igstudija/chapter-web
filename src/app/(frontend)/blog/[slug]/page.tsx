@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import config from '@/payload.config'
-import { Breadcrumb } from '@/components'
+import { PageHeader } from '@/components'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { Calendar, MapPin, ArrowRight, FileText } from 'lucide-react'
@@ -120,32 +120,35 @@ export default async function BlogPostPage({ params }: Props) {
   })
 
   return (
-    <article className="py-8 bg-neutral-100 dark:bg-surface min-h-screen">
+    <article className="min-h-screen bg-paper dark:bg-surface">
       <JsonLd data={articleSchema} />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <Breadcrumb
-          items={[
-            { label: t('common', 'home'), href: '/' },
-            { label: t('blog', 'title'), href: '/blog' },
-            { label: post.title },
-          ]}
-        />
-
-        <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/*
+        The headline was shouted through `uppercase`, which on a Latvian title
+        strips the diacritics' legibility and makes long headlines unreadable.
+        It runs as written now, in the display face at the size the masthead
+        gives every other page.
+      */}
+      <PageHeader
+        title={post.title}
+        eyebrow={
+          formattedDate
+            ? new Date(post.publishedAt!).toLocaleDateString('lv-LV', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })
+            : undefined
+        }
+        breadcrumbs={[
+          { label: t('common', 'home'), href: '/' },
+          { label: t('blog', 'title'), href: '/blog' },
+          { label: post.title },
+        ]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 gap-14 lg:grid-cols-3 lg:gap-16">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-surface-text mb-2 uppercase">
-              {post.title}
-            </h1>
-            {formattedDate && (
-              <p className="text-neutral-500 dark:text-neutral-400 mb-6">
-                {new Date(post.publishedAt!).toLocaleDateString('lv-LV', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                })}
-              </p>
-            )}
 
             {post.featuredImage &&
               typeof post.featuredImage === 'object' &&
@@ -173,8 +176,8 @@ export default async function BlogPostPage({ params }: Props) {
           <aside className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
               {/* Events Widget */}
-              <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-bold text-ink dark:text-surface-text mb-4">
+              <div className="panel p-6">
+                <h2 className="eyebrow mb-5">
                   {t('events', 'upcomingEvents')}
                 </h2>
 
@@ -199,7 +202,7 @@ export default async function BlogPostPage({ params }: Props) {
                                 />
                               </div>
                             ) : (
-                              <div className="w-16 h-16 rounded bg-brand flex items-center justify-center shrink-0">
+                              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg bg-neutral-900">
                                 <FileText className="h-6 w-6 text-white" />
                               </div>
                             )}
@@ -241,15 +244,15 @@ export default async function BlogPostPage({ params }: Props) {
 
                 <Link
                   href="/events"
-                  className="mt-6 w-full bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors font-medium flex items-center justify-center gap-2"
+                  className="btn btn-line mt-6 w-full py-2.5 text-sm"
                 >
                   {t('events', 'title')} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
 
               {/* Recent Posts Widget */}
-              <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6">
-                <h2 className="text-lg font-bold text-ink dark:text-surface-text mb-4">
+              <div className="panel p-6">
+                <h2 className="eyebrow mb-5">
                   {t('blog', 'recentPosts')}
                 </h2>
                 {recentPosts.length > 0 ? (

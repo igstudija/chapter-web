@@ -82,7 +82,7 @@ export function MembersSearch({ groups }: MembersSearchProps) {
           placeholder={t('common', 'searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+          className="field py-3 pl-12"
         />
       </div>
 
@@ -94,7 +94,7 @@ export function MembersSearch({ groups }: MembersSearchProps) {
         filteredGroups.map((group) => (
           <section key={group.groupId} className="mb-12">
             <div className="flex items-center gap-3 mb-6">
-              <h2 className="text-xl font-bold text-ink dark:text-surface-text">
+              <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">
                 {group.title}
               </h2>
               <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm px-3 py-1 rounded-full">

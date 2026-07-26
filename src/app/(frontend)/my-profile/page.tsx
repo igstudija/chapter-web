@@ -27,7 +27,7 @@ export default async function MyProfilePage() {
     return (
       <div className="py-16">
         <div className="mx-auto max-w-3xl px-4 text-center">
-          <h1 className="text-2xl font-bold text-ink mb-4">
+          <h1 className="display-2 mb-4 text-ink dark:text-surface-text">
             {t('profile', 'accountBlocked')}
           </h1>
           <p className="text-neutral-600">{t('profile', 'accountBlockedDescription')}</p>

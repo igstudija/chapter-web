@@ -54,8 +54,8 @@ export default function NewSpecialRequestPage() {
           <span className="text-ink dark:text-surface-text">New Special Request</span>
         </nav>
 
-        <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6">
-          <h1 className="text-2xl font-bold text-ink dark:text-surface-text mb-6">Add Special Request</h1>
+        <div className="panel p-6">
+          <h1 className="display-2 mb-6 text-ink dark:text-surface-text">Add Special Request</h1>
 
           {error && <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-lg mb-6">{error}</div>}
 
@@ -69,7 +69,7 @@ export default function NewSpecialRequestPage() {
                 name="title"
                 required
                 rows={4}
-                className="w-full border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
+                className="field"
                 placeholder="Describe what you are looking for..."
               />
             </div>
@@ -85,7 +85,7 @@ export default function NewSpecialRequestPage() {
                 type="text"
                 id="registrationNumber"
                 name="registrationNumber"
-                className="w-full border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent placeholder:text-neutral-400 dark:placeholder:text-neutral-500"
+                className="field"
                 placeholder="Company registration number (if applicable)"
               />
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
@@ -96,7 +96,7 @@ export default function NewSpecialRequestPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50"
+              className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading ? 'SAVING...' : 'SAVE'}
             </button>

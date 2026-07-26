@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { SuccessStoryBlogCard } from '@/components/SuccessStoryBlogCard'
-import { Breadcrumb } from '@/components'
+import { PageHeader } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
 import { headers } from 'next/headers'
@@ -95,18 +95,16 @@ export default async function SuccessStoriesPage() {
   }
 
   return (
-    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-        <Breadcrumb items={[{ label: t('common', 'home'), href: '/' }, { label: t('successStory', 'pageTitle') }]} />
-
-        <div className="text-center mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold text-ink dark:text-white mb-4">
-            {t('successStory', 'pageTitle')}
-          </h1>
-          <p className="text-lg text-neutral-600 dark:text-neutral-300 max-w-2xl mx-auto">
-            {t('successStory', 'pageDescription')}
-          </p>
-        </div>
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <PageHeader
+        title={t('successStory', 'pageTitle')}
+        lead={t('successStory', 'pageDescription')}
+        breadcrumbs={[
+          { label: t('common', 'home'), href: '/' },
+          { label: t('successStory', 'pageTitle') },
+        ]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
 
         {successStoriesData.docs.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">

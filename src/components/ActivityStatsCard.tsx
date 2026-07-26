@@ -19,10 +19,19 @@ export function ActivityStatsCard({
 
   const formattedValue = `${prefix}${value.toLocaleString('lv-LV')}${suffix}`
 
+  /*
+    Same shape as the figures on the public homepage: mono caption above, the
+    number below in the display face with tabular digits so a row of these
+    lines up. A member looking at their own activity should recognise the
+    treatment from the chapter's public numbers — it is the same claim, scoped
+    to one person.
+  */
   return (
-    <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-4 shadow-sm">
-      <div className="text-sm text-neutral-500 dark:text-neutral-400 mb-1">{label}</div>
-      <div className="text-2xl font-bold text-ink dark:text-surface-text">{formattedValue}</div>
+    <div className="panel rounded-xl p-5">
+      <div className="eyebrow mb-3">{label}</div>
+      <div className="tabular font-display text-3xl font-bold tracking-tight text-ink dark:text-surface-text">
+        {formattedValue}
+      </div>
     </div>
   )
 }

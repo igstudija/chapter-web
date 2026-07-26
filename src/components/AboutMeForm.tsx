@@ -556,7 +556,7 @@ export function AboutMeForm({
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               />
             </div>
             <div>
@@ -573,7 +573,7 @@ export function AboutMeForm({
                 required
                 value={formData.surname}
                 onChange={handleChange}
-                className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               />
             </div>
           </div>
@@ -605,7 +605,7 @@ export function AboutMeForm({
                 name="orgRole"
                 value={formData.orgRole}
                 onChange={handleChange}
-                className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               />
             </div>
           </div>
@@ -626,7 +626,7 @@ export function AboutMeForm({
                 max={99000000}
                 value={formData.tyfcbGiven ?? ''}
                 onChange={handleBusinessChange}
-                className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               />
             </div>
             <div>
@@ -644,7 +644,7 @@ export function AboutMeForm({
                 max={99000000}
                 value={formData.tyfcbReceived ?? ''}
                 onChange={handleBusinessChange}
-                className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               />
             </div>
           </div>
@@ -691,7 +691,7 @@ export function AboutMeForm({
               name="powerGroup"
               value={formData.powerGroup || ''}
               onChange={handleChange}
-              className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
             >
               <option value="">{t('common', 'selectPowerGroup')}</option>
               {powerGroups.map((group) => (
@@ -789,7 +789,7 @@ export function AboutMeForm({
                 required
                 value={formData.company}
                 onChange={handleChange}
-                className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               />
             </div>
             <div>
@@ -805,7 +805,7 @@ export function AboutMeForm({
                 name="jobPosition"
                 value={formData.jobPosition}
                 onChange={handleChange}
-                className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               />
             </div>
           </div>
@@ -837,7 +837,7 @@ export function AboutMeForm({
                 name="companyEmail"
                 value={formData.companyEmail}
                 onChange={handleChange}
-                className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               />
             </div>
           </div>
@@ -995,7 +995,7 @@ export function AboutMeForm({
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50 shadow-lg"
+            className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? t('profile', 'savingChanges') : t('profile', 'saveChangesBtn')}
           </button>

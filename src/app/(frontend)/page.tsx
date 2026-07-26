@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { EventCard, BlogCard } from '@/components'
+import { EventCard, BlogCard, Reveal } from '@/components'
 import { ArrowRight } from 'lucide-react'
 import type { Media } from '@/payload-types'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
@@ -129,131 +129,303 @@ export default async function HomePage() {
       ? (hero.backgroundImage as Media)
       : null
 
+  /**
+   * The headline highlight used to be split on an empty string when no
+   * highlight was configured, which explodes the title into one span per
+   * character. Resolve the segments once, up front, and render the plain
+   * title when there is nothing to highlight.
+   */
+  const highlight = hero?.highlightedText?.trim() || ''
+  const titleSegments = highlight && hero?.title ? hero.title.split(highlight) : null
+
+  /**
+   * The hero deliberately carries no figures.
+   *
+   * A rail of headline numbers under the headline was the obvious move, and it
+   * does not survive contact with the data: `stats.items[].label` is a
+   * paragraph of prose, not a caption, so anything short enough to sit under a
+   * figure has to be cut out of the middle of a sentence. Truncated Latvian
+   * reads as broken copy, and an unlabelled number says nothing. The figures
+   * get their room in the band immediately below, which starts within a
+   * screen's scroll of the fold.
+   */
+  const statItems = stats?.items ?? []
+
+  const DEFAULT_STAT_ICONS = [
+    'solar:wallet-money-bold-duotone',
+    'solar:calendar-bold-duotone',
+    'solar:armchair-bold-duotone',
+    'solar:users-group-rounded-bold-duotone',
+    'solar:hand-money-bold-duotone',
+    'mdi:handshake',
+  ]
+  const statIconUrl = (icon: string | null | undefined, index: number) =>
+    `https://api.iconify.design/${icon || DEFAULT_STAT_ICONS[index] || 'mdi:chart-line'}.svg`
+
   return (
     <>
       {/* Structured Data */}
       <JsonLd data={organizationSchema} />
 
-      {/* Hero Section */}
-      <section className="relative bg-linear-to-br from-ink to-neutral-800 text-white py-24 overflow-hidden">
+      {/*
+        Hero — a stage, not a banner.
+
+        It fills the viewport, the photograph is pushed back behind a heavy
+        scrim and a layer of grain so it reads as the room this happens in
+        rather than the subject, and the headline is given the full display
+        scale. The rail across the bottom carries the organisation's own
+        figures, so the first screen states who they are and what they have
+        produced at the same time.
+      */}
+      <section className="grain relative isolate flex min-h-[84svh] flex-col overflow-hidden bg-neutral-950 text-white">
         {/* Background Image */}
-        {backgroundImage?.url && (
+        {backgroundImage?.url ? (
           <>
             <Image
               src={backgroundImage.url}
               alt={backgroundImage.alt || 'Hero background'}
               fill
-              className="object-cover"
+              className="scale-105 object-cover"
               sizes="100vw"
               priority
             />
-            {/* Overlay */}
+            {/*
+              A flat 60% black wash over the whole photo is what made this read
+              as a stock-image banner. Two layers do the work now: an even wash
+              deep enough to hold display type at any viewport width, and a
+              directional gradient on top that keeps the right-hand side of the
+              room readable. `enableOverlay` still does its job, layering more
+              darkening for images too busy to hold type on their own.
+            */}
+            <div className="absolute inset-0 bg-neutral-950/72" aria-hidden="true" />
+            <div
+              className="absolute inset-0 bg-[linear-gradient(94deg,rgba(9,9,11,0.92)0%,rgba(9,9,11,0.72)42%,rgba(9,9,11,0.28)78%,rgba(9,9,11,0.4)100%)]"
+              aria-hidden="true"
+            />
             {hero?.enableOverlay && (
-              <div className="absolute inset-0 bg-black/60" aria-hidden="true" />
+              <div className="absolute inset-0 bg-neutral-950/40" aria-hidden="true" />
             )}
           </>
+        ) : (
+          <div
+            className="absolute inset-0 bg-[radial-gradient(120%_100%_at_12%_0%,color-mix(in_oklab,var(--color-brand)32%,transparent)0%,transparent60%)]"
+            aria-hidden="true"
+          />
         )}
 
         {/* Content */}
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            {hero?.title?.split(hero?.highlightedText || '').map((part, i, arr) =>
-              i < arr.length - 1 ? (
-                <span key={`title-part-${i}-${part.substring(0, 10)}`}>
-                  {part}
-                  <span className="text-brand">{hero?.highlightedText}</span>
-                </span>
-              ) : (
-                <span key={`title-part-${i}-${part.substring(0, 10)}`}>{part}</span>
-              ),
-            )}
-          </h1>
-          <p className="text-xl text-neutral-300 max-w-2xl mx-auto mb-8">{hero?.description}</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href={hero?.primaryButtonLink || '/companies'}
-              className="bg-brand text-white px-8 py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold"
+        <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 pb-16 pt-28 sm:px-6 md:pb-24 md:pt-36 lg:px-8">
+          <div className="max-w-4xl">
+            <p
+              className="eyebrow rise-in flex items-center gap-3 text-white/55"
+              style={{ animationDelay: '60ms' }}
             >
-              {hero?.primaryButtonText || t('home', 'viewMembers')}
-            </Link>
-            <Link
-              href={hero?.secondaryButtonLink || '/contacts'}
-              className="bg-white text-ink px-8 py-3 rounded-lg hover:bg-neutral-100 transition-colors font-semibold"
+              <span className="h-px w-8 bg-brand" aria-hidden="true" />
+              {currentSite?.siteName || DEFAULT_ORG_NAME}
+            </p>
+            <h1 className="display-1 rise-in mt-6" style={{ animationDelay: '140ms' }}>
+              {titleSegments
+                ? titleSegments.map((part, i, arr) => (
+                    <span key={`title-part-${i}-${part.substring(0, 10)}`}>
+                      {part}
+                      {i < arr.length - 1 && (
+                        /*
+                          The highlighted word gets a slab rather than red
+                          letterforms. Brand red on near-black is close to the
+                          contrast floor at body size and only just clears it
+                          at display size; white on red clears it comfortably,
+                          and a solid mark reads louder than coloured text.
+                        */
+                        <span className="relative inline-block whitespace-nowrap px-[0.12em]">
+                          <span
+                            className="absolute inset-x-0 bottom-[0.1em] top-[0.06em] -z-10 bg-brand"
+                            aria-hidden="true"
+                          />
+                          {highlight}
+                        </span>
+                      )}
+                    </span>
+                  ))
+                : hero?.title}
+            </h1>
+            <p
+              className="rise-in mt-8 max-w-xl text-lg leading-relaxed text-white/70"
+              style={{ animationDelay: '220ms' }}
             >
-              {hero?.secondaryButtonText || t('contacts', 'title')}
-            </Link>
+              {hero?.description}
+            </p>
+            <div
+              className="rise-in mt-11 flex flex-col gap-3 sm:flex-row"
+              style={{ animationDelay: '300ms' }}
+            >
+              <Link
+                href={hero?.primaryButtonLink || '/companies'}
+                className="btn btn-primary px-7 py-3.5"
+              >
+                {hero?.primaryButtonText || t('home', 'viewMembers')}
+              </Link>
+              <Link
+                href={hero?.secondaryButtonLink || '/contacts'}
+                className="btn btn-line-invert px-7 py-3.5"
+              >
+                {hero?.secondaryButtonText || t('contacts', 'title')}
+              </Link>
+            </div>
           </div>
         </div>
+
       </section>
 
-      {/* Stats Section */}
-      <section className="bg-brand py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-white text-center mb-12">
-            {stats?.title || t('home', 'statsTitle')}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
-            {stats?.items?.map((stat, index) => {
-              const defaultIcons = [
-                'solar:wallet-money-bold-duotone',
-                'solar:calendar-bold-duotone',
-                'solar:armchair-bold-duotone',
-                'solar:users-group-rounded-bold-duotone',
-                'solar:hand-money-bold-duotone',
-                'mdi:handshake',
-              ]
-              const iconName = stat.icon || defaultIcons[index] || 'mdi:chart-line'
-              return (
-                <div key={stat.id} className="text-center">
-                  <div className="flex justify-center mb-4">
-                    <img
-                      src={`https://api.iconify.design/${iconName}.svg?color=%23ffffff`}
-                      alt=""
-                      className="h-16 w-16"
+      {/*
+        Stats Section — the page's signature.
+
+        A referral network's claim is that it produces measurable business, so
+        the figures are the most characteristic thing this organisation owns.
+        They used to sit in a flat brand-red block with 64px cartoon icons,
+        which read as decoration, and six identical cells give six figures
+        equal weight when they plainly do not have it.
+
+        The first figure — the lifetime total the whole pitch rests on — takes
+        a brand-red cell twice the size of the others and the largest type on
+        the page after the headline. The rest fill the grid around it. This is
+        also the one place the brand colour is allowed to own a whole surface;
+        everywhere else it stays ink.
+      */}
+      <section className="border-b border-line bg-card dark:border-line-dark dark:bg-surface-raised">
+        <div className="mx-auto max-w-7xl px-4 py-20 sm:px-6 md:py-28 lg:px-8">
+          <Reveal className="max-w-3xl">
+            <p className="eyebrow mb-5 flex items-center gap-3">
+              <span className="h-px w-8 bg-brand" aria-hidden="true" />
+              {currentSite?.siteName || DEFAULT_ORG_NAME}
+            </p>
+            <h2 className="display-2 text-ink dark:text-surface-text">
+              {stats?.title || t('home', 'statsTitle')}
+            </h2>
+          </Reveal>
+
+          {statItems.length > 0 && (
+            /*
+              Three columns, with the lead cell two wide and two tall. That is
+              not an arbitrary shape: it leaves exactly five slots, which is
+              what six stats need. A different number of stats still flows —
+              the cells just fill in reading order — so an organisation that
+              configures four or eight gets a sensible grid rather than a
+              broken one.
+            */
+            <div className="mt-14 grid auto-rows-fr gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {statItems.map((stat, index) => {
+                const iconUrl = statIconUrl(stat.icon, index)
+
+                if (index === 0) {
+                  return (
+                    <Reveal
+                      key={stat.id}
+                      className="grain relative flex min-h-72 flex-col overflow-hidden rounded-2xl bg-brand p-8 text-white sm:col-span-2 lg:row-span-2 md:p-10"
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="masked-icon h-9 w-9 shrink-0 text-white/40"
+                        style={{ maskImage: `url(${iconUrl})`, WebkitMaskImage: `url(${iconUrl})` }}
+                      />
+                      <div className="stat-figure-lead mt-auto pt-12">{stat.value}</div>
+                      <p className="mt-6 max-w-lg text-sm leading-relaxed text-white/80">
+                        {stat.label}
+                      </p>
+                    </Reveal>
+                  )
+                }
+
+                return (
+                  <Reveal
+                    key={stat.id}
+                    delay={index * 60}
+                    className="panel flex flex-col rounded-2xl p-7"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="masked-icon h-6 w-6 shrink-0 text-brand"
+                      style={{ maskImage: `url(${iconUrl})`, WebkitMaskImage: `url(${iconUrl})` }}
                     />
-                  </div>
-                  <div className="text-2xl md:text-3xl font-bold text-white">{stat.value}</div>
-                  <div className="text-sm text-red-100 mt-2">{stat.label}</div>
-                </div>
-              )
-            })}
-          </div>
+                    <div className="stat-figure mt-auto pt-10 text-ink dark:text-surface-text">
+                      {stat.value}
+                    </div>
+                    <p className="mt-4 text-sm leading-relaxed text-ink-soft dark:text-neutral-400">
+                      {stat.label}
+                    </p>
+                  </Reveal>
+                )
+              })}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Upcoming Events */}
-      <section className="py-16 dark:bg-surface">
+      {/*
+        Upcoming Events.
+
+        Three equal tiles say all three meetings matter equally. They do not —
+        the next one is the one a visitor can actually attend, and it is the
+        conversion moment for a network whose pitch is "come to a meeting". It
+        takes a large card; the ones behind it become a ruled schedule.
+      */}
+      <section className="bg-paper py-20 md:py-28 dark:bg-surface">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-ink dark:text-surface-text">
+          <Reveal className="mb-12 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-line pb-6 dark:border-line-dark">
+            <h2 className="display-2 text-ink dark:text-surface-text">
               {t('home', 'upcomingEvents')}
             </h2>
             <Link
               href="/events"
-              className="text-brand hover:text-brand-dark font-medium flex items-center gap-2"
+              className="group flex items-center gap-2 font-mono text-xs font-medium uppercase tracking-[0.14em] text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
             >
-              {t('common', 'viewAll')} <ArrowRight className="h-4 w-4" />
+              {t('common', 'viewAll')}
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
             </Link>
-          </div>
+          </Reveal>
           {eventsData.docs.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {eventsData.docs.map((event) => (
+            <div className="grid gap-8 lg:grid-cols-[1.3fr_1fr] lg:gap-12">
+              <Reveal>
                 <EventCard
-                  key={event.id}
-                  title={event.title}
-                  date={event.date}
-                  location={event.location || undefined}
-                  slug={String(event.slug || event.id)}
+                  variant="featured"
+                  title={eventsData.docs[0]!.title}
+                  date={eventsData.docs[0]!.date}
+                  location={eventsData.docs[0]!.location || undefined}
+                  slug={String(eventsData.docs[0]!.slug || eventsData.docs[0]!.id)}
                   image={
-                    event.image && typeof event.image === 'object'
-                      ? { url: event.image.url || '', alt: event.image.alt || undefined }
+                    eventsData.docs[0]!.image && typeof eventsData.docs[0]!.image === 'object'
+                      ? {
+                          url: (eventsData.docs[0]!.image as Media).url || '',
+                          alt: (eventsData.docs[0]!.image as Media).alt || undefined,
+                        }
                       : undefined
                   }
                 />
-              ))}
+              </Reveal>
+              {eventsData.docs.length > 1 && (
+                <Reveal
+                  delay={120}
+                  className="flex flex-col divide-y divide-line dark:divide-line-dark"
+                >
+                  {eventsData.docs.slice(1).map((event) => (
+                    <EventCard
+                      key={event.id}
+                      variant="row"
+                      title={event.title}
+                      date={event.date}
+                      location={event.location || undefined}
+                      slug={String(event.slug || event.id)}
+                      image={
+                        event.image && typeof event.image === 'object'
+                          ? { url: event.image.url || '', alt: event.image.alt || undefined }
+                          : undefined
+                      }
+                    />
+                  ))}
+                </Reveal>
+              )}
             </div>
           ) : (
-            <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">
+            <p className="text-sm text-ink-soft dark:text-neutral-400">
               {t('home', 'noUpcomingEvents')}
             </p>
           )}
@@ -261,58 +433,89 @@ export default async function HomePage() {
       </section>
 
       {/* Latest Blog Posts */}
-      <section className="py-16 bg-white dark:bg-surface-raised">
+      <section className="border-t border-line bg-card py-20 md:py-28 dark:border-line-dark dark:bg-surface-raised">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-ink dark:text-surface-text">
+          <Reveal className="mb-12 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-line pb-6 dark:border-line-dark">
+            <h2 className="display-2 text-ink dark:text-surface-text">
               {t('home', 'latestNews')}
             </h2>
             <Link
               href="/blog"
-              className="text-brand hover:text-brand-dark font-medium flex items-center gap-2"
+              className="group flex items-center gap-2 font-mono text-xs font-medium uppercase tracking-[0.14em] text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
             >
-              {t('common', 'viewAll')} <ArrowRight className="h-4 w-4" />
+              {t('common', 'viewAll')}
+              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
             </Link>
-          </div>
+          </Reveal>
           {blogData.docs.length > 0 ? (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {blogData.docs.map((post) => (
-                <BlogCard
-                  key={post.id}
-                  title={post.title}
-                  excerpt={post.excerpt || undefined}
-                  slug={post.slug || String(post.id)}
-                  publishedAt={post.publishedAt || undefined}
-                  featuredImage={
-                    post.featuredImage && typeof post.featuredImage === 'object'
-                      ? { url: post.featuredImage.url || '', alt: post.featuredImage.alt || '' }
-                      : undefined
-                  }
-                  variant="homepage"
-                />
+            /*
+              Columns follow the number of posts. A three-column track holding
+              one card leaves two thirds of the row empty and reads as a page
+              that failed to load rather than a chapter that has published one
+              article this month.
+            */
+            <div
+              className={`grid gap-6 ${
+                blogData.docs.length === 1
+                  ? 'max-w-xl'
+                  : blogData.docs.length === 2
+                    ? 'sm:grid-cols-2'
+                    : 'sm:grid-cols-2 lg:grid-cols-3'
+              }`}
+            >
+              {blogData.docs.map((post, index) => (
+                <Reveal key={post.id} delay={index * 90}>
+                  <BlogCard
+                    title={post.title}
+                    excerpt={post.excerpt || undefined}
+                    slug={post.slug || String(post.id)}
+                    publishedAt={post.publishedAt || undefined}
+                    featuredImage={
+                      post.featuredImage && typeof post.featuredImage === 'object'
+                        ? { url: post.featuredImage.url || '', alt: post.featuredImage.alt || '' }
+                        : undefined
+                    }
+                    variant="homepage"
+                  />
+                </Reveal>
               ))}
             </div>
           ) : (
-            <p className="text-neutral-500 text-center py-8">{t('home', 'noBlogPosts')}</p>
+            <p className="text-sm text-ink-soft dark:text-neutral-400">
+              {t('home', 'noBlogPosts')}
+            </p>
           )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-brand py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            {cta?.title || t('home', 'ctaTitle')}
-          </h2>
-          <p className="text-red-100 mb-8 max-w-2xl mx-auto">
-            {cta?.description || t('home', 'ctaDescription')}
-          </p>
-          <Link
-            href={cta?.buttonLink || '/contacts'}
-            className="bg-white text-brand px-8 py-3 rounded-lg hover:bg-neutral-100 transition-colors font-semibold inline-block"
-          >
-            {cta?.buttonText || t('home', 'getInTouch')}
-          </Link>
+      {/*
+        CTA — the closing statement, at the scale of one.
+
+        Both this band and the stats band used to be solid brand red, which is
+        why the page read as two red stripes with content wedged between them.
+        Red now belongs to the one figure that earns it and to this button; the
+        band itself is ink, set at display size so the last thing on the page
+        is as loud as the first.
+      */}
+      <section className="grain relative isolate overflow-hidden bg-neutral-950 text-white">
+        <div className="absolute inset-x-0 top-0 h-px bg-brand" aria-hidden="true" />
+        <div
+          className="absolute inset-0 bg-[radial-gradient(80%_130%_at_50%_0%,color-mix(in_oklab,var(--color-brand)26%,transparent)0%,transparent62%)]"
+          aria-hidden="true"
+        />
+        <div className="relative mx-auto max-w-4xl px-4 py-28 text-center sm:px-6 md:py-36 lg:px-8">
+          <Reveal>
+            <h2 className="display-page">{cta?.title || t('home', 'ctaTitle')}</h2>
+            <p className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-white/65">
+              {cta?.description || t('home', 'ctaDescription')}
+            </p>
+            <Link
+              href={cta?.buttonLink || '/contacts'}
+              className="btn btn-primary mt-11 px-9 py-4 text-base"
+            >
+              {cta?.buttonText || t('home', 'getInTouch')}
+            </Link>
+          </Reveal>
         </div>
       </section>
     </>

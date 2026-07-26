@@ -33,7 +33,7 @@ export function SuccessStoryBlogCard({
   return (
     <Link
       href={`/success-stories/${id}`}
-      className="block bg-white dark:bg-neutral-800 rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden group"
+      className="block card-surface overflow-hidden group"
     >
       {/* Image area with profile + logo */}
       <div className="relative h-48 bg-gradient-to-br from-brand/10 to-brand/5 dark:from-brand/20 dark:to-neutral-900">

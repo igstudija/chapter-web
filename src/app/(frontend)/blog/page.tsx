@@ -1,10 +1,8 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { BlogCard } from '@/components'
+import { BlogCard, PageHeader } from '@/components'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
 import { headers } from 'next/headers'
 import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
 
@@ -63,23 +61,12 @@ export default async function BlogPage() {
   })
 
   return (
-    <div className="py-8 bg-neutral-100 dark:bg-surface min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-          <Link href="/" className="hover:text-brand transition-colors">
-            {t('common', 'home')}
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-ink dark:text-surface-text font-medium">
-            {t('blog', 'title')}
-          </span>
-        </nav>
-
-        <h1 className="text-4xl font-bold text-ink dark:text-surface-text mb-8">
-          {t('blog', 'title')}
-        </h1>
-
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <PageHeader
+        title={t('blog', 'title')}
+        breadcrumbs={[{ label: t('common', 'home'), href: '/' }, { label: t('blog', 'title') }]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         {blogData.docs.length > 0 ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {blogData.docs.map((post) => (
@@ -101,9 +88,9 @@ export default async function BlogPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-neutral-500 dark:text-neutral-400 text-lg">{t('blog', 'noPosts')}</p>
-          </div>
+          <p className="border-t border-line py-12 text-sm text-ink-soft dark:border-line-dark dark:text-neutral-400">
+            {t('blog', 'noPosts')}
+          </p>
         )}
       </div>
     </div>

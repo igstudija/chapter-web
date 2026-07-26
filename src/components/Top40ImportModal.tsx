@@ -317,13 +317,13 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/55 p-4 backdrop-blur-sm">
+      <div className="panel flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-3">
             <FileSpreadsheet className="h-6 w-6 text-brand" />
-            <h2 className="text-xl font-bold text-ink dark:text-surface-text">
+            <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">
               {title ?? t('top40Import', 'title').replace('{label}', '').replace(/\s+/g, ' ').trim()}
             </h2>
           </div>

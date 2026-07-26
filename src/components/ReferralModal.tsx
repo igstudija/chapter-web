@@ -127,13 +127,13 @@ export function ReferralModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
         type="button"
-        className="fixed inset-0 bg-neutral-600/50"
+        className="fixed inset-0 bg-neutral-950/55 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Close modal"
       />
       <div className="relative bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-ink dark:text-surface-text">{title}</h2>
+          <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">{title}</h2>
           <button
             onClick={onClose}
             className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
@@ -163,7 +163,7 @@ export function ReferralModal({
                 required
                 value={toUser}
                 onChange={(e) => setToUser(e.target.value)}
-                className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               >
                 <option value="">{t('activities', 'selectMember')}</option>
                 {members.map((member) => (
@@ -187,7 +187,7 @@ export function ReferralModal({
                 required
                 value={fromUser}
                 onChange={(e) => setFromUser(e.target.value)}
-                className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
               >
                 <option value="">{t('activities', 'selectMember')}</option>
                 {members.map((member) => (
@@ -213,7 +213,7 @@ export function ReferralModal({
               required
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
             />
           </div>
 
@@ -231,7 +231,7 @@ export function ReferralModal({
               rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
               placeholder={t('activities', 'referralDescriptionPlaceholder')}
             />
           </div>
@@ -252,7 +252,7 @@ export function ReferralModal({
                 step="0.01"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
                 placeholder="0.00"
               />
             </div>
@@ -261,7 +261,7 @@ export function ReferralModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50"
+            className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? t('common', 'saving') : t('common', 'save')}
           </button>

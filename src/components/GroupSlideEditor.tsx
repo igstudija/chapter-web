@@ -49,7 +49,7 @@ export function GroupSlideEditor({
 
   return (
     <div>
-      <h2 className="text-lg font-bold text-ink dark:text-surface-text mb-2">
+      <h2 className="font-display mb-2 text-lg font-bold tracking-tight text-ink dark:text-surface-text">
         {powerGroupTitle}
       </h2>
       <label className="block text-sm font-medium text-neutral-600 dark:text-neutral-400 mb-2">

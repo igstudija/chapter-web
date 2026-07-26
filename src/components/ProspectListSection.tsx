@@ -162,7 +162,7 @@ export function ProspectListSection({
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-ink dark:text-surface-text">{heading}</h2>
+        <h2 className="font-display text-lg font-bold tracking-tight text-ink dark:text-surface-text">{heading}</h2>
         <div className="flex items-center gap-2">
           {entries.length > 0 && (
             <button
@@ -206,7 +206,7 @@ export function ProspectListSection({
             placeholder={t('common', 'searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+            className="field py-3 pl-12"
           />
         </div>
         <div className="hidden lg:flex rounded-lg border border-neutral-300 dark:border-neutral-600 overflow-hidden">
@@ -230,7 +230,7 @@ export function ProspectListSection({
       {filteredEntries.length > 0 ? (
         <>
           {viewMode === 'table' && (
-            <div className="hidden lg:block bg-white dark:bg-neutral-800 rounded-lg shadow-sm overflow-hidden">
+            <div className="hidden lg:block panel overflow-hidden">
               {filteredEntries.map((entry, index) => (
                 <Top40EntryRow
                   key={entry.id}
@@ -254,7 +254,7 @@ export function ProspectListSection({
             {filteredEntries.map((entry, index) => (
               <div
                 key={entry.id}
-                className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-4 border border-neutral-200 dark:border-neutral-600 hover:border-brand transition-colors"
+                className="card-surface p-4"
               >
                 <div className="flex items-start justify-between mb-2">
                   <span className="text-xs text-neutral-400 dark:text-neutral-500">
@@ -360,7 +360,7 @@ export function ProspectListSection({
       {showImportHelp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
-            className="fixed inset-0 bg-black/50"
+            className="fixed inset-0 bg-neutral-950/55 backdrop-blur-sm"
             onClick={() => setShowImportHelp(false)}
             onKeyDown={(e) => {
               if (e.key === 'Escape') setShowImportHelp(false)
@@ -376,7 +376,7 @@ export function ProspectListSection({
             >
               <X className="h-5 w-5" />
             </button>
-            <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-3">
+            <h3 className="font-display mb-3 text-lg font-bold tracking-tight text-ink dark:text-surface-text">
               {t('top40Import', 'helpTitle').replace('{label}', listLabel)}
             </h3>
             <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">

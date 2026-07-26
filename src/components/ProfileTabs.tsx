@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import {
   User,
   Users,
@@ -21,7 +20,9 @@ import {
   HelpCircle,
   X,
   UsersRound,
+  Plus,
 } from 'lucide-react'
+import { TabNav } from './TabNav'
 import { SpecialRequestModal } from './SpecialRequestModal'
 import { SuccessStoryModal } from './SuccessStoryModal'
 import { ConfirmDialog } from './ConfirmDialog'
@@ -151,41 +152,6 @@ interface ProfileTabsProps {
   readonly pendingEmail?: string | null
 }
 
-interface TabButtonProps {
-  href: string
-  isActive: boolean
-  icon: React.ReactNode
-  label: string
-  count?: number
-}
-
-function TabButton({ href, isActive, icon, label, count }: Readonly<TabButtonProps>) {
-  const baseClasses =
-    'flex items-center justify-center gap-2 p-3 sm:px-6 sm:py-3 rounded-lg text-sm font-medium transition-colors'
-  const activeClasses = 'bg-brand text-white'
-  const inactiveClasses =
-    'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-600'
-  const className = `${baseClasses} ${isActive ? activeClasses : inactiveClasses} ${count === undefined ? '' : 'relative'}`
-
-  return (
-    <Link href={href} className={className} title={label}>
-      {icon}
-      <span className="hidden sm:inline">{label}</span>
-      {count !== undefined && count > 0 && (
-        <span
-          className={`text-xs px-1.5 py-0.5 rounded-full min-w-5 text-center ${
-            isActive
-              ? 'bg-white/20 text-white'
-              : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
-          }`}
-        >
-          {count}
-        </span>
-      )}
-    </Link>
-  )
-}
-
 export function ProfileTabs({
   activeTab,
   specialRequestsCount,
@@ -268,67 +234,75 @@ export function ProfileTabs({
 
   return (
     <>
-      {/* Tab Buttons - icons only on mobile, full on desktop */}
-      <div className="flex gap-1 sm:gap-2 mb-6 overflow-x-auto">
-        <TabButton
-          href="/my-profile"
-          isActive={activeTab === 'about'}
-          icon={<User className="h-5 w-5 sm:h-4 sm:w-4" />}
-          label={t('profile', 'aboutMe')}
-        />
-        <TabButton
-          href="/my-profile/my-requests"
-          isActive={activeTab === 'special-requests'}
-          icon={<Users className="h-5 w-5 sm:h-4 sm:w-4" />}
-          label={t('profile', 'specialRequests')}
-          count={specialRequestsCount}
-        />
-        <TabButton
-          href="/my-profile/my-top40"
-          isActive={activeTab === 'top40'}
-          icon={<Trophy className="h-5 w-5 sm:h-4 sm:w-4" />}
-          label={t('profile', 'top40')}
-          count={top40Count}
-        />
-        <TabButton
-          href="/my-profile/my-top20"
-          isActive={activeTab === 'top20'}
-          icon={<Microscope className="h-5 w-5 sm:h-4 sm:w-4" />}
-          label={t('profile', 'top20')}
-          count={top20Count}
-        />
-        {enableSuccessStories && (
-          <TabButton
-            href="/my-profile/success-stories"
-            isActive={activeTab === 'success-stories'}
-            icon={<Star className="h-5 w-5 sm:h-4 sm:w-4" />}
-            label={t('profile', 'successStories')}
-            count={successStoriesCount}
-          />
-        )}
-        <TabButton
-          href="/my-profile/presentation"
-          isActive={activeTab === 'presentation'}
-          icon={<Presentation className="h-5 w-5 sm:h-4 sm:w-4" />}
-          label={t('profile', 'presentationSlide')}
-        />
-        {isPowerGroupLead && (
-          <TabButton
-            href="/my-profile/group-slide"
-            isActive={activeTab === 'group-slide'}
-            icon={<UsersRound className="h-5 w-5 sm:h-4 sm:w-4" />}
-            label={t('profile', 'groupSlide')}
-          />
-        )}
-        {enableActivities && (
-          <TabButton
-            href="/my-profile/activities"
-            isActive={activeTab === 'activities'}
-            icon={<Activity className="h-5 w-5 sm:h-4 sm:w-4" />}
-            label={t('profile', 'activities')}
-          />
-        )}
-      </div>
+      <TabNav
+        ariaLabel={t('profile', 'title')}
+        items={[
+          {
+            href: '/my-profile',
+            active: activeTab === 'about',
+            icon: <User className="h-4 w-4" />,
+            label: t('profile', 'aboutMe'),
+          },
+          {
+            href: '/my-profile/my-requests',
+            active: activeTab === 'special-requests',
+            icon: <Users className="h-4 w-4" />,
+            label: t('profile', 'specialRequests'),
+            count: specialRequestsCount,
+          },
+          {
+            href: '/my-profile/my-top40',
+            active: activeTab === 'top40',
+            icon: <Trophy className="h-4 w-4" />,
+            label: t('profile', 'top40'),
+            count: top40Count,
+          },
+          {
+            href: '/my-profile/my-top20',
+            active: activeTab === 'top20',
+            icon: <Microscope className="h-4 w-4" />,
+            label: t('profile', 'top20'),
+            count: top20Count,
+          },
+          ...(enableSuccessStories
+            ? [
+                {
+                  href: '/my-profile/success-stories',
+                  active: activeTab === 'success-stories',
+                  icon: <Star className="h-4 w-4" />,
+                  label: t('profile', 'successStories'),
+                  count: successStoriesCount,
+                },
+              ]
+            : []),
+          {
+            href: '/my-profile/presentation',
+            active: activeTab === 'presentation',
+            icon: <Presentation className="h-4 w-4" />,
+            label: t('profile', 'presentationSlide'),
+          },
+          ...(isPowerGroupLead
+            ? [
+                {
+                  href: '/my-profile/group-slide',
+                  active: activeTab === 'group-slide',
+                  icon: <UsersRound className="h-4 w-4" />,
+                  label: t('profile', 'groupSlide'),
+                },
+              ]
+            : []),
+          ...(enableActivities
+            ? [
+                {
+                  href: '/my-profile/activities',
+                  active: activeTab === 'activities',
+                  icon: <Activity className="h-4 w-4" />,
+                  label: t('profile', 'activities'),
+                },
+              ]
+            : []),
+        ]}
+      />
 
       {/* Tab Content */}
       {activeTab === 'about' && userData && (
@@ -362,15 +336,17 @@ export function ProfileTabs({
 
       {activeTab === 'special-requests' && (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-ink dark:text-surface-text">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">
               {t('profile', 'mySpecialRequests')}
             </h2>
             <button
+              type="button"
               onClick={() => setShowSpecialRequestModal(true)}
-              className="flex items-center justify-center w-10 h-10 bg-brand text-white rounded-full hover:bg-brand-dark transition-colors"
+              className="btn btn-primary px-4 py-2.5 text-sm"
             >
-              <span className="text-xl">+</span>
+              <Plus className="h-4 w-4" />
+              {t('common', 'add')}
             </button>
           </div>
 
@@ -385,7 +361,7 @@ export function ProfileTabs({
               deletingId={deleting}
             />
           ) : (
-            <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">
+            <p className="border-t border-line py-12 text-sm text-ink-soft dark:border-line-dark dark:text-neutral-400">
               {t('profile', 'noSpecialRequests')}
             </p>
           )}
@@ -427,15 +403,17 @@ export function ProfileTabs({
 
       {activeTab === 'success-stories' && (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-ink dark:text-surface-text">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">
               {t('profile', 'mySuccessStories')}
             </h2>
             <button
+              type="button"
               onClick={() => setShowSuccessStoryModal(true)}
-              className="flex items-center justify-center w-10 h-10 bg-brand text-white rounded-full hover:bg-brand-dark transition-colors"
+              className="btn btn-primary px-4 py-2.5 text-sm"
             >
-              <span className="text-xl">+</span>
+              <Plus className="h-4 w-4" />
+              {t('common', 'add')}
             </button>
           </div>
 
@@ -456,7 +434,7 @@ export function ProfileTabs({
               ))}
             </div>
           ) : (
-            <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">
+            <p className="border-t border-line py-12 text-sm text-ink-soft dark:border-line-dark dark:text-neutral-400">
               {t('profile', 'noSuccessStories')}
             </p>
           )}

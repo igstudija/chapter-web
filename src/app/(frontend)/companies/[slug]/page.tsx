@@ -98,50 +98,56 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
       : null
 
   return (
-    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <nav className="text-sm mb-6">
-          <Link href="/" className="text-neutral-500 dark:text-neutral-400 hover:text-brand">
-            {t('common', 'home')}
-          </Link>
-          <span className="mx-2 text-neutral-400">›</span>
-          <Link
-            href="/companies"
-            className="text-neutral-500 dark:text-neutral-400 hover:text-brand"
-          >
-            {t('companies', 'title')}
-          </Link>
-          <span className="mx-2 text-neutral-400">›</span>
-          <span className="text-ink dark:text-surface-text">{membership.company}</span>
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <nav aria-label="Breadcrumb" className="mb-10">
+          <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs">
+            <li className="flex items-center gap-2">
+              <Link href="/" className="text-ink-soft transition-colors hover:text-brand dark:text-neutral-400">
+                {t('common', 'home')}
+              </Link>
+              <span aria-hidden="true" className="text-neutral-400 dark:text-neutral-600">/</span>
+            </li>
+            <li className="flex items-center gap-2">
+              <Link
+                href="/companies"
+                className="text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
+              >
+                {t('companies', 'title')}
+              </Link>
+              <span aria-hidden="true" className="text-neutral-400 dark:text-neutral-600">/</span>
+            </li>
+            <li aria-current="page" className="text-ink dark:text-surface-text">
+              {membership.company}
+            </li>
+          </ol>
         </nav>
 
         {/* Company Header */}
-        <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
+        <div className="panel mb-6 p-6 md:p-8">
+          <div className="flex flex-col items-start gap-6 md:flex-row md:gap-8">
             {memberLogo?.url ? (
-              <div className="shrink-0 bg-white rounded-lg p-3">
+              <div className="shrink-0 rounded-lg bg-white p-4 ring-1 ring-line">
                 <Image
                   src={memberLogo.url}
                   alt={membership.company || ''}
                   width={200}
                   height={100}
-                  className="object-contain max-h-24"
+                  className="max-h-24 object-contain"
                 />
               </div>
             ) : (
-              <div className="w-24 h-24 bg-brand rounded-lg flex items-center justify-center text-white text-2xl font-bold shrink-0">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg border border-line font-display text-3xl font-semibold text-brand dark:border-line-dark">
                 {membership.company?.charAt(0)}
               </div>
             )}
 
             <div className="flex-1">
-              <h1 className="text-3xl font-bold text-ink dark:text-white">
-                {membership.company}
-              </h1>
+              <h1 className="display-2 text-ink dark:text-surface-text">{membership.company}</h1>
 
-              <div className="flex flex-wrap gap-2 mt-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {powerGroup && (
-                  <span className="text-xs px-2 py-1 rounded-full bg-brand/10 dark:bg-brand/20 text-brand dark:text-red-400">
+                  <span className="eyebrow rounded-full border border-brand/35 px-2.5 py-1 text-brand">
                     {powerGroup.title}
                   </span>
                 )}
@@ -184,8 +190,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
 
         {/* Company Description */}
         {membership.companyDescription && (
-          <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+          <div className="panel p-6 mb-6">
+            <h2 className="eyebrow mb-5">
               {t('companies', 'aboutCompany')}
             </h2>
             <div
@@ -197,8 +203,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
 
         {/* Gallery */}
         {membership.gallery && membership.gallery.length > 0 && (
-          <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6 mb-6">
-            <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+          <div className="panel p-6 mb-6">
+            <h2 className="eyebrow mb-5">
               {t('companies', 'gallery')}
             </h2>
             <GalleryLightbox
@@ -218,8 +224,8 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
 
         {/* Representative */}
         {memberUser && (
-          <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6">
-            <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+          <div className="panel p-6">
+            <h2 className="eyebrow mb-5">
               {t('companies', 'representative')}
             </h2>
             <div className="flex items-center gap-4">

@@ -123,21 +123,19 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                         <img
                           src={getThumbnailUrl(profileImage, 'thumbnail') || profileImage}
                           alt={`${name} ${surname}`}
-                          className="w-24 h-24 rounded-full object-cover"
+                          className="h-24 w-24 rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
                           loading="lazy"
                         />
                       </div>
                     )}
-                    <h3 className="text-xl font-bold text-ink dark:text-surface-text">
+                    <h3 className="font-display text-lg font-semibold tracking-tight text-ink dark:text-surface-text">
                       {name} {surname}
                     </h3>
                     {orgRole && (
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
-                        {orgRole}
-                      </p>
+                      <p className="eyebrow">{orgRole}</p>
                     )}
                     {(jobPosition || company) && (
-                      <p className="text-sm text-neutral-500 dark:text-neutral-500">
+                      <p className="text-sm text-ink-soft dark:text-neutral-400">
                         {jobPosition}
                         {jobPosition && company && ', '}
                         {company}
@@ -146,7 +144,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                     {email && (
                       <a
                         href={`mailto:${email}`}
-                        className="flex items-center justify-center gap-1.5 text-sm text-brand hover:text-brand-dark transition-colors break-words"
+                        className="flex items-center justify-center gap-1.5 break-words text-sm text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
                       >
                         <Mail className="h-3.5 w-3.5 flex-shrink-0" />
                         <span>{email}</span>
@@ -155,7 +153,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                     {phone && (
                       <a
                         href={`tel:${phone}`}
-                        className="flex items-center justify-center gap-1.5 text-sm text-brand hover:text-brand-dark transition-colors"
+                        className="tabular flex items-center justify-center gap-1.5 font-mono text-xs text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
                       >
                         <Phone className="h-3.5 w-3.5 flex-shrink-0" />
                         <span>{phone}</span>
@@ -194,21 +192,19 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                         <img
                           src={getThumbnailUrl(profileImage, 'thumbnail') || profileImage}
                           alt={`${name} ${surname}`}
-                          className="w-24 h-24 rounded-full object-cover"
+                          className="h-24 w-24 rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
                           loading="lazy"
                         />
                       </div>
                     )}
-                    <h3 className="text-xl font-bold text-ink dark:text-surface-text">
+                    <h3 className="font-display text-lg font-semibold tracking-tight text-ink dark:text-surface-text">
                       {name} {surname}
                     </h3>
                     {orgRole && (
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400 font-medium">
-                        {orgRole}
-                      </p>
+                      <p className="eyebrow">{orgRole}</p>
                     )}
                     {(jobPosition || company) && (
-                      <p className="text-sm text-neutral-500 dark:text-neutral-500">
+                      <p className="text-sm text-ink-soft dark:text-neutral-400">
                         {jobPosition}
                         {jobPosition && company && ', '}
                         {company}
@@ -217,7 +213,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                     {email && (
                       <a
                         href={`mailto:${email}`}
-                        className="flex items-center justify-center gap-1.5 text-sm text-brand hover:text-brand-dark transition-colors break-words"
+                        className="flex items-center justify-center gap-1.5 break-words text-sm text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
                       >
                         <Mail className="h-3.5 w-3.5 flex-shrink-0" />
                         <span>{email}</span>
@@ -226,7 +222,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                     {phone && (
                       <a
                         href={`tel:${phone}`}
-                        className="flex items-center justify-center gap-1.5 text-sm text-brand hover:text-brand-dark transition-colors"
+                        className="tabular flex items-center justify-center gap-1.5 font-mono text-xs text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
                       >
                         <Phone className="h-3.5 w-3.5 flex-shrink-0" />
                         <span>{phone}</span>
@@ -241,10 +237,10 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
       )}
 
       {/* Contact Form - Separate Section */}
-      <div className="-mx-4 sm:-mx-6 lg:-mx-8 mt-16 py-16 bg-neutral-50 dark:bg-neutral-900/50">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mt-20 border-t border-line pt-16 dark:border-line-dark">
+        <div className="mx-auto max-w-2xl">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-ink dark:text-surface-text mb-3">
+            <h2 className="display-2 mb-4 text-ink dark:text-surface-text">
               {formSettings?.formTitle || 'RAKSTI MUMS'}
             </h2>
             {formSettings?.formDescription && (
@@ -254,15 +250,15 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
             )}
           </div>
 
-          <div className="bg-white dark:bg-surface-raised rounded-lg shadow-md p-8">
+          <div className="panel p-8 md:p-10">
             {success && (
-              <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-600 dark:text-green-200 p-4 rounded-lg mb-6">
+              <div className="mb-6 rounded-lg border border-emerald-600/25 bg-emerald-500/10 p-4 text-sm text-emerald-800 dark:text-emerald-300">
                 {formSettings?.successMessage}
               </div>
             )}
 
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-200 p-4 rounded-lg mb-6">
+              <div className="mb-6 rounded-lg border border-rose-600/25 bg-rose-500/10 p-4 text-sm text-rose-800 dark:text-rose-300">
                 {error}
               </div>
             )}
@@ -271,7 +267,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {labels.name} *
                 </label>
@@ -281,7 +277,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="field"
                   required
                 />
               </div>
@@ -289,7 +285,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {labels.email} *
                 </label>
@@ -299,7 +295,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="field"
                   required
                 />
               </div>
@@ -307,7 +303,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
               <div>
                 <label
                   htmlFor="phone"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {labels.phone}
                 </label>
@@ -317,14 +313,14 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="field"
                 />
               </div>
 
               <div>
                 <label
                   htmlFor="subject"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {labels.subject} *
                 </label>
@@ -334,7 +330,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                   name="subject"
                   value={formData.subject}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="field"
                   required
                 />
               </div>
@@ -342,7 +338,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
               <div>
                 <label
                   htmlFor="message"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {labels.message} *
                 </label>
@@ -352,7 +348,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
                   value={formData.message}
                   onChange={handleChange}
                   rows={4}
-                  className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="field"
                   required
                 />
               </div>
@@ -372,7 +368,7 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50"
+                className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? labels.sending : formSettings?.submitButtonText || labels.sendMessage}
               </button>

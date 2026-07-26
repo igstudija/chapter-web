@@ -1,5 +1,5 @@
-import Link from 'next/link'
 import { User, Users, Trophy, Star, Microscope } from 'lucide-react'
+import { TabNav } from './TabNav'
 
 interface MemberProfileTabsProps {
   slug: string
@@ -18,6 +18,15 @@ interface MemberProfileTabsProps {
   }
 }
 
+/**
+ * Tabs on another member's profile.
+ *
+ * This was ~90 lines of the same markup written twice per tab — once for the
+ * active state as a `<div>`, once for the inactive state as a `<Link>` — with
+ * the labels shouted through `.toUpperCase()`. It is a list of five items now,
+ * rendered by the same `TabNav` the reader's own profile uses, so the two
+ * cannot drift apart again.
+ */
 export function MemberProfileTabs({
   slug,
   activeTab,
@@ -28,99 +37,49 @@ export function MemberProfileTabs({
   enableSuccessStories = true,
   labels,
 }: MemberProfileTabsProps) {
-  const baseClasses =
-    'flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-colors'
-  const activeClasses = 'bg-brand text-white'
-  const inactiveClasses =
-    'bg-white dark:bg-surface-raised text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-600'
-  const badgeClasses =
-    'text-xs px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-600 dark:text-neutral-300'
-
   return (
-    <div className="flex flex-wrap gap-2 mb-6">
-      {activeTab === 'about' ? (
-        <div className={`${baseClasses} ${activeClasses}`}>
-          <User className="h-4 w-4" />
-          {labels.about.toUpperCase()}
-        </div>
-      ) : (
-        <Link href={`/members/${slug}`} className={`${baseClasses} ${inactiveClasses}`}>
-          <User className="h-4 w-4" />
-          {labels.about.toUpperCase()}
-        </Link>
-      )}
-
-      {activeTab === 'special-requests' ? (
-        <div className={`${baseClasses} ${activeClasses}`}>
-          <Users className="h-4 w-4" />
-          {labels.specialRequests.toUpperCase()}
-          <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 text-white">
-            {specialRequestsCount}
-          </span>
-        </div>
-      ) : (
-        <Link
-          href={`/members/${slug}/special-requests`}
-          className={`${baseClasses} ${inactiveClasses}`}
-        >
-          <Users className="h-4 w-4" />
-          {labels.specialRequests.toUpperCase()}
-          <span className={badgeClasses}>{specialRequestsCount}</span>
-        </Link>
-      )}
-
-      {activeTab === 'top-40' ? (
-        <div className={`${baseClasses} ${activeClasses}`}>
-          <Trophy className="h-4 w-4" />
-          {labels.top40.toUpperCase()}
-          <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 text-white">
-            {top40Count}
-          </span>
-        </div>
-      ) : (
-        <Link href={`/members/${slug}/top-40`} className={`${baseClasses} ${inactiveClasses}`}>
-          <Trophy className="h-4 w-4" />
-          {labels.top40.toUpperCase()}
-          <span className={badgeClasses}>{top40Count}</span>
-        </Link>
-      )}
-
-      {activeTab === 'top-20' ? (
-        <div className={`${baseClasses} ${activeClasses}`}>
-          <Microscope className="h-4 w-4" />
-          {labels.top20.toUpperCase()}
-          <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 text-white">
-            {top20Count}
-          </span>
-        </div>
-      ) : (
-        <Link href={`/members/${slug}/top-20`} className={`${baseClasses} ${inactiveClasses}`}>
-          <Microscope className="h-4 w-4" />
-          {labels.top20.toUpperCase()}
-          <span className={badgeClasses}>{top20Count}</span>
-        </Link>
-      )}
-
-      {enableSuccessStories && (
-        activeTab === 'success-stories' ? (
-          <div className={`${baseClasses} ${activeClasses}`}>
-            <Star className="h-4 w-4" />
-            {labels.successStories.toUpperCase()}
-            <span className="text-xs px-2 py-0.5 rounded-full bg-white/20 text-white">
-              {successStoriesCount}
-            </span>
-          </div>
-        ) : (
-          <Link
-            href={`/members/${slug}/success-stories`}
-            className={`${baseClasses} ${inactiveClasses}`}
-          >
-            <Star className="h-4 w-4" />
-            {labels.successStories.toUpperCase()}
-            <span className={badgeClasses}>{successStoriesCount}</span>
-          </Link>
-        )
-      )}
-    </div>
+    <TabNav
+      ariaLabel={labels.about}
+      items={[
+        {
+          href: `/members/${slug}`,
+          active: activeTab === 'about',
+          icon: <User className="h-4 w-4" />,
+          label: labels.about,
+        },
+        {
+          href: `/members/${slug}/special-requests`,
+          active: activeTab === 'special-requests',
+          icon: <Users className="h-4 w-4" />,
+          label: labels.specialRequests,
+          count: specialRequestsCount,
+        },
+        {
+          href: `/members/${slug}/top-40`,
+          active: activeTab === 'top-40',
+          icon: <Trophy className="h-4 w-4" />,
+          label: labels.top40,
+          count: top40Count,
+        },
+        {
+          href: `/members/${slug}/top-20`,
+          active: activeTab === 'top-20',
+          icon: <Microscope className="h-4 w-4" />,
+          label: labels.top20,
+          count: top20Count,
+        },
+        ...(enableSuccessStories
+          ? [
+              {
+                href: `/members/${slug}/success-stories`,
+                active: activeTab === 'success-stories',
+                icon: <Star className="h-4 w-4" />,
+                label: labels.successStories,
+                count: successStoriesCount,
+              },
+            ]
+          : []),
+      ]}
+    />
   )
 }

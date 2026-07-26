@@ -166,7 +166,7 @@ export default async function MemberTop40Page({ params }: { params: Promise<{ sl
         />
 
         {/* Content */}
-        <h2 className="text-2xl font-bold text-ink dark:text-surface-text uppercase mb-6">
+        <h2 className="display-2 mb-6 text-ink dark:text-surface-text">
           {t('members', 'top40')}
         </h2>
         <Top40Table

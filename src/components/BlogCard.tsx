@@ -30,35 +30,38 @@ export function BlogCard({
     : null
 
   return (
-    <Link
-      href={`/blog/${slug}`}
-      className={`block bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden group ${
-        variant === 'homepage'
-          ? 'dark:bg-surface dark:border dark:border-neutral-700'
-          : 'dark:bg-neutral-800'
-      }`}
-    >
-      {featuredImage && (
-        <div className="relative aspect-[4/3] overflow-hidden">
-          <Image
-            src={featuredImage.url}
-            alt={featuredImage.alt}
-            fill
-            className="object-cover"
-          />
+    <Link href={`/blog/${slug}`} className="group block">
+      <article className="card-surface flex h-full flex-col overflow-hidden">
+        {featuredImage && (
+          <div className="relative aspect-16/10 overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+            <Image
+              src={featuredImage.url}
+              alt={featuredImage.alt}
+              fill
+              className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+              sizes={variant === 'homepage' ? '(max-width: 768px) 100vw, 33vw' : '(max-width: 768px) 100vw, 50vw'}
+            />
+          </div>
+        )}
+        <div className="flex flex-1 flex-col p-6">
+          {formattedDate && (
+            <time
+              dateTime={publishedAt}
+              className="tabular mb-3 font-mono text-xs text-ink-soft dark:text-neutral-500"
+            >
+              {formattedDate}
+            </time>
+          )}
+          <h3 className="font-display text-lg font-semibold leading-snug tracking-tight text-ink transition-colors group-hover:text-brand dark:text-surface-text">
+            {title}
+          </h3>
+          {excerpt && (
+            <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-ink-soft dark:text-neutral-400">
+              {excerpt}
+            </p>
+          )}
         </div>
-      )}
-      <div className="p-6">
-        {formattedDate && (
-          <div className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">{formattedDate}</div>
-        )}
-        <h3 className="text-lg font-semibold text-neutral-900 dark:text-surface-text group-hover:text-brand transition-colors">
-          {title}
-        </h3>
-        {excerpt && (
-          <p className="text-neutral-700 dark:text-neutral-300 mt-2 line-clamp-3">{excerpt}</p>
-        )}
-      </div>
+      </article>
     </Link>
   )
 }

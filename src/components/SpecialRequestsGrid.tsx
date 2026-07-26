@@ -199,7 +199,7 @@ export function SpecialRequestsGrid({ requests, membershipByUserId, labels, loca
               setSearchQuery(e.target.value)
               setCurrentPage(1)
             }}
-            className="w-full pl-12 pr-4 py-3 border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+            className="field py-3 pl-12"
           />
         </div>
       </div>
@@ -232,7 +232,7 @@ export function SpecialRequestsGrid({ requests, membershipByUserId, labels, loca
             return (
               <div
                 key={entry.memberId}
-                className="bg-white dark:bg-surface-raised rounded-lg shadow-sm"
+                className="panel"
               >
               <div className="flex flex-col md:flex-row">
                 {/* Left: Member Info with red accent */}
@@ -419,7 +419,7 @@ export function SpecialRequestsGrid({ requests, membershipByUserId, labels, loca
           })}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white dark:bg-surface-raised rounded-lg shadow-sm">
+        <div className="text-center py-16 panel">
           <p className="text-neutral-500 dark:text-neutral-400">{labels.noRequests}</p>
         </div>
       )}

@@ -224,7 +224,7 @@ export function PresentationForm({
     t('profile', 'minBusinessHint').replace('{amount}', formatMinAmount(min))
 
   return (
-    <div className="bg-white dark:bg-surface-raised rounded-lg p-6 shadow-sm">
+    <div className="panel p-6">
       {/* Error Messages */}
       {error && (
         <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg">
@@ -307,7 +307,7 @@ export function PresentationForm({
                   await handleFieldBlur('tyfcbReceived')
                 }}
                 disabled={saving}
-                className="h-10 px-4 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="btn btn-primary h-10 px-4 py-0 text-sm disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? (
                   <>
@@ -479,7 +479,7 @@ export function PresentationForm({
                     }
                   }}
                   disabled={saving}
-                  className="h-10 px-4 bg-brand hover:bg-brand-dark text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  className="btn btn-primary h-10 px-4 py-0 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? (
                     <>

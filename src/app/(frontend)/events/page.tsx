@@ -1,7 +1,6 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { EventCard } from '@/components'
-import Link from 'next/link'
+import { EventCard, PageHeader } from '@/components'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { headers } from 'next/headers'
@@ -74,22 +73,17 @@ export default async function EventsPage() {
   const upcomingEvents = eventsData.docs.filter((e) => new Date(e.date) >= now)
 
   return (
-    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <nav className="text-sm mb-6">
-          <Link href="/" className="text-neutral-500 dark:text-neutral-400 hover:text-brand">
-            {t('common', 'home')}
-          </Link>
-          <span className="mx-2 text-neutral-400 dark:text-neutral-500">›</span>
-          <span className="text-ink dark:text-surface-text">{t('events', 'title')}</span>
-        </nav>
-
-        <h1 className="text-3xl font-bold text-ink dark:text-surface-text mb-8">
-          {t('events', 'title').toUpperCase()}
-        </h1>
-
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <PageHeader
+        title={t('events', 'title')}
+        breadcrumbs={[
+          { label: t('common', 'home'), href: '/' },
+          { label: t('events', 'title') },
+        ]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         {upcomingEvents.length > 0 ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-12">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {upcomingEvents.map((event) => (
               <EventCard
                 key={event.id}
@@ -107,7 +101,7 @@ export default async function EventsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-neutral-500 dark:text-neutral-400 mb-12">
+          <p className="border-t border-line py-12 text-sm text-ink-soft dark:border-line-dark dark:text-neutral-400">
             {t('events', 'noUpcoming')}
           </p>
         )}

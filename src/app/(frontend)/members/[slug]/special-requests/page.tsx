@@ -176,7 +176,7 @@ export default async function MemberSpecialRequestsPage({
 
         {/* Content */}
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-ink dark:text-surface-text uppercase">
+          <h2 className="display-2 text-ink dark:text-surface-text">
             {t('members', 'specialRequests')}
           </h2>
         </div>

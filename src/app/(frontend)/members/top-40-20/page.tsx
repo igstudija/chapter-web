@@ -1,8 +1,8 @@
 import { headers as getHeaders } from 'next/headers'
 import { redirect } from 'next/navigation'
-import Link from 'next/link'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import { PageHeader } from '@/components'
 import { TopListSwitch } from '@/components/TopListSwitch'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
 import { getSettings } from '@/lib/getSiteSettings'
@@ -48,21 +48,15 @@ export default async function Top4020Page() {
   ])
 
   return (
-    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        <nav className="text-sm mb-6">
-          <Link href="/" className="text-neutral-500 dark:text-neutral-400 hover:text-brand">
-            {t('common', 'home')}
-          </Link>
-          <span className="mx-2 text-neutral-400 dark:text-neutral-500">›</span>
-          <span className="text-ink dark:text-surface-text">{t('nav', 'top4020')}</span>
-        </nav>
-
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-ink dark:text-surface-text">
-            {t('top40Page', 'combinedTitle').toUpperCase()}
-          </h1>
-        </div>
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <PageHeader
+        title={t('top40Page', 'combinedTitle')}
+        breadcrumbs={[
+          { label: t('common', 'home'), href: '/' },
+          { label: t('nav', 'top4020') },
+        ]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 
         <TopListSwitch
           top40Entries={top40Data.docs}

@@ -99,13 +99,13 @@ export function SuccessStoryModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <button
         type="button"
-        className="fixed inset-0 bg-neutral-600/50"
+        className="fixed inset-0 bg-neutral-950/55 backdrop-blur-sm"
         onClick={onClose}
         aria-label="Close modal"
       />
       <div className="relative bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-3xl mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-ink dark:text-surface-text">
+          <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">
             {isEditMode ? t('successStory', 'editTitle') : t('successStory', 'addTitle')}
           </h2>
           <button
@@ -137,7 +137,7 @@ export function SuccessStoryModal({
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
               placeholder={t('successStory', 'titlePlaceholder')}
             />
           </div>
@@ -169,7 +169,7 @@ export function SuccessStoryModal({
               name="businessValue"
               value={businessValue}
               onChange={(e) => setBusinessValue(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
               placeholder={t('successStory', 'businessValuePlaceholder')}
             />
           </div>
@@ -186,7 +186,7 @@ export function SuccessStoryModal({
               name="partnerMember"
               value={partnerMember}
               onChange={(e) => setPartnerMember(e.target.value)}
-              className="w-full border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent"
+              className="field"
             >
               <option value="">{t('successStory', 'selectPartner')}</option>
               {members.map((member) => (
@@ -203,7 +203,7 @@ export function SuccessStoryModal({
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50"
+            className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? t('common', 'saving') : t('common', 'save')}
           </button>

@@ -201,7 +201,7 @@ export function ActivitiesContent({
       {/* 1-2-1 Meetings Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-ink dark:text-surface-text">
+          <h2 className="font-display text-lg font-bold tracking-tight text-ink dark:text-surface-text">
             {t('activities', 'meetings')}
           </h2>
           <button
@@ -209,7 +209,7 @@ export function ActivitiesContent({
               setEditMeeting(null)
               setShowMeetingModal(true)
             }}
-            className="flex items-center justify-center w-8 h-8 bg-brand text-white rounded-full hover:bg-brand-dark transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-brand/40 text-brand transition-colors hover:bg-brand hover:text-white"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -236,7 +236,7 @@ export function ActivitiesContent({
       {/* Referrals Received Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-ink dark:text-surface-text">
+          <h2 className="font-display text-lg font-bold tracking-tight text-ink dark:text-surface-text">
             {t('activities', 'receivedReferralsTitle')} ({referralsReceived.length})
           </h2>
           <button
@@ -244,7 +244,7 @@ export function ActivitiesContent({
               setEditReferralReceived(null)
               setShowReferralReceivedModal(true)
             }}
-            className="flex items-center justify-center w-8 h-8 bg-brand text-white rounded-full hover:bg-brand-dark transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-brand/40 text-brand transition-colors hover:bg-brand hover:text-white"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -272,7 +272,7 @@ export function ActivitiesContent({
       {/* Referrals Given Section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-ink dark:text-surface-text">
+          <h2 className="font-display text-lg font-bold tracking-tight text-ink dark:text-surface-text">
             {t('activities', 'givenReferralsTitle')} ({referralsGiven.length})
           </h2>
           <button
@@ -280,7 +280,7 @@ export function ActivitiesContent({
               setEditReferralGiven(null)
               setShowReferralGivenModal(true)
             }}
-            className="flex items-center justify-center w-8 h-8 bg-brand text-white rounded-full hover:bg-brand-dark transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-brand/40 text-brand transition-colors hover:bg-brand hover:text-white"
           >
             <Plus className="h-4 w-4" />
           </button>

@@ -81,8 +81,8 @@ export function MyProfilePageWrapper({
   children,
 }: MyProfilePageWrapperProps) {
   return (
-    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <Breadcrumb items={breadcrumbItems} />
 
         <MemberProfileHeader

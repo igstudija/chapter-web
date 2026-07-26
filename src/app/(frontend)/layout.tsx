@@ -1,5 +1,6 @@
 import React from 'react'
 import { headers } from 'next/headers'
+import { Bricolage_Grotesque, IBM_Plex_Mono, Instrument_Sans } from 'next/font/google'
 import './styles.css'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
@@ -25,6 +26,37 @@ import { DEFAULT_ORG_NAME } from '@/lib/branding'
  * Saying it outright is what that side effect was doing by accident.
  */
 export const dynamic = 'force-dynamic'
+
+/**
+ * Three type roles, self-hosted by `next/font` so nothing is fetched from a
+ * third party at runtime.
+ *
+ * `latin-ext` is not optional: the interface ships in Latvian and Lithuanian,
+ * and without it every ā/ē/ķ/ļ/ņ falls back to a system face mid-word.
+ *
+ * - display — headings and the figures in the stats band
+ * - body    — everything read as prose or interface text
+ * - data    — eyebrows, dates, times, counts; anything that wants to line up
+ *             in a column. Loaded at three weights because it is not variable.
+ */
+const displayFont = Bricolage_Grotesque({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  variable: '--font-display-face',
+})
+
+const bodyFont = Instrument_Sans({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  variable: '--font-body-face',
+})
+
+const dataFont = IBM_Plex_Mono({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500', '600'],
+  display: 'swap',
+  variable: '--font-data-face',
+})
 
 /**
  * Fallback metadata only. Title and description come from `Settings` /
@@ -56,7 +88,11 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
   const messages = getMessages(locale)
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html
+      lang={locale}
+      suppressHydrationWarning
+      className={`${displayFont.variable} ${bodyFont.variable} ${dataFont.variable}`}
+    >
       <head>
         {favicon16 && typeof favicon16 !== 'string' && favicon16.url && (
           <link rel="icon" type="image/png" sizes="16x16" href={favicon16.url} />
@@ -79,7 +115,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           facebookPixelId={settings?.facebookPixelId || undefined}
         />
       </head>
-      <body className="min-h-screen flex flex-col bg-neutral-50 dark:bg-surface dark:text-surface-text transition-colors">
+      <body className="min-h-screen flex flex-col bg-paper text-ink dark:bg-surface dark:text-surface-text transition-colors antialiased">
         <script
           dangerouslySetInnerHTML={{
             __html: `

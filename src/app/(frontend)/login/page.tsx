@@ -110,7 +110,7 @@ function LoginContent() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center py-16">
         <div className="w-full max-w-md px-4">
-          <div className="bg-white dark:bg-surface-raised rounded-lg shadow-md p-8">
+          <div className="panel p-8 md:p-10">
             <div className="text-center">
               <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg
@@ -127,7 +127,7 @@ function LoginContent() {
                   />
                 </svg>
               </div>
-              <h1 className="text-2xl font-bold text-ink dark:text-surface-text mb-4">
+              <h1 className="display-2 mb-4 text-ink dark:text-surface-text">
                 {t('login', 'checkYourEmail')}
               </h1>
               <p className="text-neutral-600 dark:text-neutral-300 mb-6">
@@ -156,22 +156,22 @@ function LoginContent() {
   return (
     <div className="min-h-[60vh] flex items-center justify-center py-16">
       <div className="w-full max-w-md px-4">
-        <div className="bg-white dark:bg-surface-raised rounded-lg shadow-md p-8">
-          <h1 className="text-2xl font-bold text-ink dark:text-surface-text text-center mb-6">
+        <div className="panel p-8 md:p-10">
+          <h1 className="display-2 mb-8 text-center text-ink dark:text-surface-text">
             {t('login', 'memberLogin')}
           </h1>
 
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-lg mb-4 text-sm">
+            <div className="mb-5 rounded-lg border border-rose-600/25 bg-rose-500/10 p-3.5 text-sm text-rose-800 dark:text-rose-300">
               {error}
             </div>
           )}
 
-          <div className="flex mb-6 bg-neutral-100 dark:bg-surface rounded-lg p-1">
+          <div className="mb-7 flex gap-1 rounded-xl border border-line bg-neutral-100 p-1 dark:border-line-dark dark:bg-surface">
             <button
               type="button"
               onClick={() => setLoginMode('password')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 loginMode === 'password'
                   ? 'bg-white dark:bg-surface-raised text-ink dark:text-surface-text shadow-sm'
                   : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
@@ -182,7 +182,7 @@ function LoginContent() {
             <button
               type="button"
               onClick={() => setLoginMode('magic-link')}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+              className={`flex-1 rounded-lg px-4 py-2 text-sm font-medium transition-colors ${
                 loginMode === 'magic-link'
                   ? 'bg-white dark:bg-surface-raised text-ink dark:text-surface-text shadow-sm'
                   : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300'
@@ -197,7 +197,7 @@ function LoginContent() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {t('login', 'email')}
                 </label>
@@ -206,14 +206,14 @@ function LoginContent() {
                   id="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value.toLowerCase())}
-                  className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-gray-900 dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="field"
                   required
                 />
               </div>
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {t('login', 'password')}
                 </label>
@@ -223,7 +223,7 @@ function LoginContent() {
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full px-4 py-2 pr-10 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-gray-900 dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                    className="field pr-10"
                     required
                   />
                   <button
@@ -311,7 +311,7 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={loading || !agreedToTerms}
-                className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? t('common', 'loading') : t('login', 'signIn')}
               </button>
@@ -324,7 +324,7 @@ function LoginContent() {
               <div>
                 <label
                   htmlFor="magic-email"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {t('login', 'email')}
                 </label>
@@ -333,7 +333,7 @@ function LoginContent() {
                   id="magic-email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value.toLowerCase())}
-                  className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-gray-900 dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                  className="field"
                   required
                   placeholder={t('forgotPassword', 'emailPlaceholder')}
                 />
@@ -373,7 +373,7 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={loading || !agreedToTerms}
-                className="w-full bg-brand text-white py-3 rounded-lg hover:bg-brand-dark transition-colors font-semibold disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? t('common', 'sending') : t('login', 'sendLoginLink')}
               </button>
@@ -397,7 +397,7 @@ export default function LoginPage() {
       fallback={
         <div className="min-h-[60vh] flex items-center justify-center py-16">
           <div className="w-full max-w-md px-4">
-            <div className="bg-white dark:bg-surface-raised rounded-lg shadow-md p-8">
+            <div className="panel p-8 md:p-10">
               <div className="text-center">
                 <div className="animate-pulse">
                   <div className="h-8 bg-neutral-200 dark:bg-neutral-700 rounded w-48 mx-auto mb-6"></div>

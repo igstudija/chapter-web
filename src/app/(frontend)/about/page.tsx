@@ -2,7 +2,8 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Mail, Phone, ChevronRight } from 'lucide-react'
+import { Mail, Phone } from 'lucide-react'
+import { PageHeader } from '@/components'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { headers } from 'next/headers'
@@ -75,22 +76,12 @@ export default async function AboutPage() {
   const pageTitle = page.title || t('nav', 'about')
 
   return (
-    <div className="py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-          <Link href="/" className="hover:text-brand transition-colors">
-            {t('common', 'home')}
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-ink dark:text-surface-text font-medium">
-            {pageTitle}
-          </span>
-        </nav>
-
-        <h1 className="text-4xl font-bold text-ink dark:text-surface-text mb-8 text-center">
-          {pageTitle}
-        </h1>
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <PageHeader
+        title={pageTitle}
+        breadcrumbs={[{ label: t('common', 'home'), href: '/' }, { label: pageTitle }]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
 
         {page.introduction && (
           <div
@@ -101,7 +92,7 @@ export default async function AboutPage() {
 
         {page.chapterLeaders && page.chapterLeaders.length > 0 && (
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-ink dark:text-surface-text mb-8 text-center">
+            <h2 className="display-2 mb-10 text-ink dark:text-surface-text">
               Chapter Leadership Team
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -117,7 +108,7 @@ export default async function AboutPage() {
                 return (
                   <div
                     key={index}
-                    className="bg-white dark:bg-surface-raised rounded-lg shadow-md p-6 flex flex-col"
+                    className="panel p-6 flex flex-col"
                   >
                     {profileImage?.url && (
                       <div className="mb-4">
@@ -167,8 +158,8 @@ export default async function AboutPage() {
         )}
 
         {page.howWeWork && (
-          <section className="mb-16 bg-neutral-50 dark:bg-surface-raised rounded-lg p-8">
-            <h2 className="text-3xl font-bold text-ink dark:text-surface-text mb-6">
+          <section className="mb-16 panel p-8">
+            <h2 className="display-2 mb-6 text-ink dark:text-surface-text">
               {page.howWeWork.title || 'How We Work'}
             </h2>
             {page.howWeWork.description && (
@@ -184,7 +175,7 @@ export default async function AboutPage() {
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   {page.howWeWork.meetings.map((meeting: any, index: number) => (
-                    <div key={index} className="bg-white dark:bg-surface rounded-lg p-6">
+                    <div key={index} className="panel p-6">
                       <div className="space-y-2 text-neutral-700 dark:text-neutral-300">
                         {meeting.frequency && (
                           <p>
@@ -217,14 +208,14 @@ export default async function AboutPage() {
 
         {page.principles && page.principles.length > 0 && (
           <section className="mb-16">
-            <h2 className="text-3xl font-bold text-ink dark:text-surface-text mb-8 text-center">
+            <h2 className="display-2 mb-10 text-ink dark:text-surface-text">
               {t('about', 'principlesTitle')}
             </h2>
             <div className="grid md:grid-cols-2 gap-6">
               {page.principles.map((principle: any, index: number) => (
                 <div
                   key={index}
-                  className="bg-white dark:bg-surface-raised border-l-4 border-brand p-6 rounded-r-lg"
+                  className="panel border-l-2 border-l-brand p-6"
                 >
                   <h3 className="text-xl font-semibold text-ink dark:text-surface-text mb-2">
                     {principle.title}
@@ -237,8 +228,8 @@ export default async function AboutPage() {
         )}
 
         {page.membershipInfo && (
-          <section className="bg-brand text-white rounded-lg p-8 text-center">
-            <h2 className="text-3xl font-bold mb-4">
+          <section className="relative overflow-hidden rounded-xl bg-neutral-900 p-10 text-center text-white dark:bg-neutral-950">
+            <h2 className="display-2 mb-4">
               {page.membershipInfo.title || 'Join Our Chapter'}
             </h2>
             {page.membershipInfo.description && (

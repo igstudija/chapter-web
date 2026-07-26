@@ -3,8 +3,8 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 import config from '@/payload.config'
-import { Calendar, MapPin, ArrowRight, ChevronRight } from 'lucide-react'
-import { EventRegistrationForm } from '@/components'
+import { Calendar, MapPin, ArrowRight } from 'lucide-react'
+import { EventRegistrationForm, PageHeader } from '@/components'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { headers } from 'next/headers'
@@ -133,40 +133,35 @@ export default async function EventPage({ params }: Props) {
   })
 
   return (
-    <article className="py-8">
+    <article className="min-h-screen bg-paper dark:bg-surface">
       <JsonLd data={eventSchema} />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-          <Link href="/" className="hover:text-brand transition-colors">
-            {t('common', 'home')}
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <Link href="/events" className="hover:text-brand transition-colors">
-            {t('events', 'title')}
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-ink dark:text-surface-text font-medium line-clamp-1">
-            {event.title}
-          </span>
-        </nav>
-
-        <div className="flex flex-col lg:flex-row gap-12">
+      <PageHeader
+        title={event.title}
+        breadcrumbs={[
+          { label: t('common', 'home'), href: '/' },
+          { label: t('events', 'title'), href: '/events' },
+          { label: event.title },
+        ]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-14 lg:flex-row lg:gap-16">
           {/* Main Content */}
           <div className="lg:w-2/3">
-            <h1 className="text-4xl font-bold text-ink dark:text-surface-text mb-6">
-              {event.title}
-            </h1>
-
-            <div className="flex flex-wrap gap-4 mb-8 text-neutral-600 dark:text-neutral-300">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-brand" />
-                <span>{formattedDate}</span>
+            {/*
+              When and where — the two things a reader opens an event page for.
+              Set in the mono face on a ruled strip so they are found without
+              being read, the same treatment the date chip on the event cards
+              uses.
+            */}
+            <div className="mb-10 flex flex-wrap items-center gap-x-6 gap-y-3 border-y border-line py-4 dark:border-line-dark">
+              <div className="flex items-center gap-2.5 text-ink dark:text-surface-text">
+                <Calendar className="h-4 w-4 shrink-0 text-brand" />
+                <span className="tabular font-mono text-sm">{formattedDate}</span>
               </div>
               {event.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-5 w-5 text-brand" />
-                  <span>{event.location}</span>
+                <div className="flex items-center gap-2.5 text-ink dark:text-surface-text">
+                  <MapPin className="h-4 w-4 shrink-0 text-brand" />
+                  <span className="text-sm">{event.location}</span>
                 </div>
               )}
             </div>
@@ -216,8 +211,8 @@ export default async function EventPage({ params }: Props) {
           {/* Sidebar */}
           <aside className="lg:w-1/3">
             <div className="sticky top-24 space-y-6">
-              <div className="bg-neutral-50 dark:bg-surface-raised rounded-lg p-6">
-                <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+              <div className="panel p-6">
+                <h2 className="eyebrow mb-5">
                   {t('events', 'upcomingEvents')}
                 </h2>
 
@@ -244,7 +239,7 @@ export default async function EventPage({ params }: Props) {
                                 />
                               </div>
                             ) : (
-                              <div className="w-20 h-16 rounded bg-brand flex items-center justify-center shrink-0">
+                              <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-neutral-900">
                                 <Calendar className="h-6 w-6 text-white" />
                               </div>
                             )}
@@ -288,15 +283,15 @@ export default async function EventPage({ params }: Props) {
 
                 <Link
                   href="/events"
-                  className="mt-6 w-full bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors font-medium flex items-center justify-center gap-2"
+                  className="btn btn-line mt-6 w-full py-2.5 text-sm"
                 >
                   {t('events', 'title')} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
 
               {/* Blog Posts Section */}
-              <div className="bg-neutral-50 dark:bg-surface-raised rounded-lg p-6">
-                <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+              <div className="panel p-6">
+                <h2 className="eyebrow mb-5">
                   {t('blog', 'recentPosts')}
                 </h2>
 
@@ -325,7 +320,7 @@ export default async function EventPage({ params }: Props) {
                                 />
                               </div>
                             ) : (
-                              <div className="w-20 h-16 rounded bg-brand flex items-center justify-center shrink-0">
+                              <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-neutral-900">
                                 <Calendar className="h-6 w-6 text-white" />
                               </div>
                             )}
@@ -354,7 +349,7 @@ export default async function EventPage({ params }: Props) {
 
                 <Link
                   href="/blog"
-                  className="mt-6 w-full bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors font-medium flex items-center justify-center gap-2"
+                  className="btn btn-line mt-6 w-full py-2.5 text-sm"
                 >
                   {t('blog', 'title')} <ArrowRight className="h-4 w-4" />
                 </Link>

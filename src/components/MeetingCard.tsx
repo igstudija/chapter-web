@@ -114,7 +114,7 @@ export function MeetingCard({ meeting, currentUserId, onEdit }: MeetingCardProps
   }
 
   return (
-    <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-sm">
+    <div className="panel">
       {/* Compact header - responsive: 2 rows on mobile, 1 row on desktop */}
       <div
         role="button"

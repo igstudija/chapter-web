@@ -141,7 +141,7 @@ function ResetPasswordForm() {
                 id="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
                 required
                 minLength={8}
                 placeholder={t('resetPassword', 'newPasswordPlaceholder')}
@@ -162,7 +162,7 @@ function ResetPasswordForm() {
                 id="confirmPassword"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-ink dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent"
+                className="field"
                 required
                 minLength={8}
                 placeholder={t('resetPassword', 'confirmPasswordPlaceholder')}

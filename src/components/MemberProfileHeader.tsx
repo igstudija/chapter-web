@@ -37,8 +37,15 @@ export function MemberProfileHeader({
 }: MemberProfileHeaderProps) {
   const { t } = useTranslations()
   return (
-    <div className="bg-white dark:bg-surface-raised rounded-lg shadow-sm p-6 mb-6">
-      <div className="flex flex-col md:flex-row gap-6 items-start">
+    /*
+      The masthead of the member area. It used to be a shadowed white card
+      floating on a grey page — the same treatment as the content below it, so
+      nothing established that this is the top of the screen. It is now the
+      page's own header: no card, a hairline closing it off, and the name at
+      display size so the hierarchy is stated once rather than repeated.
+    */
+    <header className="mb-8 border-b border-line pb-8 dark:border-line-dark">
+      <div className="flex flex-col items-start gap-6 md:flex-row md:gap-8">
         <div className="shrink-0">
           {profileImage?.url ? (
             <img
@@ -46,40 +53,45 @@ export function MemberProfileHeader({
               alt={member.name}
               width={120}
               height={120}
-              className="rounded-full object-cover w-28 h-28"
+              className="h-28 w-28 rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
             />
           ) : (
-            <div className="w-28 h-28 bg-brand rounded-full flex items-center justify-center text-white text-3xl font-bold">
+            /*
+              A solid brand-red disc with white initials was the loudest thing
+              on the page and said nothing. Initials on a hairline circle read
+              as a placeholder, which is what it is.
+            */
+            <div className="flex h-28 w-28 items-center justify-center rounded-full border border-line font-display text-3xl font-bold tracking-tight text-brand dark:border-line-dark">
               {member.name?.charAt(0)}
               {member.surname?.charAt(0)}
             </div>
           )}
         </div>
 
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-ink dark:text-surface-text">
+        <div className="min-w-0 flex-1">
+          <h1 className="display-2 text-ink dark:text-surface-text">
             {member.name} {member.surname}
           </h1>
-          <p className="text-neutral-600 dark:text-neutral-300">
+          <p className="mt-2 text-base text-ink-soft dark:text-neutral-400">
             {member.jobPosition || t('profile', 'member')}, {member.company}
           </p>
 
-          <div className="flex flex-wrap gap-4 mt-4 text-sm text-neutral-600 dark:text-neutral-300">
+          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2.5 text-sm">
             {(member.loginEmail || member.companyEmail) && (
               <a
                 href={`mailto:${member.loginEmail || member.companyEmail}`}
-                className="flex items-center gap-1 hover:text-brand"
+                className="flex items-center gap-2 text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
               >
-                <Mail className="h-4 w-4" />
+                <Mail className="h-3.5 w-3.5 shrink-0" />
                 {member.loginEmail || member.companyEmail}
               </a>
             )}
             {(member.phone || member.companyPhone) && (
               <a
                 href={`tel:${member.phone || member.companyPhone}`}
-                className="flex items-center gap-1 hover:text-brand"
+                className="tabular flex items-center gap-2 font-mono text-xs text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
               >
-                <Phone className="h-4 w-4" />
+                <Phone className="h-3.5 w-3.5 shrink-0" />
                 {member.phone || member.companyPhone}
               </a>
             )}
@@ -88,19 +100,16 @@ export function MemberProfileHeader({
                 href={`https://${member.website}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1 hover:text-brand"
+                className="flex items-center gap-2 text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
               >
-                <Globe className="h-4 w-4" />
+                <Globe className="h-3.5 w-3.5 shrink-0" />
                 {member.website}
               </a>
             )}
           </div>
 
           {previewLink && (
-            <Link
-              href={previewLink}
-              className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors text-sm font-medium"
-            >
+            <Link href={previewLink} className="btn btn-line mt-6 px-4 py-2.5 text-sm">
               <Eye className="h-4 w-4" />
               {t('profile', 'previewOthers')}
             </Link>
@@ -108,17 +117,17 @@ export function MemberProfileHeader({
         </div>
 
         {logo?.url && (
-          <div className="shrink-0 hidden md:block bg-white rounded-lg p-2">
+          <div className="hidden shrink-0 rounded-lg bg-white p-3 ring-1 ring-line md:block">
             <img
               src={getThumbnailUrl(logo.url, 'card') || logo.url}
               alt={member.company}
               width={140}
               height={70}
-              className="object-contain max-h-16"
+              className="max-h-16 object-contain"
             />
           </div>
         )}
       </div>
-    </div>
+    </header>
   )
 }

@@ -6,22 +6,80 @@
 /**
  * Theme tokens.
  *
- * Every token reads a bare custom property first and falls back to the
+ * Every brand token reads a bare custom property first and falls back to the
  * default below. That indirection is what makes the palette themable per
  * organisation at runtime: `<BrandStyle />` emits a `:root` block setting
  * `--brand`, `--brand-dark`, `--accent` from the org's branding fields, and
  * those win over the fallbacks without a rebuild. Install with no branding
  * configured and you get the defaults.
+ *
+ * The brand colour is treated as ink, not wallpaper: it belongs to the logo,
+ * one primary action per view, the rules above a section label and the figures
+ * in the stats band. Flooding a full-bleed section with it is what made the
+ * old design read as a 2014 template, and it also punishes any organisation
+ * whose brand colour is light or low-contrast.
  */
 @theme {
+  /* ---------- Brand (org-themable) ---------- */
   --color-brand: var(--brand, #cf2030);
   --color-brand-dark: var(--brand-dark, #a6192e);
   --color-accent: var(--accent, #f59e0b);
-  --color-ink: var(--ink, #404040); /* neutral-700 */
-  --color-ink-light: var(--ink-light, #f5f5f5); /* neutral-100 */
-  --color-surface: var(--surface, #171717); /* neutral-900 */
-  --color-surface-raised: var(--surface-raised, #262626); /* neutral-800 */
-  --color-surface-text: var(--surface-text, #e5e5e5); /* neutral-200 */
+
+  /* ---------- Type ----------
+   * The three faces are loaded by `next/font` in the frontend layout, which
+   * defines `--font-*-face`. Naming them through the Tailwind scale means
+   * `font-display` / `font-mono` work everywhere and `--font-sans` retunes the
+   * default body face for the whole app at once.
+   */
+  --font-sans: var(--font-body-face), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: var(--font-display-face), var(--font-body-face), ui-sans-serif, system-ui,
+    sans-serif;
+  --font-mono: var(--font-data-face), ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  /* ---------- Neutrals ----------
+   * Retuned off Tailwind's pure grey to a faintly warm ramp, and the dark end
+   * pushed considerably deeper. This is deliberate leverage: dozens of screens
+   * that this redesign never opens are written against `neutral-*`, so moving
+   * the ramp itself upgrades them without touching their markup. The steps
+   * keep their relative lightness, so nothing that passed contrast before
+   * stops passing now.
+   */
+  --color-neutral-50: #f7f7f5;
+  --color-neutral-100: #efefec;
+  --color-neutral-200: #e4e4e0;
+  --color-neutral-300: #d2d2cd;
+  --color-neutral-400: #a3a39d;
+  --color-neutral-500: #78787c;
+  --color-neutral-600: #56565c;
+  --color-neutral-700: #3a3a3e;
+  --color-neutral-800: #1e1e21;
+  --color-neutral-900: #141416;
+  --color-neutral-950: #0b0b0d;
+
+  /* ---------- Semantic surfaces ---------- */
+  --color-ink: var(--ink, #17171a);
+  --color-ink-soft: #56565c;
+  --color-ink-light: var(--ink-light, #f5f5f5);
+  --color-paper: #f7f7f5;
+  --color-card: #ffffff;
+  --color-line: #e4e4e0;
+  --color-line-strong: #d2d2cd;
+  --color-surface: var(--surface, #141416);
+  --color-surface-raised: var(--surface-raised, #1e1e21);
+  --color-surface-text: var(--surface-text, #e6e6e3);
+  --color-line-dark: #2c2c31;
+
+  /* ---------- Elevation ----------
+   * Redefined rather than removed, for the same reason as the neutral ramp:
+   * `shadow-md hover:shadow-lg` is the most common card idiom in this codebase.
+   * A soft drop shadow is replaced by a hairline ring plus the faintest lift,
+   * so every existing card loses its 2014 puffiness in place.
+   */
+  --shadow-xs: 0 1px 1px 0 rgb(17 17 20 / 0.03);
+  --shadow-sm: 0 1px 2px 0 rgb(17 17 20 / 0.04), 0 0 0 1px rgb(17 17 20 / 0.05);
+  --shadow-md: 0 1px 2px 0 rgb(17 17 20 / 0.04), 0 0 0 1px rgb(17 17 20 / 0.07);
+  --shadow-lg: 0 10px 28px -12px rgb(17 17 20 / 0.18), 0 0 0 1px rgb(17 17 20 / 0.09);
+  --shadow-xl: 0 22px 48px -20px rgb(17 17 20 / 0.24), 0 0 0 1px rgb(17 17 20 / 0.09);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,45 +88,546 @@
   }
 }
 
+@layer base {
+  /**
+   * Headings take the display face globally. Pages this redesign never opens
+   * still pick up the new voice; pages it does open only have to worry about
+   * size, weight and rhythm.
+   */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.021em;
+    text-wrap: balance;
+  }
+
+  /* Long-form paragraphs read better without orphans on the last line. */
+  p {
+    text-wrap: pretty;
+  }
+
+  /**
+   * One visible focus treatment for the whole app. The previous default was
+   * whatever the browser drew, which on a white card was a thin blue box that
+   * disappeared against light borders.
+   */
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--color-brand) 22%, transparent);
+  }
+
+  /* Force light color-scheme for form inputs in light mode */
+  input,
+  select,
+  textarea {
+    color-scheme: light;
+  }
+
+  /* Force dark color-scheme for form inputs in dark mode */
+  .dark input,
+  .dark select,
+  .dark textarea {
+    color-scheme: dark;
+  }
+}
+
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Design primitives
+ *
+ * Written as plain classes rather than `@apply` chains so the cascade stays
+ * readable: each one owns a small, non-overlapping set of properties and none
+ * of them sets margin, which is what causes primitives to silently cancel each
+ * other out when they meet in the same element.
+ *
+ * They live in `components` on purpose. Unlayered CSS outranks everything
+ * Tailwind emits, so a primitive declared at the top level would quietly beat
+ * any utility used to adjust it — `card-surface dark:bg-white` would keep the
+ * primitive's background and the override would look broken for no visible
+ * reason. In the components layer the utility wins, which is the whole point
+ * of having both.
+ * ------------------------------------------------------------------------ */
+
+@layer components {
+
+/**
+ * Eyebrow — the small mono label that opens a section.
+ *
+ * The mono face is not decoration here. Half the labels in this product are
+ * data that wants to line up (dates, times, counts, euro figures), and using
+ * the same face for the labels above them ties the two together.
+ */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+.dark .eyebrow {
+  color: var(--color-neutral-400);
+}
+
+/**
+ * Section opener — a brand-coloured tick, then the eyebrow, then a hairline
+ * running to the end of the measure. The rule encodes where a section starts;
+ * it is the only structural device on the page that repeats.
+ */
+.section-mark {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.section-mark::before {
+  content: '';
+  width: 1.5rem;
+  height: 2px;
+  flex: none;
+  background: var(--color-brand);
+}
+.section-mark::after {
+  content: '';
+  height: 1px;
+  flex: 1;
+  background: var(--color-line);
+}
+.dark .section-mark::after {
+  background: var(--color-line-dark);
+}
+
+/**
+ * Display scale.
+ *
+ * The jump from the mono eyebrow at 11px to the headline at 100px+ is the
+ * point. A page whose largest type is 40px reads as a document; one that
+ * commits to a real scale reads as a designed thing. Tracking tightens as the
+ * size grows because a grotesque set large needs it and set small does not.
+ */
+.display-1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 1rem + 7.6vw, 7rem);
+  line-height: 0.9;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+.display-page {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 1.3rem + 3.8vw, 4.5rem);
+  line-height: 0.96;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.display-2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.875rem, 1.1rem + 3vw, 3.25rem);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.037em;
+}
+
+/**
+ * Figures in the stats band. Tabular so the columns of digits line up.
+ *
+ * The ceiling on the secondary size is set by the longest real value in a
+ * third-width cell — "€ 39 287 788" — not by what looks biggest in isolation.
+ * A euro amount that breaks across two lines is worse than one set smaller,
+ * so the size stops where the number still fits on one line.
+ */
+.stat-figure {
+  font-family: var(--font-display);
+  font-size: clamp(1.875rem, 1.1rem + 1.9vw, 2.625rem);
+  line-height: 0.95;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  text-wrap: balance;
+}
+.stat-figure-lead {
+  font-family: var(--font-display);
+  font-size: clamp(2.75rem, 1.2rem + 5.4vw, 5.5rem);
+  line-height: 0.86;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  text-wrap: balance;
+}
+
+/** Figures that belong in a column: euro amounts, counts, dates, times. */
+.tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+}
+
+/**
+ * Card — hairline first, elevation only on hover, and the lift is 2px rather
+ * than a shadow bloom. `border-color` carries the hover state so the card
+ * still reads as interactive with shadows disabled.
+ */
+.card-surface {
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+.dark .card-surface {
+  background: var(--color-surface-raised);
+  border-color: var(--color-line-dark);
+}
+.card-surface:hover {
+  border-color: color-mix(in oklab, var(--color-brand) 34%, var(--color-line));
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+.dark .card-surface:hover {
+  border-color: color-mix(in oklab, var(--color-brand) 46%, var(--color-line-dark));
+  box-shadow: 0 14px 34px -18px rgb(0 0 0 / 0.75);
+}
+
+/**
+ * Form controls.
+ *
+ * Every text input in this product carried the same eleven-utility class
+ * string, copy-pasted per field, which is how the contact form and the login
+ * form ended up with different border colours and focus rings. One class, one
+ * focus treatment: the border takes the brand colour and a soft ring grows
+ * around it, replacing the browser default that vanished against a light
+ * border.
+ */
+.field {
+  width: 100%;
+  border-radius: 0.5rem;
+  border: 1px solid var(--color-line-strong);
+  background: var(--color-card);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9375rem;
+  color: var(--color-ink);
+  transition:
+    border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.field::placeholder {
+  color: var(--color-neutral-400);
+}
+.field:focus,
+.field:focus-visible {
+  outline: none;
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-brand) 16%, transparent);
+}
+.dark .field {
+  background: var(--color-surface);
+  border-color: var(--color-line-dark);
+  color: var(--color-surface-text);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-ink);
+}
+.dark .field-label {
+  color: var(--color-surface-text);
+}
+
+/**
+ * Panel — a card that is a container, not a target. Same surface and hairline
+ * as `card-surface` with none of the hover behaviour, so a sidebar box does
+ * not lift under the cursor and promise a click it cannot honour.
+ */
+.panel {
+  background: var(--color-card);
+  border: 1px solid var(--color-line);
+  border-radius: 0.75rem;
+}
+.dark .panel {
+  background: var(--color-surface-raised);
+  border-color: var(--color-line-dark);
+}
+
+/**
+ * Nav link — the underline grows from the left on hover rather than appearing
+ * all at once, which is the only motion in the header.
+ */
+.nav-link {
+  position: relative;
+  padding-block: 0.35rem;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 2px;
+  width: 100%;
+  background: var(--color-brand);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.nav-link:hover::after,
+.nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/**
+ * Buttons. `btn` carries only shape and type; `btn-primary` / `btn-line` carry
+ * only colour. Keeping those disjoint is what stops one from overriding the
+ * other depending on class order.
+ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.12s ease;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-primary {
+  background: var(--color-brand);
+  color: #fff;
+  border: 1px solid transparent;
+}
+.btn-primary:hover {
+  background: var(--color-brand-dark);
+}
+.btn-line {
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-line-strong);
+}
+.btn-line:hover {
+  border-color: var(--color-ink);
+}
+.dark .btn-line {
+  color: var(--color-surface-text);
+  border-color: var(--color-line-dark);
+}
+.dark .btn-line:hover {
+  border-color: var(--color-neutral-400);
+}
+/* On a photographic hero the outline button sits on an unknown backdrop. */
+.btn-line-invert {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgb(255 255 255 / 0.45);
+  backdrop-filter: blur(6px);
+}
+.btn-line-invert:hover {
+  background: rgb(255 255 255 / 0.12);
+  border-color: #fff;
+}
+
+/**
+ * Iconify glyphs come back as flat black SVGs. Painting them through a mask
+ * lets them inherit `currentColor`, so a CMS-chosen icon takes the org's brand
+ * colour and stays legible in dark mode — neither of which works when the
+ * colour is baked into the request URL.
+ */
+.masked-icon {
+  display: inline-block;
+  background-color: currentColor;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+}
+
+/**
+ * Hero entrance. One orchestrated sequence on load rather than effects
+ * scattered through the page; each child declares its own delay.
+ */
+.rise-in {
+  animation: rise-in 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+/**
+ * Scroll reveal. The class ships in the hidden state and `<Reveal>` adds
+ * `is-visible` when the element crosses into view. Anything that never gets
+ * observed — JavaScript off, an old browser — is caught by the `no-js` rule
+ * below, so content is never left invisible by a failed effect.
+ */
+.reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  transition:
+    opacity 0.75s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.75s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/**
+ * Grain. A flat dark panel reads as a coloured rectangle; the same panel with
+ * a trace of noise reads as a surface. Generated inline so it costs one
+ * gradient's worth of bytes and no request.
+ */
+.grain {
+  position: relative;
+}
+.grain::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+/**
+ * Logo wall. The companies page is a roster of one seat per profession, so it
+ * should read as a single board rather than a scatter of floating tiles. One
+ * pixel of grid gap over a line-coloured backdrop draws shared hairlines, and
+ * the logos sit desaturated until pointed at — otherwise thirty brand palettes
+ * fight each other and the page has no colour of its own.
+ */
+.logo-wall {
+  display: grid;
+  overflow: hidden;
+  border-radius: 0.875rem;
+  /*
+   * The board is white in both themes because that is what company logos are
+   * drawn for. Separators are painted by the cells themselves rather than by
+   * a coloured backdrop showing through a 1px gap: a group whose member count
+   * does not divide evenly by the column count would otherwise end in a grey
+   * hole. Painted this way the remainder of the last row is plain white — and
+   * on a roster that holds one seat per profession, an unfilled slot is the
+   * right thing to show.
+   */
+  background: #fff;
+  box-shadow: inset 1px 1px 0 var(--color-line);
+}
+.logo-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  padding: 1.25rem;
+  box-shadow: inset -1px -1px 0 var(--color-line);
+  transition: background-color 0.25s ease;
+}
+.logo-cell:hover {
+  background: #fcfcfb;
+}
+.logo-cell img,
+.logo-cell span {
+  transition:
+    filter 0.35s ease,
+    opacity 0.35s ease,
+    transform 0.35s ease;
+  filter: grayscale(1);
+  opacity: 0.72;
+}
+.logo-cell:hover img,
+.logo-cell:focus-visible img,
+.logo-cell:hover span,
+.logo-cell:focus-visible span {
+  filter: none;
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in {
+    animation: none;
+  }
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .card-surface:hover {
+    transform: none;
+  }
+  .logo-cell:hover img {
+    transform: none;
+  }
+  .nav-link::after {
+    transition: none;
+  }
+}
+
+}
+/* end @layer components */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Long-form content
+ * ------------------------------------------------------------------------ */
+
+/* Light mode prose styles - brand colour for links and bullets */
+.prose {
+  --tw-prose-body: #3a3a3e;
+  --tw-prose-headings: var(--color-ink);
+  --tw-prose-links: var(--color-brand);
+  --tw-prose-counters: var(--color-brand);
+  --tw-prose-bullets: var(--color-brand);
+  --tw-prose-quote-borders: var(--color-brand);
+  --tw-prose-hr: var(--color-line);
+}
+
 /* Dark mode prose styles */
 .dark .prose {
-  --tw-prose-body: #e5e5e5; /* neutral-200 */
+  --tw-prose-body: #d4d4d0;
   --tw-prose-headings: #ffffff;
-  --tw-prose-lead: #d4d4d4; /* neutral-300 */
+  --tw-prose-lead: #b9b9b4;
   --tw-prose-links: var(--color-brand);
   --tw-prose-bold: #ffffff;
   --tw-prose-counters: var(--color-brand);
   --tw-prose-bullets: var(--color-brand);
-  --tw-prose-hr: #404040; /* neutral-700 */
-  --tw-prose-quotes: #e5e5e5; /* neutral-200 */
+  --tw-prose-hr: var(--color-line-dark);
+  --tw-prose-quotes: #e6e6e3;
   --tw-prose-quote-borders: var(--color-brand);
-  --tw-prose-captions: #a3a3a3; /* neutral-400 */
+  --tw-prose-captions: #a3a39d;
   --tw-prose-code: #ffffff;
-  --tw-prose-pre-code: #e5e5e5; /* neutral-200 */
-  --tw-prose-pre-bg: #171717; /* neutral-900 */
-  --tw-prose-th-borders: #525252; /* neutral-600 */
-  --tw-prose-td-borders: #404040; /* neutral-700 */
+  --tw-prose-pre-code: #e6e6e3;
+  --tw-prose-pre-bg: #0b0b0d;
+  --tw-prose-th-borders: #3a3a3e;
+  --tw-prose-td-borders: var(--color-line-dark);
 }
-
-/* Light mode prose styles - brand colour for links and bullets */
-.prose {
-  --tw-prose-links: var(--color-brand);
-  --tw-prose-counters: var(--color-brand);
-  --tw-prose-bullets: var(--color-brand);
-  --tw-prose-quote-borders: var(--color-brand);
-}
-
-/* Force light color-scheme for form inputs in light mode */
-input,
-select,
-textarea {
-  color-scheme: light;
-}
-
-/* Force dark color-scheme for form inputs in dark mode */
-.dark input,
-.dark select,
-.dark textarea {
-  color-scheme: dark;
-}
-

@@ -5,10 +5,11 @@ import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import FAQClient from './FAQClient'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ChevronRight, ArrowRight, Calendar, MapPin } from 'lucide-react'
+import { ArrowRight, Calendar, MapPin } from 'lucide-react'
 import { headers } from 'next/headers'
 import { generateMetadata as generateSeoMetadata, generateFAQSchema } from '@/lib/seoHelpers'
 import { JsonLd } from '@/components/JsonLd'
+import { PageHeader } from '@/components'
 
 export async function generateMetadata() {
   const headersList = await headers()
@@ -103,30 +104,15 @@ export default async function FaqPage() {
   const faqSchema = generateFAQSchema(faqSchemaData)
 
   return (
-    <div className="py-8">
+    <div className="min-h-screen bg-paper dark:bg-surface">
       <JsonLd data={faqSchema} />
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-          <Link href="/" className="hover:text-brand transition-colors">
-            {t('common', 'home')}
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-ink dark:text-surface-text font-medium">{pageTitle}</span>
-        </nav>
-
-        <div className="mb-12">
-          <h1 className="text-4xl font-bold text-ink dark:text-surface-text mb-4">
-            {pageTitle}
-          </h1>
-          {pageDescription && (
-            <p className="text-lg text-neutral-600 dark:text-neutral-300 max-w-2xl">
-              {pageDescription}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-12">
+      <PageHeader
+        title={pageTitle}
+        lead={pageDescription || undefined}
+        breadcrumbs={[{ label: t('common', 'home'), href: '/' }, { label: pageTitle }]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+        <div className="flex flex-col gap-14 lg:flex-row lg:gap-16">
           {/* Main Content */}
           <div className="lg:w-2/3">
             {faqs.length > 0 ? (
@@ -138,9 +124,9 @@ export default async function FaqPage() {
                 }}
               />
             ) : (
-              <div className="bg-white dark:bg-surface-raised rounded-lg shadow-md p-8 text-center">
-                <p className="text-neutral-500 dark:text-neutral-400">{t('faq', 'noFaqs')}</p>
-              </div>
+              <p className="border-t border-line py-12 text-sm text-ink-soft dark:border-line-dark dark:text-neutral-400">
+                {t('faq', 'noFaqs')}
+              </p>
             )}
           </div>
 
@@ -148,8 +134,8 @@ export default async function FaqPage() {
           <aside className="lg:w-1/3">
             <div className="sticky top-24 space-y-6">
               {/* Events Section */}
-              <div className="bg-neutral-50 dark:bg-surface-raised rounded-lg p-6">
-                <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+              <div className="panel p-6">
+                <h2 className="eyebrow mb-5">
                   {t('events', 'upcomingEvents')}
                 </h2>
 
@@ -174,8 +160,8 @@ export default async function FaqPage() {
                                 />
                               </div>
                             ) : (
-                              <div className="w-20 h-16 rounded bg-brand flex items-center justify-center shrink-0">
-                                <Calendar className="h-6 w-6 text-white" />
+                              <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-neutral-900">
+                                <Calendar className="h-5 w-5 text-white/40" />
                               </div>
                             )}
                             <div className="min-w-0">
@@ -216,15 +202,15 @@ export default async function FaqPage() {
 
                 <Link
                   href="/events"
-                  className="mt-6 w-full bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors font-medium flex items-center justify-center gap-2"
+                  className="btn btn-line mt-6 w-full py-2.5 text-sm"
                 >
                   {t('events', 'title')} <ArrowRight className="h-4 w-4" />
                 </Link>
               </div>
 
               {/* Blog Posts Section */}
-              <div className="bg-neutral-50 dark:bg-surface-raised rounded-lg p-6">
-                <h2 className="text-xl font-bold text-ink dark:text-surface-text mb-4">
+              <div className="panel p-6">
+                <h2 className="eyebrow mb-5">
                   {t('blog', 'recentPosts')}
                 </h2>
 
@@ -253,8 +239,8 @@ export default async function FaqPage() {
                                 />
                               </div>
                             ) : (
-                              <div className="w-20 h-16 rounded bg-brand flex items-center justify-center shrink-0">
-                                <Calendar className="h-6 w-6 text-white" />
+                              <div className="flex h-16 w-20 shrink-0 items-center justify-center rounded-lg bg-neutral-900">
+                                <Calendar className="h-5 w-5 text-white/40" />
                               </div>
                             )}
                             <div className="min-w-0">
@@ -282,7 +268,7 @@ export default async function FaqPage() {
 
                 <Link
                   href="/blog"
-                  className="mt-6 w-full bg-brand text-white px-4 py-2 rounded-lg hover:bg-brand-dark transition-colors font-medium flex items-center justify-center gap-2"
+                  className="btn btn-line mt-6 w-full py-2.5 text-sm"
                 >
                   {t('blog', 'title')} <ArrowRight className="h-4 w-4" />
                 </Link>

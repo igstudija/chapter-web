@@ -195,7 +195,7 @@ export function Top40Grid({ entries }: Top40GridProps) {
             placeholder={t('top40Grid', 'searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+            className="field py-3 pl-12"
           />
         </div>
         <div className="hidden lg:flex rounded-lg border border-neutral-300 dark:border-neutral-600 overflow-hidden">
@@ -224,7 +224,7 @@ export function Top40Grid({ entries }: Top40GridProps) {
       {/* Prospects Grid/Table */}
       {paginatedEntries.length > 0 ? (
         viewMode === 'table' ? (
-          <div className="hidden lg:block bg-white dark:bg-neutral-800 rounded-lg shadow-sm overflow-hidden">
+          <div className="hidden lg:block panel overflow-hidden">
             {paginatedEntries.map((prospect, index) => {
               const submitter =
                 prospect.submittedBy && typeof prospect.submittedBy === 'object'
@@ -353,7 +353,7 @@ export function Top40Grid({ entries }: Top40GridProps) {
             return (
               <div
                 key={prospect.id}
-                className="bg-white dark:bg-neutral-800 rounded-lg shadow-sm p-4 border border-neutral-200 dark:border-neutral-600 hover:border-brand transition-colors"
+                className="card-surface p-4"
               >
                 {/* Submitter Badge */}
                 {submitter && submitterSlug && (
@@ -439,7 +439,7 @@ export function Top40Grid({ entries }: Top40GridProps) {
           })}
         </div>
       ) : (
-        <div className="text-center py-16 bg-white dark:bg-neutral-800 rounded-lg shadow-sm">
+        <div className="text-center py-16 panel">
           <p className="text-neutral-500 dark:text-neutral-400">{t('top40Grid', 'noEntries')}</p>
         </div>
       )}

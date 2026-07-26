@@ -5,6 +5,13 @@ import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 
+const SOCIAL_ICONS = {
+  facebook: { Icon: Facebook, label: 'Facebook' },
+  instagram: { Icon: Instagram, label: 'Instagram' },
+  twitter: { Icon: Twitter, label: 'Twitter' },
+  linkedin: { Icon: Linkedin, label: 'LinkedIn' },
+} as const
+
 export async function Footer() {
   const [siteSettings, currentSite] = await Promise.all([getSettings(), getSettings()])
 
@@ -14,144 +21,103 @@ export async function Footer() {
   const locale = (currentSite?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
+  const socialLinks = (
+    Object.keys(SOCIAL_ICONS) as (keyof typeof SOCIAL_ICONS)[]
+  ).flatMap((key) => {
+    const href = socialMedia?.[key]
+    return href ? [{ key, href, ...SOCIAL_ICONS[key] }] : []
+  })
+
+  const quickLinks = [
+    { href: '/about', label: t('footer', 'aboutUs') },
+    { href: '/events', label: t('footer', 'events') },
+    { href: '/contacts', label: t('footer', 'contact') },
+  ]
+
+  const legalLinks = [
+    { href: '/terms-and-conditions', label: t('footer', 'termsOfUse') },
+    { href: '/privacy-policy', label: t('footer', 'privacyPolicy') },
+    { href: '/cookie-policy', label: t('footer', 'cookiePolicy') },
+  ]
+
+  const linkClass =
+    'text-sm text-ink-soft transition-colors hover:text-brand dark:text-neutral-400 dark:hover:text-surface-text'
+
   return (
-    <footer className="bg-white dark:bg-neutral-800 text-neutral-800 dark:text-white py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
+    <footer className="border-t border-line bg-paper dark:border-line-dark dark:bg-surface">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid gap-12 md:grid-cols-[1.6fr_1fr_1fr]">
+          <div className="max-w-sm">
             {logoUrl ? (
-              <div className="mb-4">
-                <Image
-                  src={logoUrl}
-                  alt={siteName}
-                  width={120}
-                  height={120}
-                  className="object-contain dark:invert dark:brightness-0 dark:contrast-200"
-                />
-              </div>
+              <Image
+                src={logoUrl}
+                alt={siteName}
+                width={120}
+                height={120}
+                className="mb-5 object-contain dark:invert dark:brightness-0 dark:contrast-200"
+              />
             ) : (
-              <h3 className="text-xl font-bold mb-4">{siteName}</h3>
+              <h3 className="mb-5 font-display text-xl font-semibold tracking-tight">{siteName}</h3>
             )}
-            <p className="text-neutral-600 dark:text-neutral-300">{t('footer', 'description')}</p>
-            {socialMedia && (
-              <div className="flex gap-4 mt-4">
-                {socialMedia.facebook && (
+            <p className="text-sm leading-relaxed text-ink-soft dark:text-neutral-400">
+              {t('footer', 'description')}
+            </p>
+            {socialLinks.length > 0 && (
+              <div className="mt-6 flex gap-2">
+                {socialLinks.map(({ key, href, Icon, label }) => (
                   <a
-                    href={socialMedia.facebook}
+                    key={key}
+                    href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                    aria-label="Facebook"
+                    aria-label={label}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg border border-line text-ink-soft transition-colors hover:border-brand hover:text-brand dark:border-line-dark dark:text-neutral-400"
                   >
-                    <Facebook className="h-5 w-5" />
+                    <Icon className="h-4 w-4" />
                   </a>
-                )}
-                {socialMedia.instagram && (
-                  <a
-                    href={socialMedia.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                    aria-label="Instagram"
-                  >
-                    <Instagram className="h-5 w-5" />
-                  </a>
-                )}
-                {socialMedia.twitter && (
-                  <a
-                    href={socialMedia.twitter}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                    aria-label="Twitter"
-                  >
-                    <Twitter className="h-5 w-5" />
-                  </a>
-                )}
-                {socialMedia.linkedin && (
-                  <a
-                    href={socialMedia.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                    aria-label="LinkedIn"
-                  >
-                    <Linkedin className="h-5 w-5" />
-                  </a>
-                )}
+                ))}
               </div>
             )}
           </div>
+
           <div>
-            <h4 className="font-semibold mb-4">{t('footer', 'quickLinks')}</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  href="/about"
-                  className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                >
-                  {t('footer', 'aboutUs')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/events"
-                  className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                >
-                  {t('footer', 'events')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/contacts"
-                  className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                >
-                  {t('footer', 'contact')}
-                </Link>
-              </li>
+            <h4 className="eyebrow mb-5">{t('footer', 'quickLinks')}</h4>
+            <ul className="space-y-3">
+              {quickLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className={linkClass}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
+
           <div>
-            <h4 className="font-semibold mb-4">{t('footer', 'legal')}</h4>
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  href="/terms-and-conditions"
-                  className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                >
-                  {t('footer', 'termsOfUse')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/privacy-policy"
-                  className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                >
-                  {t('footer', 'privacyPolicy')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/cookie-policy"
-                  className="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors"
-                >
-                  {t('footer', 'cookiePolicy')}
-                </Link>
-              </li>
+            <h4 className="eyebrow mb-5">{t('footer', 'legal')}</h4>
+            <ul className="space-y-3">
+              {legalLinks.map((link) => (
+                <li key={link.href}>
+                  <Link href={link.href} className={linkClass}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
-        <div className="mt-8 pt-8 text-center text-neutral-500 dark:text-neutral-400">
-          <p>
+
+        <div className="mt-14 flex flex-col gap-2 border-t border-line pt-6 text-xs text-ink-soft dark:border-line-dark dark:text-neutral-500 sm:flex-row sm:items-center sm:justify-between">
+          <p className="font-mono">
             &copy; {new Date().getFullYear()} {siteName}. {t('common', 'allRightsReserved')}
           </p>
-          <p className="mt-2 text-sm">
+          <p>
             {t('footer', 'developedBy')}{' '}
             <a
               href="https://codars.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium hover:text-neutral-900 dark:hover:text-white transition-colors underline underline-offset-2"
+              className="font-medium underline underline-offset-4 transition-colors hover:text-brand"
             >
               Codars Design
             </a>

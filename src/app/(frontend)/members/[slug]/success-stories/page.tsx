@@ -179,8 +179,8 @@ export default async function MemberSuccessStoriesPage({
           }}
         />
 
-        <h2 className="text-lg font-bold text-ink dark:text-surface-text mb-4">
-          {memberUser.name.toUpperCase()} - {t('profile', 'successStories').toUpperCase()}
+        <h2 className="font-display mb-4 text-lg font-bold tracking-tight text-ink dark:text-surface-text">
+          {memberUser.name} — {t('profile', 'successStories')}
         </h2>
         {successStoriesData.docs.length > 0 ? (
           <div className="space-y-4">

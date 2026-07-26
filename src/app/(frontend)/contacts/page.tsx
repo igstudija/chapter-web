@@ -3,8 +3,7 @@ import config from '@/payload.config'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import ContactsClient from './ContactsClient'
-import Link from 'next/link'
-import { ChevronRight } from 'lucide-react'
+import { PageHeader } from '@/components'
 import { headers } from 'next/headers'
 import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
 
@@ -75,17 +74,12 @@ export default async function ContactsPage() {
   const pageTitle = pageData.title || t('contacts', 'title')
 
   return (
-    <div className="py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Breadcrumbs */}
-        <nav className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-          <Link href="/" className="hover:text-brand transition-colors">
-            {t('common', 'home')}
-          </Link>
-          <ChevronRight className="h-4 w-4" />
-          <span className="text-ink dark:text-surface-text font-medium">{pageTitle}</span>
-        </nav>
-
+    <div className="min-h-screen bg-paper dark:bg-surface">
+      <PageHeader
+        title={pageTitle}
+        breadcrumbs={[{ label: t('common', 'home'), href: '/' }, { label: pageTitle }]}
+      />
+      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <ContactsClient
           pageData={pageData}
           labels={{
