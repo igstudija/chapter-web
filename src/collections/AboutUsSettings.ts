@@ -137,7 +137,7 @@ export const AboutUsSettings: CollectionConfig = {
           name: 'title',
           type: 'text',
           required: true,
-          admin: { placeholder: 'e.g., Givers Gain' },
+          admin: { placeholder: 'e.g., Reliability' },
         },
         {
           name: 'description',

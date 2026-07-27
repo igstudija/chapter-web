@@ -11,8 +11,6 @@ export { ContactSubmissions } from './ContactSubmissions'
 export { EventSubmissions } from './EventSubmissions'
 export { Wiki } from './Pages'
 export { SuccessStories } from './SuccessStories'
-export { OneToOneMeetings } from './OneToOneMeetings'
-export { Referrals } from './Referrals'
 export { AuditLogs } from './AuditLogs'
 export { PolicyTemplates } from './PolicyTemplates'
 

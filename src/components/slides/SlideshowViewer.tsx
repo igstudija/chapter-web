@@ -122,7 +122,6 @@ function isTimedSlide(slide: SlideData | undefined): boolean {
 interface SlideshowTranslations {
   businessGiven: string
   businessReceived: string
-  fromActivities: string
   businessTotal: string
   groupSubtitle?: string
   lookingForPartners?: string
@@ -143,7 +142,6 @@ interface SlideshowViewerProps {
   overrideBackgroundColorRight?: string
   overrideImageMode?: 'contain' | 'cover'
   overrideTemplate?: MemberSlideTemplate
-  enableActivities?: boolean
   translations?: SlideshowTranslations
   /**
    * Bump to send the viewer back to `startMemberId`. Lets the presentation
@@ -156,7 +154,6 @@ interface SlideshowViewerProps {
 const defaultTranslations: SlideshowTranslations = {
   businessGiven: 'Business Given',
   businessReceived: 'Business Received',
-  fromActivities: 'From Activities',
   businessTotal: 'Total business',
   groupSubtitle: 'Our experts. For your growth.',
   lookingForPartners: 'Looking for collaboration partners',
@@ -174,7 +171,6 @@ export function SlideshowViewer({
   overrideBackgroundColorRight,
   overrideImageMode,
   overrideTemplate,
-  enableActivities = false,
   translations = defaultTranslations,
   focusStartMemberSignal = 0,
 }: Readonly<SlideshowViewerProps>) {
@@ -708,7 +704,6 @@ export function SlideshowViewer({
                     }
                     overrideImageMode={isStartMember ? overrideImageMode : undefined}
                     overrideTemplate={isStartMember ? overrideTemplate : undefined}
-                    enableActivities={enableActivities}
                     translations={translations}
                     businessGivenMin={buildContext.settings.businessGivenMin ?? 0}
                     businessReceivedMin={buildContext.settings.businessReceivedMin ?? 0}

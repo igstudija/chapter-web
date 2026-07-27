@@ -18,7 +18,6 @@ export type ProfileTabName =
   | 'success-stories'
   | 'presentation'
   | 'group-slide'
-  | 'activities'
 
 interface MyProfilePageWrapperProps {
   readonly breadcrumbItems: ReadonlyArray<{ label: string; href?: string }>
@@ -38,7 +37,6 @@ interface MyProfilePageWrapperProps {
 
   readonly activeTab: ProfileTabName
   readonly tabCounts: ProfileTabCounts
-  readonly enableActivities: boolean
   readonly enableSuccessStories?: boolean
   readonly isPowerGroupLead?: boolean
 
@@ -65,7 +63,6 @@ export function MyProfilePageWrapper({
   previewLink,
   activeTab,
   tabCounts,
-  enableActivities,
   enableSuccessStories = true,
   isPowerGroupLead = false,
   siteId,
@@ -103,7 +100,6 @@ export function MyProfilePageWrapper({
           top40Count={tabCounts.top40Count}
           top20Count={tabCounts.top20Count}
           successStoriesCount={tabCounts.successStoriesCount}
-          enableActivities={enableActivities}
           enableSuccessStories={enableSuccessStories}
           isPowerGroupLead={isPowerGroupLead}
           siteId={siteId}

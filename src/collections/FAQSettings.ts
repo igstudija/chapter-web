@@ -70,7 +70,6 @@ export const FAQSettings: CollectionConfig = {
             { label: 'General', value: 'general' },
             { label: 'Membership', value: 'membership' },
             { label: 'Meetings', value: 'meetings' },
-            { label: 'Referrals', value: 'referrals' },
             { label: 'Events', value: 'events' },
             { label: 'Other', value: 'other' },
           ],

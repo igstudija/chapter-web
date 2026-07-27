@@ -60,7 +60,7 @@ const policyData = [
 </ul>
 
 <h2>5. Member-contributed content</h2>
-<p>[State who owns content members submit — profiles, referrals, requests, success stories — and what licence you need in order to display it.]</p>
+<p>[State who owns content members submit — profiles, requests, success stories — and what licence you need in order to display it.]</p>
 
 <h2>6. Intellectual property</h2>
 <p>[State what you own and what members may do with it.]</p>
@@ -94,7 +94,7 @@ const policyData = [
 <ul>
 <li>account details — name, email address, password hash;</li>
 <li>profile details members choose to publish — photo, company, role, contact details, business description;</li>
-<li>activity records — referrals, meetings, requests, success stories and any business figures attached to them;</li>
+<li>activity records — requests, success stories and any business figures attached to them;</li>
 <li>technical data — server logs and session cookies.</li>
 </ul>
 <p>[Add anything else your install collects, and remove anything you have disabled.]</p>

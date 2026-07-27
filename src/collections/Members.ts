@@ -237,19 +237,15 @@ export const Members: CollectionConfig = {
 
         const byUser = (field: string) => ({ [field]: { equals: userId } })
 
-        const [top40, sr, stories, meetings, refsFrom, refsTo] = await Promise.all([
+        const [top40, sr, stories] = await Promise.all([
           bulkDelete('top40', byUser('submittedBy')),
           bulkDelete('special-requests', byUser('requestedBy')),
           bulkDelete('success-stories', byUser('author')),
-          bulkDelete('one-to-one-meetings', byUser('createdBy')),
-          bulkDelete('referrals', byUser('fromUser')),
-          bulkDelete('referrals', byUser('toUser')),
         ])
 
         console.log(
           `[Members] Cascade-deleted for user ${userId}: ` +
-            `Top40: ${top40}, Special Requests: ${sr}, Success Stories: ${stories}, ` +
-            `Meetings: ${meetings}, Referrals: ${refsFrom + refsTo}`,
+            `Top40: ${top40}, Special Requests: ${sr}, Success Stories: ${stories}`,
         )
       },
     ],
@@ -724,23 +720,6 @@ export const Members: CollectionConfig = {
                   admin: {
                     description: 'Total revenue received through the organisation, in EUR',
                   },
-                },
-                {
-                  name: 'referralsReceivedCount',
-                  type: 'number',
-                  label: 'Referrals Received',
-                  defaultValue: 0,
-                },
-              ],
-            },
-            {
-              type: 'row',
-              fields: [
-                {
-                  name: 'referralsGivenCount',
-                  type: 'number',
-                  label: 'Referrals Given',
-                  defaultValue: 0,
                 },
               ],
             },

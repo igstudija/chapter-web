@@ -85,7 +85,7 @@ export const createAdminOrOwner = (ownerField: string): Access => {
  * This replaced a filter that listed the users holding a membership in the
  * request's organisation. With one organisation the only thing left worth
  * filtering on is whether the account is blocked — a blocked member should not
- * be selectable as the counterpart of a new referral or meeting.
+ * be selectable as the counterpart of a new record.
  */
 export const activeUsersFilter = () => ({ status: { equals: 'active' } })
 

@@ -68,7 +68,7 @@ export const metadata = {
     default: DEFAULT_ORG_NAME,
     template: `%s | ${DEFAULT_ORG_NAME}`,
   },
-  description: 'A member directory and referral network for professional organisations.',
+  description: 'A member directory and business network for professional organisations.',
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {

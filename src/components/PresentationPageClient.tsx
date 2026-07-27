@@ -46,7 +46,6 @@ interface PresentationPageClientProps {
 interface SlideshowTranslations {
   businessGiven: string
   businessReceived: string
-  fromActivities: string
   businessTotal: string
   groupSubtitle?: string
   lookingForPartners?: string
@@ -63,7 +62,6 @@ interface PreviewData {
   slideBlocks: SlideBlockData[]
   buildContext: Omit<BuildSlidesContext, 'attendanceFilter'>
   transitionSoundUrl: string | null
-  enableActivities: boolean
   translations?: SlideshowTranslations
 }
 
@@ -272,7 +270,6 @@ export function PresentationPageClient({
                 overrideImageMode={slideImageMode}
                 overrideTemplate={slideTemplate}
                 focusStartMemberSignal={focusSignal}
-                enableActivities={previewData.enableActivities || false}
                 translations={previewData.translations}
               />
             )}

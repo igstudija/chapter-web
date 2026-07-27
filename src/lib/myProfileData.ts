@@ -16,10 +16,7 @@ import { isUserAdmin } from '@/lib/userHelpers'
 import type { User, Member, Setting } from '@/payload-types'
 
 // User with JWT context fields - extends User without redefining fields that already exist
-export interface UserWithContext extends User {
-  // Additional fields not in base User type
-  siteEnableActivities?: boolean
-}
+export type UserWithContext = User
 
 // Profile image/logo type
 export interface MediaImage {

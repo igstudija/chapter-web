@@ -46,7 +46,6 @@ export default async function MyTop20Page() {
       previewLink={previewLink}
       activeTab="top20"
       tabCounts={tabCounts}
-      enableActivities={settings.enableActivities || false}
       enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
       siteId={settings.id}

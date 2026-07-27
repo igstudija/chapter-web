@@ -13,7 +13,6 @@ interface SiteForSlides {
   id: number | string
   name?: string | null
   enableAttendance?: boolean | null
-  enableActivities?: boolean | null
   locale?: string | null
 }
 

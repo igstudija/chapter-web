@@ -63,7 +63,6 @@ export default async function MySuccessStoriesPage() {
       previewLink={previewLink}
       activeTab="success-stories"
       tabCounts={tabCounts}
-      enableActivities={settings.enableActivities || false}
       enableSuccessStories={settings.enableSuccessStories === true}
       isPowerGroupLead={membership?.powerGroupLead || false}
       siteId={settings.id}

@@ -8,7 +8,6 @@ import { isSafariBrowser } from '@/lib/browserDetect'
 interface SlideshowTranslations {
   businessGiven: string
   businessReceived: string
-  fromActivities: string
   businessTotal: string
   groupSubtitle?: string
   lookingForPartners?: string
@@ -25,7 +24,6 @@ interface SlidesData {
   buildContext: Omit<BuildSlidesContext, 'attendanceFilter'>
   transitionSoundUrl: string | null
   locale: 'lv' | 'en'
-  enableActivities: boolean
   translations?: SlideshowTranslations
 }
 
@@ -116,7 +114,6 @@ export default function SlidesPageClient({ startMemberId }: { startMemberId?: st
       buildContext={data.buildContext}
       transitionSoundUrl={data.transitionSoundUrl}
       startMemberId={startMemberId}
-      enableActivities={data.enableActivities}
       translations={data.translations}
     />
   )

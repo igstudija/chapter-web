@@ -71,7 +71,7 @@ export const HomepageSettings: CollectionConfig = {
                   label: 'Subtitle',
                   type: 'textarea',
                   defaultValue:
-                    'Business Network International - connecting professionals through trusted referrals and building lasting business relationships.',
+                    'Connecting professionals and building lasting business relationships.',
                   admin: {
                     description: 'Supporting text below the main title',
                   },
@@ -228,7 +228,7 @@ export const HomepageSettings: CollectionConfig = {
                   label: 'Description',
                   type: 'textarea',
                   defaultValue:
-                    'Join our network of professionals and start receiving quality referrals today.',
+                    'Join our network of professionals and start building valuable business relationships today.',
                 },
                 {
                   type: 'row',

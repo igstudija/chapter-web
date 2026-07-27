@@ -71,15 +71,6 @@ export const Settings: CollectionConfig = {
               },
             },
             {
-              name: 'enableActivities',
-              type: 'checkbox',
-              defaultValue: true,
-              label: 'Enable Activities Module',
-              admin: {
-                description: 'Referrals and one-to-one meetings',
-              },
-            },
-            {
               name: 'enableAttendance',
               type: 'checkbox',
               defaultValue: false,

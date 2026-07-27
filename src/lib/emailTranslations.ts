@@ -82,47 +82,6 @@ export const emailTranslations = {
       reminder: 'Atgādinājums: Pasākums sākas pēc 1 stundas',
     },
 
-    // Activity notifications (1-2-1 meetings, referrals)
-    activity: {
-      // Meetings
-      meetingCreatedSubject: 'Jauna 1-2-1 tikšanās reģistrēta',
-      meetingCreatedTitle: 'Jauna 1-2-1 tikšanās',
-      meetingRegistered: 'ir reģistrējis 1-2-1 tikšanos ar jums.',
-      meetingDate: 'Datums',
-      meetingLocation: 'Vieta',
-      meetingInvitedBy: 'Uzaicināja',
-      meetingTopics: 'Tēmas',
-      meetingCanComment: 'Jūs varat pievienot komentārus par šo tikšanos savā profilā.',
-      viewActivities: 'Skatīt aktivitātes',
-
-      // Meeting comments
-      commentSubject: 'Jauns komentārs 1-2-1 tikšanās ierakstam',
-      commentTitle: 'Jauns komentārs',
-      commentAdded: 'ir pievienojis komentāru jūsu 1-2-1 tikšanās ierakstam',
-
-      // Referrals
-      referralCreatedSubject: 'Jauna rekomendācija saņemta',
-      referralCreatedTitle: 'Jauna rekomendācija',
-      referralRegistered: 'ir reģistrējis rekomendāciju jums.',
-      referralDate: 'Datums',
-      referralFrom: 'No',
-      referralPotentialValue: 'Potenciālā vērtība',
-      referralDescription: 'Apraksts',
-      referralUpdateStatus: 'Lūdzu, atjauniniet rekomendācijas statusu, kad būsiet sazinājušies ar klientu.',
-      viewReferrals: 'Skatīt rekomendācijas',
-
-      // Referral status
-      referralStatusSubject: 'Rekomendācijas statuss atjaunināts',
-      referralStatusTitle: 'Rekomendācijas statuss atjaunināts',
-      referralStatusUpdated: 'ir atjauninājis jūsu dotās rekomendācijas statusu.',
-      referralStatus: 'Statuss',
-      referralRecipient: 'Saņēmējs',
-      referralBusinessValue: 'Darījuma vērtība',
-      referralSuccess: 'VEIKSMĪGA',
-      referralFailed: 'NEVEIKSMĪGA',
-      referralCongrats: 'Apsveicam ar veiksmīgu rekomendāciju!',
-    },
-
     // Email change
     emailChange: {
       subject: 'E-pasta maiņas apstiprināšana',
@@ -222,47 +181,6 @@ export const emailTranslations = {
       calendarNote: 'A calendar invitation is attached to this email. Please add it to your calendar.',
       lookForward: 'We look forward to seeing you at the event!',
       reminder: 'Reminder: Event starts in 1 hour',
-    },
-
-    // Activity notifications (1-2-1 meetings, referrals)
-    activity: {
-      // Meetings
-      meetingCreatedSubject: 'New 1-2-1 Meeting Registered',
-      meetingCreatedTitle: 'New 1-2-1 Meeting',
-      meetingRegistered: 'has registered a 1-2-1 meeting with you.',
-      meetingDate: 'Date',
-      meetingLocation: 'Location',
-      meetingInvitedBy: 'Invited By',
-      meetingTopics: 'Topics',
-      meetingCanComment: 'You can add comments about this meeting in your profile.',
-      viewActivities: 'View Activities',
-
-      // Meeting comments
-      commentSubject: 'New Comment on 1-2-1 Meeting',
-      commentTitle: 'New Comment',
-      commentAdded: 'has added a comment to your 1-2-1 meeting record',
-
-      // Referrals
-      referralCreatedSubject: 'New Referral Received',
-      referralCreatedTitle: 'New Referral',
-      referralRegistered: 'has registered a referral for you.',
-      referralDate: 'Date',
-      referralFrom: 'From',
-      referralPotentialValue: 'Potential Value',
-      referralDescription: 'Description',
-      referralUpdateStatus: 'Please update the referral status once you have contacted the client.',
-      viewReferrals: 'View Referrals',
-
-      // Referral status
-      referralStatusSubject: 'Referral Status Updated',
-      referralStatusTitle: 'Referral Status Updated',
-      referralStatusUpdated: 'has updated the status of your referral.',
-      referralStatus: 'Status',
-      referralRecipient: 'Recipient',
-      referralBusinessValue: 'Business Value',
-      referralSuccess: 'SUCCESS',
-      referralFailed: 'FAILED',
-      referralCongrats: 'Congratulations on a successful referral!',
     },
 
     // Email change

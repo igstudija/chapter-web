@@ -71,7 +71,6 @@ export default async function PresentationPage() {
       previewLink={previewLink}
       activeTab="presentation"
       tabCounts={tabCounts}
-      enableActivities={settings.enableActivities || false}
       enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
       siteId={String(settings.id)}

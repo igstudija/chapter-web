@@ -14,19 +14,12 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const { revenueReceived, referralsReceivedCount, referralsGivenCount, tyfcbGiven } =
-      await request.json()
+    const { revenueReceived, tyfcbGiven } = await request.json()
 
     const updateData: Record<string, number> = {}
 
     if (revenueReceived !== undefined) {
       updateData.revenueReceived = Number(revenueReceived) || 0
-    }
-    if (referralsReceivedCount !== undefined) {
-      updateData.referralsReceivedCount = Number(referralsReceivedCount) || 0
-    }
-    if (referralsGivenCount !== undefined) {
-      updateData.referralsGivenCount = Number(referralsGivenCount) || 0
     }
     if (tyfcbGiven !== undefined) {
       updateData.tyfcbGiven = Number(tyfcbGiven) || 0

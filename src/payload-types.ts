@@ -77,8 +77,6 @@ export interface Config {
     top40: Top40;
     top20: Top20;
     'success-stories': SuccessStory;
-    'one-to-one-meetings': OneToOneMeeting;
-    referrals: Referral;
     'contact-submissions': ContactSubmission;
     'event-submissions': EventSubmission;
     wiki: Wiki;
@@ -109,8 +107,6 @@ export interface Config {
     top40: Top40Select<false> | Top40Select<true>;
     top20: Top20Select<false> | Top20Select<true>;
     'success-stories': SuccessStoriesSelect<false> | SuccessStoriesSelect<true>;
-    'one-to-one-meetings': OneToOneMeetingsSelect<false> | OneToOneMeetingsSelect<true>;
-    referrals: ReferralsSelect<false> | ReferralsSelect<true>;
     'contact-submissions': ContactSubmissionsSelect<false> | ContactSubmissionsSelect<true>;
     'event-submissions': EventSubmissionsSelect<false> | EventSubmissionsSelect<true>;
     wiki: WikiSelect<false> | WikiSelect<true>;
@@ -342,8 +338,6 @@ export interface Member {
    * Total revenue received through the organisation, in EUR
    */
   revenueReceived?: number | null;
-  referralsReceivedCount?: number | null;
-  referralsGivenCount?: number | null;
   /**
    * Remaining AI chatbot credit in USD
    */
@@ -606,81 +600,6 @@ export interface SuccessStory {
    */
   isPublic?: boolean | null;
   author: number | User;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "one-to-one-meetings".
- */
-export interface OneToOneMeeting {
-  id: number;
-  /**
-   * The member you met with
-   */
-  metWith: number | User;
-  /**
-   * Who invited to the meeting
-   */
-  invitedBy: number | User;
-  /**
-   * Meeting location
-   */
-  location: string;
-  /**
-   * Topics of conversation
-   */
-  topics: string;
-  date: string;
-  /**
-   * Comments from both participants
-   */
-  comments?:
-    | {
-        text: string;
-        author: number | User;
-        commentCreatedAt?: string | null;
-        id?: string | null;
-      }[]
-    | null;
-  /**
-   * Meeting creator (can edit/delete)
-   */
-  createdBy: number | User;
-  updatedAt: string;
-  createdAt: string;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "referrals".
- */
-export interface Referral {
-  id: number;
-  /**
-   * Who gave the referral
-   */
-  fromUser: number | User;
-  /**
-   * Who received the referral
-   */
-  toUser: number | User;
-  date: string;
-  /**
-   * Description of the referral
-   */
-  description: string;
-  /**
-   * Referral outcome status
-   */
-  status: 'pending' | 'success' | 'failed';
-  /**
-   * Business value in EUR (only for successful referrals)
-   */
-  value?: number | null;
-  /**
-   * Referral creator (can edit/delete)
-   */
-  createdBy: number | User;
   updatedAt: string;
   createdAt: string;
 }
@@ -1246,7 +1165,7 @@ export interface FaqSetting {
         answer: {
           [k: string]: unknown;
         };
-        category?: ('general' | 'membership' | 'meetings' | 'referrals' | 'events' | 'other') | null;
+        category?: ('general' | 'membership' | 'meetings' | 'events' | 'other') | null;
         /**
          * Lower numbers appear first
          */
@@ -1315,10 +1234,6 @@ export interface Setting {
    * IANA timezone name, e.g. Europe/Riga
    */
   timezone?: string | null;
-  /**
-   * Referrals and one-to-one meetings
-   */
-  enableActivities?: boolean | null;
   enableAttendance?: boolean | null;
   enableSuccessStories?: boolean | null;
   /**
@@ -1980,14 +1895,6 @@ export interface PayloadLockedDocument {
         value: number | SuccessStory;
       } | null)
     | ({
-        relationTo: 'one-to-one-meetings';
-        value: number | OneToOneMeeting;
-      } | null)
-    | ({
-        relationTo: 'referrals';
-        value: number | Referral;
-      } | null)
-    | ({
         relationTo: 'contact-submissions';
         value: number | ContactSubmission;
       } | null)
@@ -2175,8 +2082,6 @@ export interface MembersSelect<T extends boolean = true> {
   tyfcbReceived?: T;
   tyfcbGiven?: T;
   revenueReceived?: T;
-  referralsReceivedCount?: T;
-  referralsGivenCount?: T;
   aiCreditBalanceUsd?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -2315,43 +2220,6 @@ export interface SuccessStoriesSelect<T extends boolean = true> {
   partnerMember?: T;
   isPublic?: T;
   author?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "one-to-one-meetings_select".
- */
-export interface OneToOneMeetingsSelect<T extends boolean = true> {
-  metWith?: T;
-  invitedBy?: T;
-  location?: T;
-  topics?: T;
-  date?: T;
-  comments?:
-    | T
-    | {
-        text?: T;
-        author?: T;
-        commentCreatedAt?: T;
-        id?: T;
-      };
-  createdBy?: T;
-  updatedAt?: T;
-  createdAt?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "referrals_select".
- */
-export interface ReferralsSelect<T extends boolean = true> {
-  fromUser?: T;
-  toUser?: T;
-  date?: T;
-  description?: T;
-  status?: T;
-  value?: T;
-  createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -2690,7 +2558,6 @@ export interface SettingsSelect<T extends boolean = true> {
   internalTitle?: T;
   locale?: T;
   timezone?: T;
-  enableActivities?: T;
   enableAttendance?: T;
   enableSuccessStories?: T;
   siteName?: T;

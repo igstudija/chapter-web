@@ -313,7 +313,7 @@ export default async function HomePage() {
       {/*
         Stats Section — the page's signature.
 
-        A referral network's claim is that it produces measurable business, so
+        A business network's claim is that it produces measurable business, so
         the figures are the most characteristic thing this organisation owns.
         They used to sit in a flat brand-red block with 64px cartoon icons,
         which read as decoration, and six identical cells give six figures

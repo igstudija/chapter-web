@@ -27,7 +27,6 @@ export async function GET(_request: Request, { params }: { params: Promise<{ mem
     return NextResponse.json({
       ...data,
       locale,
-      enableActivities: settings.enableActivities || false,
       translations: slideshowTranslations,
     })
   } catch (error) {

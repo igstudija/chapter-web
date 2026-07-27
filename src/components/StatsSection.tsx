@@ -12,8 +12,6 @@ const stats: Stat[] = [
   { value: '€2,400,370', labelKey: 'statsThisYear' },
   { value: '€74,000', labelKey: 'statsAvgPerMember' },
   { value: '100', labelKey: 'statsMembers' },
-  { value: '1,082', labelKey: 'statsReferralsGiven' },
-  { value: '2,094', labelKey: 'statsOneToOnes' },
 ]
 
 export function StatsSection() {

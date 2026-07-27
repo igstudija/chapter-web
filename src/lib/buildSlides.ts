@@ -28,8 +28,6 @@ export interface SlideMember {
   country?: string | null
   tyfcbGiven?: number | null
   tyfcbReceived?: number | null
-  activityGiven?: number | null
-  activityReceived?: number | null
   profileImage?: { url?: string | null } | null
   logo?: { url?: string | null } | null
   slideImage?: { url?: string | null } | null

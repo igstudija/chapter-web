@@ -31,8 +31,6 @@ interface Member {
   country?: string | null
   tyfcbGiven?: number | null
   tyfcbReceived?: number | null
-  activityGiven?: number | null
-  activityReceived?: number | null
   profileImage?: { url?: string | null } | null
   logo?: { url?: string | null } | null
   slideImage?: { url?: string | null } | null
@@ -55,7 +53,6 @@ interface PowerGroup {
 interface SlideshowTranslations {
   businessGiven: string
   businessReceived: string
-  fromActivities: string
   businessTotal: string
 }
 
@@ -74,7 +71,6 @@ interface MemberSlideProps {
   overrideBackgroundColorRight?: string
   overrideImageMode?: 'contain' | 'cover'
   overrideTemplate?: MemberSlideTemplate
-  enableActivities?: boolean
   translations?: SlideshowTranslations
   businessGivenMin?: number
   businessReceivedMin?: number
@@ -84,7 +80,6 @@ interface MemberSlideProps {
 const defaultTranslations: SlideshowTranslations = {
   businessGiven: 'Business Given',
   businessReceived: 'Business Received',
-  fromActivities: 'From Activities',
   businessTotal: 'Total business',
 }
 

@@ -44,7 +44,6 @@ export default async function MyRequestsPage() {
       previewLink={previewLink}
       activeTab="special-requests"
       tabCounts={tabCounts}
-      enableActivities={settings.enableActivities || false}
       enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
       siteId={settings.id}

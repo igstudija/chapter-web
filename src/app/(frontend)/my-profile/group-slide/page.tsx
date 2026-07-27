@@ -51,7 +51,6 @@ export default async function GroupSlidePage() {
       previewLink={previewLink}
       activeTab="group-slide"
       tabCounts={tabCounts}
-      enableActivities={settings.enableActivities || false}
       enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={true}
       siteId={String(settings.id)}

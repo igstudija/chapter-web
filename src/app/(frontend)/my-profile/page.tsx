@@ -94,7 +94,6 @@ export default async function MyProfilePage() {
       previewLink={previewLink}
       activeTab="about"
       tabCounts={tabCounts}
-      enableActivities={settings.enableActivities || false}
       enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
       siteId={settings.id}

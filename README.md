@@ -1,8 +1,8 @@
 # ChapterOS
 
 A self-hostable member portal for professional networking organisations — the
-kind that meet regularly, pass business referrals to each other, and want their
-own site rather than a seat in someone else's platform.
+kind that meet regularly, do business with each other, and want their own site
+rather than a seat in someone else's platform.
 
 Built on [Payload CMS 3](https://payloadcms.com) and Next.js 15. One install
 serves one organisation: its members, its content, its branding, administered
@@ -21,10 +21,6 @@ from the standard Payload admin panel.
 **Members**
 Member directory with profiles, companies, photos and contact details. Profiles
 are member-editable; visibility is controlled under Settings.
-
-**Referrals and one-to-ones**
-Members log referrals passed to each other and one-to-one meetings held, with
-business value attached. Both feed per-member and per-group statistics.
 
 **Top 40 / Top 20**
 Each member maintains a list of companies and contacts they want to be
@@ -215,7 +211,7 @@ are possible.
 
 ## A note on origins
 
-This began as a portal for BNI chapters in Latvia and was generalised into a
-product. It carries no BNI branding, no BNI-specific data model and no
-affiliation with or endorsement by BNI Global LLC. "BNI" is their trademark, not
-one used here.
+This began as a portal for a handful of business-networking chapters in Latvia
+and was generalised into a product. It carries no branding, data model or
+affiliation belonging to any particular networking organisation; every name,
+colour and unit noun is configuration.

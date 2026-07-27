@@ -32,7 +32,6 @@ export async function GET() {
     return NextResponse.json({
       ...data,
       locale,
-      enableActivities: site.enableActivities || false,
       translations: slideshowTranslations,
     })
   } catch (error) {

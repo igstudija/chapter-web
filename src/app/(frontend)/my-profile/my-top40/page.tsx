@@ -46,7 +46,6 @@ export default async function MyTop40Page() {
       previewLink={previewLink}
       activeTab="top40"
       tabCounts={tabCounts}
-      enableActivities={settings.enableActivities || false}
       enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
       siteId={settings.id}

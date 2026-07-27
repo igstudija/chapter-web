@@ -34,7 +34,7 @@ export const ORG_UNIT_NOUN = process.env.NEXT_PUBLIC_ORG_UNIT_NOUN?.trim() || 'c
  * Initials badge for an organisation with no logo uploaded.
  *
  * Takes the first letter of up to two words, so "Riga Business Club" → "RB"
- * and "Vivaldi" → "V". Returns a single bullet rather than an empty string so
+ * and "Harbour" → "H". Returns a single bullet rather than an empty string so
  * the badge never collapses to zero width in the header.
  */
 export const orgInitials = (name?: string | null): string => {

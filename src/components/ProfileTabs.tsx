@@ -16,7 +16,6 @@ import {
   Upload,
   Download,
   Star,
-  Activity,
   HelpCircle,
   X,
   UsersRound,
@@ -131,7 +130,6 @@ interface ProfileTabsProps {
     | 'success-stories'
     | 'presentation'
     | 'group-slide'
-    | 'activities'
   readonly specialRequestsCount: number
   readonly top40Count: number
   readonly top20Count: number
@@ -143,7 +141,6 @@ interface ProfileTabsProps {
   readonly members?: ReadonlyArray<Member>
   readonly userData?: UserData
   readonly children?: React.ReactNode
-  readonly enableActivities?: boolean
   readonly enableSuccessStories?: boolean
   readonly isPowerGroupLead?: boolean
   readonly siteId?: string | number
@@ -165,7 +162,6 @@ export function ProfileTabs({
   members = [],
   userData,
   children,
-  enableActivities = false,
   enableSuccessStories = true,
   isPowerGroupLead = false,
   siteId,
@@ -288,16 +284,6 @@ export function ProfileTabs({
                   active: activeTab === 'group-slide',
                   icon: <UsersRound className="h-4 w-4" />,
                   label: t('profile', 'groupSlide'),
-                },
-              ]
-            : []),
-          ...(enableActivities
-            ? [
-                {
-                  href: '/my-profile/activities',
-                  active: activeTab === 'activities',
-                  icon: <Activity className="h-4 w-4" />,
-                  label: t('profile', 'activities'),
                 },
               ]
             : []),
@@ -444,8 +430,6 @@ export function ProfileTabs({
       {activeTab === 'presentation' && children}
 
       {activeTab === 'group-slide' && children}
-
-      {activeTab === 'activities' && children}
 
       <SpecialRequestModal
         isOpen={showSpecialRequestModal}
