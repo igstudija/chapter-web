@@ -208,10 +208,3 @@ You can run, modify and self-host this freely. If you run a modified version as
 a network service, the AGPL requires you to offer your users the modified
 source. If that does not suit your situation, open an issue — other arrangements
 are possible.
-
-## A note on origins
-
-This began as a portal for a handful of business-networking chapters in Latvia
-and was generalised into a product. It carries no branding, data model or
-affiliation belonging to any particular networking organisation; every name,
-colour and unit noun is configuration.
