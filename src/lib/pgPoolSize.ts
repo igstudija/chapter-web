@@ -21,10 +21,32 @@
  * Not a tuning knob — a floor. Below this a single request deadlocks against
  * itself, so anything under it is a bug rather than a conservative choice.
  */
-export const MIN_SERVERLESS_POOL_MAX = 5
+export const MIN_SERVERLESS_POOL_MAX = 2
 
-/** Serverless default: small per instance, in front of a pooler that multiplexes. */
-export const DEFAULT_SERVERLESS_POOL_MAX = 10
+/**
+ * Client connections Supavisor will accept for this project, in total, across
+ * every function instance at once. Exceeding it does not queue — the pooler
+ * refuses with `(EMAXCONN) max client connections reached`.
+ */
+export const POOLER_CLIENT_LIMIT = 200
+
+/**
+ * Concurrent function instances the pool has to survive without hitting that
+ * ceiling. The real number is set by traffic, not by us, so this is the
+ * headroom we choose to buy.
+ */
+export const PLANNED_CONCURRENT_INSTANCES = 30
+
+/**
+ * Serverless default: small per instance, in front of a pooler that multiplexes.
+ *
+ * Squeezed from both sides. Raising this to 10 after the starvation outage
+ * traded one failure for its mirror image: 30 concurrent requests spun up
+ * enough instances to ask for 300 client connections and the pooler refused
+ * them all. The window is `MIN_SERVERLESS_POOL_MAX ≤ max ≤ limit / instances`,
+ * and it is narrower than it looks.
+ */
+export const DEFAULT_SERVERLESS_POOL_MAX = 3
 
 /**
  * Long-running host default: one process serves everything, and several admin

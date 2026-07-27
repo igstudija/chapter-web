@@ -3,6 +3,8 @@ import {
   DEFAULT_SERVER_POOL_MAX,
   DEFAULT_SERVERLESS_POOL_MAX,
   MIN_SERVERLESS_POOL_MAX,
+  PLANNED_CONCURRENT_INSTANCES,
+  POOLER_CLIENT_LIMIT,
   resolvePgPoolMax,
 } from '@/lib/pgPoolSize'
 
@@ -25,6 +27,19 @@ describe('resolvePgPoolMax', () => {
     expect(serverless).toBeGreaterThan(1)
     expect(serverless).toBeGreaterThanOrEqual(MIN_SERVERLESS_POOL_MAX)
     expect(serverless).toBe(DEFAULT_SERVERLESS_POOL_MAX)
+  })
+
+  it('leaves the pooler room for every instance that may be up at once', () => {
+    /*
+     * The mirror image of the outage above, and the one the first version of
+     * this test missed: raising the default to 10 meant 30 concurrent requests
+     * asked Supavisor for 300 client connections against a 200 limit, and it
+     * refused all of them with `(EMAXCONN) max client connections reached`.
+     * A floor alone is not enough — the ceiling has to be asserted too.
+     */
+    expect(DEFAULT_SERVERLESS_POOL_MAX * PLANNED_CONCURRENT_INSTANCES).toBeLessThanOrEqual(
+      POOLER_CLIENT_LIMIT,
+    )
   })
 
   it('keeps the larger pool on a long-running host', () => {
