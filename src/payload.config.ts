@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url'
 import sharp from 'sharp'
 import { ADMIN_TITLE_SUFFIX } from './lib/branding'
 import { IS_SERVERLESS } from './lib/runtime'
+import { resolvePgPoolMax } from './lib/pgPoolSize'
 import { MAX_UPLOAD_BYTES } from './lib/uploadLimits'
 
 import {
@@ -93,27 +94,22 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
+    /*
+     * Schema push rewrites the live database to match whatever the code says.
+     * Payload turns it on for anything that is not `NODE_ENV=production`, and
+     * that includes vitest, which runs as `test` — so `pnpm test:int` was
+     * reshaping the schema of whichever database `.env` points at, and here
+     * that is production. The test timing out on the push is what kept it from
+     * doing damage. Narrow it to an actual dev server, which is where this
+     * project genuinely relies on push to land new fields.
+     */
+    push: process.env.NODE_ENV === 'development',
     pool: {
       connectionString: process.env.POSTGRESS_DATABASE_URL || '',
-      // One server, one pool: sized for multi-tenant admin load, where several
-      // admin sessions can each hold 4-8 connections during a list view render.
-      //
-      // Serverless inverts that arithmetic. Every concurrent function instance
-      // builds its own pool, so the ceiling is `max × instances` — a handful of
-      // visitors at once is enough to exhaust the database's connection limit
-      // with 50. A small pool per instance, in front of a connection pooler
-      // that does the real multiplexing, is the shape that scales there.
-      //
-      // Small, but not one. A single render fans out — the homepage alone runs
-      // three `Promise.all` blocks of `payload.find` plus the settings count —
-      // and with one slot those queries queue behind each other until
-      // `connectionTimeoutMillis` gives up. That failure reads as
-      // "timeout exceeded when trying to connect", which looks like an
-      // unreachable database and is actually self-inflicted starvation: it
-      // took production down on 2026-07-27 while the same URL worked from a
-      // laptop, where the non-serverless branch gives 50 slots.
-      // Override with PG_POOL_MAX if your host or plan says otherwise.
-      max: Number(process.env.PG_POOL_MAX) || (IS_SERVERLESS ? 10 : 50),
+      // Sizing lives in `pgPoolSize` so it can be asserted on: too small a pool
+      // deadlocks a single render against itself, and that is worth a test
+      // rather than a comment. Override with PG_POOL_MAX.
+      max: resolvePgPoolMax({ isServerless: IS_SERVERLESS, override: process.env.PG_POOL_MAX }),
       // `min: 0` lets the pool drain fully when idle. Holding warm
       // connections across long idle periods (>5min) provokes
       // "Connection terminated unexpectedly" from managed Postgres
