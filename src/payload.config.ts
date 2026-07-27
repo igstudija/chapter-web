@@ -103,8 +103,17 @@ export default buildConfig({
       // visitors at once is enough to exhaust the database's connection limit
       // with 50. A small pool per instance, in front of a connection pooler
       // that does the real multiplexing, is the shape that scales there.
+      //
+      // Small, but not one. A single render fans out — the homepage alone runs
+      // three `Promise.all` blocks of `payload.find` plus the settings count —
+      // and with one slot those queries queue behind each other until
+      // `connectionTimeoutMillis` gives up. That failure reads as
+      // "timeout exceeded when trying to connect", which looks like an
+      // unreachable database and is actually self-inflicted starvation: it
+      // took production down on 2026-07-27 while the same URL worked from a
+      // laptop, where the non-serverless branch gives 50 slots.
       // Override with PG_POOL_MAX if your host or plan says otherwise.
-      max: Number(process.env.PG_POOL_MAX) || (IS_SERVERLESS ? 1 : 50),
+      max: Number(process.env.PG_POOL_MAX) || (IS_SERVERLESS ? 10 : 50),
       // `min: 0` lets the pool drain fully when idle. Holding warm
       // connections across long idle periods (>5min) provokes
       // "Connection terminated unexpectedly" from managed Postgres
