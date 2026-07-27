@@ -137,15 +137,10 @@ export function AboutMeForm({
     const mediaId = typeof item.image === 'object' ? item.image.id : item.image
     setDeleting(`gallery-${index}`)
     try {
-      // Delete media file from storage via Payload
-      if (mediaId && typeof mediaId === 'string') {
-        await fetch(`/api/media/${mediaId}`, {
-          method: 'DELETE',
-          credentials: 'include',
-        })
-      }
-
-      // Update user's gallery to remove this item
+      /*
+       * Unlink first, delete the file second. The other way round leaves the
+       * gallery pointing at a row that no longer exists if the PATCH fails.
+       */
       const updatedGallery = existingGallery
         .filter((_, i) => i !== index)
         .map((g) => ({
@@ -153,12 +148,26 @@ export function AboutMeForm({
           caption: g.caption || '',
         }))
 
-      await fetch('/api/users/me', {
+      const patched = await fetch('/api/users/me', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ gallery: updatedGallery, siteId }),
       })
+      if (!patched.ok) throw new Error('Failed to update gallery')
+
+      /*
+       * Media ids are numbers on Postgres, so the `typeof === 'string'` guard
+       * this used to carry never fired: the row was unlinked and the file was
+       * left in the bucket, still fetchable at its original URL by anyone who
+       * had the link, while the member believed they had deleted it.
+       */
+      if (mediaId !== null && mediaId !== undefined) {
+        await fetch(`/api/media/${mediaId}`, {
+          method: 'DELETE',
+          credentials: 'include',
+        })
+      }
 
       setSuccess(t('profile', 'galleryImageDeleted'))
       setExistingGallery((prev) => prev.filter((_, i) => i !== index))

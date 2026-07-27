@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera, Loader2, Trash2, Upload } from 'lucide-react'
 import { getThumbnailUrl } from '@/lib/getThumbnailUrl'
@@ -43,6 +43,30 @@ export function ProfileMediaEditor({
   const [preview, setPreview] = useState<string | null>(url || null)
   const [busy, setBusy] = useState<'upload' | 'delete' | null>(null)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+  /** The blob currently on screen, if any — the only one we are responsible for. */
+  const objectUrlRef = useRef<string | null>(null)
+
+  const releaseObjectUrl = () => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
+  }
+
+  /*
+   * A freshly uploaded file is shown from a local blob so the change lands
+   * instantly, but that blob is a stand-in, not the picture of record. Once the
+   * server comes back with the stored URL, hand over to it and release the
+   * blob: holding on would keep a decoded copy of every upload in memory for
+   * the life of the page and leave the header rendering a client-side image
+   * that no longer matches what anyone else sees.
+   */
+  useEffect(() => {
+    releaseObjectUrl()
+    setPreview(url || null)
+  }, [url])
+
+  useEffect(() => releaseObjectUrl, [])
 
   const isAvatar = variant === 'avatar'
   const field = isAvatar ? 'profileImage' : 'logo'
@@ -85,6 +109,8 @@ export function ProfileMediaEditor({
       if (!mediaId) throw new Error('upload returned no id')
 
       await patchMembership(mediaId)
+      releaseObjectUrl()
+      objectUrlRef.current = objectUrl
       setPreview(objectUrl)
       setToast({ message: t('profile', 'profileUpdated'), type: 'success' })
       router.refresh()

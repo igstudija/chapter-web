@@ -18,6 +18,7 @@ import {
   MessageSquare,
   ArrowUp,
   ArrowDown,
+  Users,
 } from 'lucide-react'
 import { useTranslations } from './TranslationsProvider'
 import { slideImageHelp } from './slideImageHelp'
@@ -72,18 +73,26 @@ interface PresentationFormProps {
 const TEMPLATES: MemberSlideTemplate[] = ['classic', 'cover', 'reels']
 
 /**
- * Per-member overrides. There is no "chapter default" button: a member who has
- * never touched these still sees the setting they are actually getting, because
- * the highlighted button is resolved against the chapter's value below. Their
- * first click just writes that choice down explicitly.
+ * Per-member overrides, each starting with the chapter default.
+ *
+ * That first segment is not decoration: an override is one click away, and
+ * without a way back the member could never return to the chapter's choice.
+ * It matters most for the chapter's `slide` option, which has no member-level
+ * equivalent at all — the column's enum is inherit/bar/flash/off — so staying
+ * inherited is the only way to keep a dedicated special-request slide.
+ *
+ * A member who has never touched these sees the chapter segment highlighted;
+ * what they are actually getting is spelled out in its tooltip.
  */
 const REQUEST_OPTIONS = [
+  { value: 'inherit', labelKey: 'chapterDefault', Icon: Users },
   { value: 'bar', labelKey: 'requestBar', Icon: PanelBottom },
   { value: 'flash', labelKey: 'requestBalloon', Icon: MessageSquare },
   { value: 'off', labelKey: 'requestHide', Icon: EyeOff },
 ] as const
 
 const NEXT_POSITION_OPTIONS = [
+  { value: 'inherit', labelKey: 'chapterDefault', Icon: Users },
   { value: 'top', labelKey: 'positionTop', Icon: ArrowUp },
   { value: 'bottom', labelKey: 'positionBottom', Icon: ArrowDown },
 ] as const
@@ -165,13 +174,24 @@ export function PresentationForm({
   const [slideBackgroundColor, setSlideBackgroundColor] = useState(
     initialData.slideBackgroundColor || '#ffffff',
   )
-  const [slideBackgroundColorRight, setSlideBackgroundColorRight] = useState(
-    initialData.slideBackgroundColorRight || initialData.slideBackgroundColor || '#ffffff',
+  /**
+   * `null` means the member never set a media-side colour, and the slide falls
+   * back to the profile-side one. Seeding this with that fallback instead would
+   * show the preview an override that Save can never persist — the editor would
+   * promise two colours where the projector shows one.
+   */
+  const [slideBackgroundColorRight, setSlideBackgroundColorRight] = useState<string | null>(
+    initialData.slideBackgroundColorRight ?? null,
   )
   const [slideImageMode, setSlideImageMode] = useState(initialData.slideImageMode || 'contain')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  /**
+   * Kept apart from `error`: patchMembership clears `error` on every save, so a
+   * warning raised just before one would be wiped in the same tick.
+   */
+  const [notice, setNotice] = useState<string | null>(null)
   const [showHelp, setShowHelp] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
@@ -220,9 +240,7 @@ export function PresentationForm({
   const originalGiven = useRef(initialData.tyfcbGiven)
   const originalReceived = useRef(initialData.tyfcbReceived)
   const originalColor = useRef(initialData.slideBackgroundColor || '#ffffff')
-  const originalColorRight = useRef(
-    initialData.slideBackgroundColorRight || initialData.slideBackgroundColor || '#ffffff',
-  )
+  const originalColorRight = useRef<string | null>(initialData.slideBackgroundColorRight ?? null)
   const originalImageMode = useRef(initialData.slideImageMode || 'contain')
   const originalVideoUrl = useRef(initialData.slideVideoUrl || '')
 
@@ -254,17 +272,28 @@ export function PresentationForm({
   /**
    * Persist the image list. `slideImage` mirrors the first entry so anything
    * still reading the legacy single-image field stays correct.
+   *
+   * Shows the new list immediately, but puts the old one back if the save
+   * fails — otherwise a dropped request leaves the thumbnails and the live
+   * preview showing an order (or an absence) the database never accepted.
+   * Returns whether it stuck, so callers can hold off on anything destructive.
    */
   const saveImages = useCallback(
-    async (images: SlideImageRef[]) => {
+    async (images: SlideImageRef[]): Promise<boolean> => {
+      const previous = slideImages
       setSlideImages(images)
       onImagesChange?.(images)
-      await patchMembership({
+      const saved = await patchMembership({
         slideImages: images.map((image) => image.id),
         slideImage: images[0]?.id ?? null,
       })
+      if (!saved) {
+        setSlideImages(previous)
+        onImagesChange?.(previous)
+      }
+      return saved
     },
-    [onImagesChange, patchMembership],
+    [slideImages, onImagesChange, patchMembership],
   )
 
   // Save field on blur (when user leaves the input)
@@ -293,8 +322,16 @@ export function PresentationForm({
     const room = MAX_SLIDE_IMAGES - slideImages.length
     const files = selected.slice(0, Math.max(room, 0))
 
+    setNotice(files.length < selected.length ? t('presentation', 'imagesLimit') : null)
+
+    // At the cap there is nothing to upload — leave without a pointless PATCH.
+    if (files.length === 0) {
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      return
+    }
+
     setUploading(true)
-    setError(files.length < selected.length ? t('presentation', 'imagesLimit') : null)
+    setError(null)
 
     try {
       const uploaded: SlideImageRef[] = []
@@ -332,7 +369,13 @@ export function PresentationForm({
   const handleRemoveImage = async (index: number) => {
     const removed = slideImages[index]
     const remaining = slideImages.filter((_, i) => i !== index)
-    await saveImages(remaining)
+
+    // Unlink first. If that failed the membership still points at this media,
+    // so deleting the file would leave the slide referencing a row that is
+    // gone — a broken image on the projector with nothing on screen to explain
+    // it. The photo stays put and the member can try again.
+    const saved = await saveImages(remaining)
+    if (!saved) return
 
     // Drop the file too — it exists only for this slide.
     try {
@@ -360,6 +403,31 @@ export function PresentationForm({
   // What the slide will actually do right now, whether or not it was chosen.
   const effectiveRequest = requestDisplay === 'inherit' ? chapterRequestDisplay : requestDisplay
   const effectiveNextPosition = nextPosition === 'inherit' ? chapterNextPosition : nextPosition
+
+  /** What the media side actually renders: its own colour, or the profile side's. */
+  const effectiveColorRight = slideBackgroundColorRight ?? slideBackgroundColor
+
+  // Keep the preview honest as the profile-side colour moves under an unset
+  // media side, instead of leaving it on whatever it was seeded with.
+  useEffect(() => {
+    onColorRightChange?.(effectiveColorRight)
+  }, [effectiveColorRight, onColorRightChange])
+
+  /** Spelled-out names, so the inherit tooltip can say what is inherited. */
+  const requestLabel = (value: string) => {
+    if (value === 'bar') return t('presentation', 'requestBar')
+    if (value === 'flash') return t('presentation', 'requestBalloon')
+    if (value === 'slide') return t('presentation', 'requestOwnSlide')
+    if (value === 'off') return t('presentation', 'requestHide')
+    return t('presentation', 'chapterDefault')
+  }
+
+  const positionLabel = (value: string) =>
+    value === 'bottom' ? t('presentation', 'positionBottom') : t('presentation', 'positionTop')
+
+  /** Chapter segment reads "Chapter default — Bar along the bottom". */
+  const optionTitle = (value: string, label: string, effective: string, describe: (v: string) => string) =>
+    value === 'inherit' ? `${t('presentation', 'chapterDefault')} — ${describe(effective)}` : label
 
   const handleRequestDisplayChange = async (next: string) => {
     if (next === requestDisplay) return
@@ -425,6 +493,14 @@ export function PresentationForm({
         </div>
       )}
 
+      {/* Warnings that are not failures — kept out of `error` so a save cannot
+          wipe them before they have been read. */}
+      {notice && (
+        <div className="mb-4 rounded-lg bg-amber-100 p-3 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200">
+          {notice}
+        </div>
+      )}
+
       {/* Media: images or video */}
       <div className="mt-8">
         {/* Layout first: the arrangement frames what the media has to fill, so
@@ -477,12 +553,9 @@ export function PresentationForm({
                   }}
                 />
                 <ColorPicker
-                  value={slideBackgroundColorRight}
+                  value={effectiveColorRight}
                   title={t('presentation', 'backgroundRight')}
-                  onChange={(color) => {
-                    setSlideBackgroundColorRight(color)
-                    onColorRightChange?.(color)
-                  }}
+                  onChange={setSlideBackgroundColorRight}
                 />
               </div>
             </div>
@@ -539,9 +612,14 @@ export function PresentationForm({
                     key={option.value}
                     type="button"
                     onClick={() => handleRequestDisplayChange(option.value)}
-                    aria-pressed={effectiveRequest === option.value}
-                    title={t('presentation', option.labelKey)}
-                    className={segmentClass(effectiveRequest === option.value)}
+                    aria-pressed={requestDisplay === option.value}
+                    title={optionTitle(
+                      option.value,
+                      t('presentation', option.labelKey),
+                      effectiveRequest,
+                      requestLabel,
+                    )}
+                    className={segmentClass(requestDisplay === option.value)}
                   >
                     <option.Icon className="w-4 h-4" />
                   </button>
@@ -559,9 +637,14 @@ export function PresentationForm({
                     key={option.value}
                     type="button"
                     onClick={() => handleNextPositionChange(option.value)}
-                    aria-pressed={effectiveNextPosition === option.value}
-                    title={t('presentation', option.labelKey)}
-                    className={segmentClass(effectiveNextPosition === option.value)}
+                    aria-pressed={nextPosition === option.value}
+                    title={optionTitle(
+                      option.value,
+                      t('presentation', option.labelKey),
+                      effectiveNextPosition,
+                      positionLabel,
+                    )}
+                    className={segmentClass(nextPosition === option.value)}
                   >
                     <option.Icon className="w-4 h-4" />
                   </button>
@@ -577,7 +660,7 @@ export function PresentationForm({
                 <button
                   type="button"
                   onClick={async () => {
-                    const updateData: Record<string, string> = {}
+                    const updateData: Record<string, string | null> = {}
                     if (slideBackgroundColor !== originalColor.current) {
                       updateData.slideBackgroundColor = slideBackgroundColor
                     }
@@ -670,11 +753,16 @@ export function PresentationForm({
                         <span className="absolute left-1 top-1 rounded bg-black/60 px-1 text-[10px] font-semibold text-white">
                           {index + 1}
                         </span>
+                        {/* Locked while a save or upload is in flight: those
+                            handlers work from the list as it was when they
+                            started, so a removal alongside them would be
+                            written back with an id that no longer exists. */}
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(index)}
+                          disabled={uploading || saving}
                           title={t('presentation', 'removeImage')}
-                          className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                          className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 disabled:opacity-30"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -682,7 +770,7 @@ export function PresentationForm({
                           <button
                             type="button"
                             onClick={() => handleMoveImage(index, -1)}
-                            disabled={index === 0}
+                            disabled={uploading || saving || index === 0}
                             title={t('presentation', 'moveImageLeft')}
                             className="flex h-5 w-1/2 items-center justify-center bg-black/60 text-white disabled:opacity-30"
                           >
@@ -691,7 +779,7 @@ export function PresentationForm({
                           <button
                             type="button"
                             onClick={() => handleMoveImage(index, 1)}
-                            disabled={index === slideImages.length - 1}
+                            disabled={uploading || saving || index === slideImages.length - 1}
                             title={t('presentation', 'moveImageRight')}
                             className="flex h-5 w-1/2 items-center justify-center bg-black/60 text-white disabled:opacity-30"
                           >
@@ -706,7 +794,7 @@ export function PresentationForm({
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
+                      disabled={uploading || saving}
                       title={t('presentation', 'addImages')}
                       aria-label={t('presentation', 'addImages')}
                       className="flex h-12 w-16 items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-neutral-400 hover:text-neutral-700 disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-200"

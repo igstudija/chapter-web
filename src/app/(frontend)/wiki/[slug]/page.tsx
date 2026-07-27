@@ -32,7 +32,7 @@ export default async function WikiDetailPage({ params }: PageProps) {
   const t = getTranslations(locale)
 
 
-  const [wikiResult, allWikiPages, top40Data, specialRequestsData] = await Promise.all([
+  const [wikiResult, allWikiPages, top40Data, top20Data, specialRequestsData] = await Promise.all([
     payload.find({
       collection: 'wiki',
       where: {
@@ -56,6 +56,16 @@ export default async function WikiDetailPage({ params }: PageProps) {
       depth: 0,
       select: { submittedBy: true },
     }),
+    // Top 20 feeds memberRating just as Top 40 does. Leaving it out did not
+    // make the badge disappear — it made every member here read as 0/20 while
+    // /members showed the same person complete.
+    payload.find({
+      collection: 'top20',
+      where: {},
+      limit: 5000,
+      depth: 0,
+      select: { submittedBy: true },
+    }),
     payload.find({
       collection: 'special-requests',
       where: {},
@@ -71,13 +81,20 @@ export default async function WikiDetailPage({ params }: PageProps) {
     notFound()
   }
 
-  // Count top40 and special requests per user
-  const top40CountByUser = new Map<string, number>()
-  for (const entry of top40Data.docs) {
-    const u = entry.submittedBy
-    const userId = typeof u === 'object' && u ? String(u.id) : typeof u === 'number' ? String(u) : undefined
-    if (userId) top40CountByUser.set(userId, (top40CountByUser.get(userId) || 0) + 1)
+  // Count top40, top20 and special requests per user
+  const countBySubmitter = (docs: { submittedBy?: unknown }[]) => {
+    const counts = new Map<string, number>()
+    for (const entry of docs) {
+      const u = entry.submittedBy
+      const userId =
+        typeof u === 'object' && u ? String((u as { id: unknown }).id) : typeof u === 'number' ? String(u) : undefined
+      if (userId) counts.set(userId, (counts.get(userId) || 0) + 1)
+    }
+    return counts
   }
+
+  const top40CountByUser = countBySubmitter(top40Data.docs)
+  const top20CountByUser = countBySubmitter(top20Data.docs)
 
   const specialRequestsCountByUser = new Map<string, number>()
   for (const entry of specialRequestsData.docs) {
@@ -283,6 +300,7 @@ export default async function WikiDetailPage({ params }: PageProps) {
                                     email={memberUser?.email || undefined}
                                     specialRequestsCount={specialRequestsCountByUser.get(userIdStr) || 0}
                                     top40Count={top40CountByUser.get(userIdStr) || 0}
+                                    top20Count={top20CountByUser.get(userIdStr) || 0}
                                   />
                                 )
                               })}

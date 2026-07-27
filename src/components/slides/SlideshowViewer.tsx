@@ -401,6 +401,23 @@ export function SlideshowViewer({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      /*
+       * These are presenter shortcuts, and they are bound to the window — but
+       * the viewer also runs as a live preview on the presentation editor,
+       * inches below the fields where a member types a video link or a hex
+       * colour. Without this, every "c" they type flips the chrome and writes
+       * the flipped value to localStorage, and every space jumps a slide.
+       */
+      const target = e.target as HTMLElement | null
+      if (
+        target?.isContentEditable ||
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.tagName === 'SELECT'
+      ) {
+        return
+      }
+
       switch (e.key) {
         case 'ArrowRight':
         case 'ArrowDown':
@@ -482,34 +499,45 @@ export function SlideshowViewer({
     return ''
   }
 
-  const getNextMemberName = () => {
-    if (currentSlideIndex === totalSlides - 1) return ''
-
-    const nextIndex = currentSlideIndex + 1
-    const nextSlideData = slides[nextIndex]
-    if (!nextSlideData) return ''
-
-    if (nextSlideData.type === 'member') {
-      const data = nextSlideData.data as { member: SlideMember }
+  const slideHeadline = (slide: SlideData): string => {
+    if (slide.type === 'member') {
+      const data = slide.data as { member: SlideMember }
       return `${data.member.name} ${data.member.surname}`
     }
-    if (nextSlideData.type === 'group') {
-      const data = nextSlideData.data as { group: SlidePowerGroup }
+    if (slide.type === 'group') {
+      const data = slide.data as { group: SlidePowerGroup }
       return data.group.title
     }
-    if (nextSlideData.type === 'guest-detail') {
-      const data = nextSlideData.data as { guest: { name: string } }
+    if (slide.type === 'guest-detail') {
+      const data = slide.data as { guest: { name: string } }
       return data.guest.name
     }
-    if (nextSlideData.type === 'guests') {
-      return (nextSlideData.data as { title?: string }).title || 'Viesi'
+    if (slide.type === 'guests') {
+      return (slide.data as { title?: string }).title || 'Viesi'
     }
-    if (nextSlideData.type === 'speech-master-ceremony') {
-      const data = nextSlideData.data as { title?: string | null }
+    if (slide.type === 'speech-master-ceremony') {
+      const data = slide.data as { title?: string | null }
       return data.title || 'Runas Meistars'
     }
-    if (nextSlideData.type === 'intro') {
+    if (slide.type === 'intro') {
       return 'Intro'
+    }
+    return ''
+  }
+
+  /**
+   * Who the room should be looking forward to.
+   *
+   * A special-request slide belongs to the member who just presented, so it is
+   * looked through rather than announced: when the chapter routes requests to
+   * their own slide, every member slide is followed by one, and stopping at it
+   * left the "up next" badge blank for the whole meeting.
+   */
+  const getNextMemberName = () => {
+    for (let index = currentSlideIndex + 1; index < totalSlides; index++) {
+      const next = slides[index]
+      if (!next || next.type === 'special-request') continue
+      return slideHeadline(next)
     }
     return ''
   }
@@ -541,10 +569,14 @@ export function SlideshowViewer({
   // Slides do not auto-advance, so the countdown parks at zero — gating on
   // `timeRemaining > 0` made the request vanish at the exact moment the member
   // was wrapping up and the room was finally looking at it.
+  //
+  // On a slide with the timer switched off there is no "last five seconds" to
+  // wait for, so it stays up the whole time. Requiring a countdown here meant a
+  // power group with `disable timer` showed the request nowhere at all: the bar
+  // is already suppressed for anything but `bar`, and the flash never fired.
   const flashRequest =
     memberSlideData?.specialRequestDisplay === 'flash' &&
-    showTimer &&
-    timeRemaining <= SPECIAL_REQUEST_FLASH_SECONDS
+    (!showTimer || timeRemaining <= SPECIAL_REQUEST_FLASH_SECONDS)
       ? memberSlideData.member.specialRequest
       : null
 

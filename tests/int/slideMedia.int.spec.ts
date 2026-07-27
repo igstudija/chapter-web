@@ -42,6 +42,24 @@ describe('parseSlideVideo', () => {
     expect(unlistedQuery?.hash).toBe('abc123def')
   })
 
+  it('takes the video id, not the collection id, from grouped Vimeo links', () => {
+    // Both numbers are valid ids; the first one belongs to the group. Picking
+    // it embedded a "video not found" panel that the form accepted happily.
+    const grouped = parseSlideVideo('https://vimeo.com/groups/123456/videos/987654321')
+    expect(grouped?.id).toBe('987654321')
+    expect(grouped?.hash).toBeUndefined()
+    expect(grouped?.embedUrl).toContain('/987654321')
+
+    expect(parseSlideVideo('https://vimeo.com/album/123456/video/987654321')?.id).toBe('987654321')
+    expect(parseSlideVideo('https://vimeo.com/showcase/123456/video/987654321')?.id).toBe(
+      '987654321',
+    )
+    expect(parseSlideVideo('https://vimeo.com/channels/staffpicks/76979871')?.id).toBe('76979871')
+
+    // A collection page names no video at all — better nothing than a wrong embed.
+    expect(parseSlideVideo('https://vimeo.com/groups/123456')).toBeNull()
+  })
+
   it('rejects anything it cannot embed', () => {
     for (const input of [null, undefined, '', '   ', 'not a url', 'https://example.com/video.mp4']) {
       expect(parseSlideVideo(input)).toBeNull()

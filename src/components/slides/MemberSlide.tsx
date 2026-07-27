@@ -103,9 +103,20 @@ function getTextColor(bgColor: string): string {
   if (!bgColor || bgColor === '#ffffff') return '#000000'
 
   const hex = bgColor.replace('#', '')
+
+  /*
+   * Only 6-digit hex parses here, and the colour field is free text — an admin
+   * who types `#fff` used to get NaN through to the comparison below, which is
+   * false for `NaN > 0.5`, so the slide fell back to white type. On a light
+   * background that is a blank slide on the projector. Anything unparseable
+   * falls back to black, which at least stays readable on the white default.
+   */
+  if (hex.length !== 6) return '#000000'
+
   const r = Number.parseInt(hex.substring(0, 2), 16)
   const g = Number.parseInt(hex.substring(2, 4), 16)
   const b = Number.parseInt(hex.substring(4, 6), 16)
+  if ([r, g, b].some(Number.isNaN)) return '#000000'
 
   // Relative luminance (perceived brightness)
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255

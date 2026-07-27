@@ -73,16 +73,44 @@ function parseYoutube(url: URL): SlideVideo | null {
   return { provider: 'youtube', id, embedUrl: youtubeEmbedUrl(id) }
 }
 
+/** Path prefixes whose first number identifies a collection, not a video. */
+const VIMEO_COLLECTIONS = new Set(['groups', 'album', 'showcase', 'folder'])
+
 function parseVimeo(url: URL): SlideVideo | null {
   const host = url.hostname.replace(/^www\./, '')
   if (!host.endsWith('vimeo.com')) return null
 
   const segments = url.pathname.split('/').filter(Boolean)
-  // player.vimeo.com/video/123, vimeo.com/123, vimeo.com/channels/staffpicks/123
-  const idIndex = segments.findIndex((segment) => VIMEO_ID.test(segment))
-  if (idIndex === -1) return null
+
+  /*
+   * player.vimeo.com/video/123, vimeo.com/123, vimeo.com/channels/staffpicks/123,
+   * vimeo.com/groups/123456/videos/987654321.
+   *
+   * That last shape is why this is not simply "the first number in the path":
+   * a grouped link carries the group's id first, and taking it embedded a
+   * "video not found" panel — accepted by the form without complaint, and
+   * discovered only once the deck was on a projector. Where the path names the
+   * video explicitly, that wins; a collection page that names no video at all
+   * is not something we can embed.
+   */
+  const marker = segments.findIndex((segment) => segment === 'video' || segment === 'videos')
+  let idIndex: number
+
+  if (marker !== -1) {
+    idIndex = marker + 1
+  } else if (segments[0] === 'channels') {
+    // /channels/<name>/<id> — the channel's own name is never the video.
+    idIndex = segments.findIndex((segment, index) => index > 0 && VIMEO_ID.test(segment))
+  } else if (segments[0] && VIMEO_COLLECTIONS.has(segments[0])) {
+    return null
+  } else {
+    idIndex = segments.findIndex((segment) => VIMEO_ID.test(segment))
+  }
+
+  if (idIndex < 0) return null
 
   const id = segments[idIndex]
+  if (!id || !VIMEO_ID.test(id)) return null
   // Unlisted videos carry their hash either as the next path segment or as `?h=`.
   const next = segments[idIndex + 1]
   const hash = url.searchParams.get('h') || (next && !VIMEO_ID.test(next) ? next : undefined)

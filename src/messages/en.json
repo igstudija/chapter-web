@@ -371,6 +371,8 @@
     "requestHide": "Hide",
     "requestBar": "Bar along the bottom",
     "requestBalloon": "Balloon in the middle, last 5 seconds",
+    "requestOwnSlide": "Its own slide, right after you",
+    "chapterDefault": "Chapter default",
     "nextSpeaker": "Next speaker",
     "positionTop": "Top right",
     "positionBottom": "Bottom right",

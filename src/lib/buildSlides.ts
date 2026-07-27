@@ -150,6 +150,9 @@ export interface BuildSlidesContext {
 
 const GUESTS_PER_SLIDE = 18
 
+/** Share of a member's slot handed to their own special-request slide. */
+const SPECIAL_REQUEST_SHARE = 1 / 3
+
 function relId(value: string | { id: string } | null | undefined): string | null {
   if (!value) return null
   if (typeof value === 'string') return value
@@ -203,10 +206,19 @@ function memberSlides(
   ]
 
   if (ownSlide && member.specialRequest) {
+    /*
+     * The request slide borrows from the member's time rather than adding to
+     * it. Giving it a full slot of its own doubles the running time of every
+     * member who has a request on file — a 20-member power group at a minute
+     * each silently becomes forty minutes — and it lands hardest on a speech
+     * master, whose duration is already multiplied before it gets here.
+     */
+    const requestDuration = Math.max(1, Math.round(slide.duration * SPECIAL_REQUEST_SHARE))
+    slides[0].duration = Math.max(1, slide.duration - requestDuration)
     slides.push({
       type: 'special-request',
       data: { member },
-      duration: slide.duration,
+      duration: requestDuration,
       disableTimer: slide.disableTimer,
     })
   }
