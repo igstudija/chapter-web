@@ -33,7 +33,7 @@ export function TabNav({ items, ariaLabel }: TabNavProps) {
   return (
     <nav
       aria-label={ariaLabel}
-      className="mb-8 -mx-4 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0 dark:border-line-dark"
+      className="no-scrollbar mb-8 -mx-4 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0 dark:border-line-dark"
     >
       <ul className="flex min-w-max gap-1">
         {items.map((item) => (

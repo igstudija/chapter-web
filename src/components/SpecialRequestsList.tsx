@@ -120,9 +120,9 @@ export function SpecialRequestsList({
               setDragIndex(null)
               setOverIndex(null)
             }}
-            className={`transition-opacity ${dragIndex === index ? 'opacity-50' : ''} ${
+            className={`rounded-xl transition-opacity ${dragIndex === index ? 'opacity-40' : ''} ${
               overIndex === index && dragIndex !== null && dragIndex !== index
-                ? 'ring-2 ring-brand/40 rounded-lg'
+                ? 'ring-2 ring-brand/45'
                 : ''
             }`}
           >

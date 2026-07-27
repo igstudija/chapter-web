@@ -21,34 +21,36 @@ export function TopListSwitch({
   const [active, setActive] = useState<'top40' | 'top20'>('top40')
   const entries = active === 'top40' ? top40Entries : top20Entries
 
-  const pill = (key: 'top40' | 'top20', label: string, count: number) => (
+  // Two hand-rolled pills — one filled solid brand — sat next to the app's
+  // segmented control everywhere else and read as a different kind of widget.
+  // This is the same primitive, so the page has one vocabulary for "pick a view".
+  const tab = (key: 'top40' | 'top20', label: string, count: number) => (
     <button
       type="button"
+      role="tab"
+      aria-selected={active === key}
       onClick={() => setActive(key)}
-      className={`flex items-center gap-2 px-5 h-11 rounded-lg font-semibold transition-colors ${
-        active === key
-          ? 'bg-brand text-white'
-          : 'bg-white dark:bg-neutral-800 text-ink dark:text-surface-text border border-neutral-300 dark:border-neutral-600 hover:border-brand'
-      }`}
+      className="segmented-item px-4 py-2"
     >
       <span>{label}</span>
-      <span
-        className={`text-sm font-bold ${active === key ? 'text-white/90' : 'text-brand'}`}
-      >
-        Σ{count}
-      </span>
+      <span className="tabular font-mono text-xs opacity-70">{count}</span>
     </button>
   )
 
-  return (
-    <div>
-      <div className="flex gap-3 mb-6">
-        {pill('top40', top40Label, top40Entries.length)}
-        {pill('top20', top20Label, top20Entries.length)}
-      </div>
-
-      {/* key forces Top40Grid to reset its internal search/pagination on switch */}
-      <Top40Grid key={active} entries={entries} />
+  /*
+    The switch rides in the grid's search row rather than on a line of its own:
+    it scopes exactly what the field below it filters, and stacking the two
+    left an empty band between the page title and the first result.
+  */
+  const scopeSwitch = (
+    <div className="segmented" role="tablist">
+      {tab('top40', top40Label, top40Entries.length)}
+      {tab('top20', top20Label, top20Entries.length)}
     </div>
+  )
+
+  return (
+    /* key forces Top40Grid to reset its internal search/pagination on switch */
+    <Top40Grid key={active} entries={entries} leadingControls={scopeSwitch} />
   )
 }

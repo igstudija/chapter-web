@@ -31,14 +31,14 @@ export function ConfirmDialog({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="modal-scrim">
       <button
         type="button"
-        className="fixed inset-0 bg-neutral-950/55 backdrop-blur-sm"
+        className="fixed inset-0"
         onClick={onClose}
         aria-label="Close dialog"
       />
-      <div className="relative bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="modal-panel relative w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-lg font-bold tracking-tight text-ink dark:text-surface-text">{title}</h2>
           <button
@@ -56,7 +56,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="px-4 py-2 border border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors font-medium disabled:opacity-50"
+            className="btn btn-line disabled:opacity-50"
           >
             {cancelText || t('common', 'cancel')}
           </button>
@@ -64,10 +64,10 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`px-4 py-2 rounded-lg transition-colors font-medium disabled:opacity-50 ${
+            className={`btn disabled:opacity-50 ${
               isDestructive
                 ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-brand text-white hover:bg-brand-dark'
+                : 'btn-primary'
             }`}
           >
             {loading ? t('common', 'deleting') : confirmText || t('common', 'delete')}

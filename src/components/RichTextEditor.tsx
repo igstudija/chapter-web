@@ -65,12 +65,10 @@ export function RichTextEditor({
   if (!mounted) {
     return (
       <div
-        className="border border-neutral-300 dark:border-neutral-600 rounded-lg overflow-hidden"
+        className="overflow-hidden rounded-lg border border-line-strong dark:border-line-dark"
         style={{ height }}
       >
-        <div className="p-4 bg-neutral-50 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
-          Ielādē redaktoru...
-        </div>
+        <div className="h-full animate-pulse bg-paper dark:bg-surface" />
       </div>
     )
   }
@@ -142,17 +140,55 @@ export function RichTextEditor({
           statusbar: false,
         }}
       />
+      {/*
+        TinyMCE ships its own chrome, and left alone it is the most dated
+        surface on any page that uses it: a grey toolbar strip, a 4px focus
+        outline in a red that is not this organisation's, and borders from a
+        different palette than every input beside it. This paints it with the
+        same tokens as `.field` — hairline, same radius, same focus treatment —
+        so the editor reads as one more form control rather than an embedded
+        application.
+      */}
       <style jsx global>{`
         .tinymce-frontend-wrapper .tox-tinymce {
-          border: 1px solid #d1d5db;
+          border: 1px solid var(--color-line-strong);
           border-radius: 0.5rem;
+          transition:
+            border-color 0.16s ease,
+            box-shadow 0.16s ease;
         }
         .dark .tinymce-frontend-wrapper .tox-tinymce {
-          border-color: #525252;
+          border-color: var(--color-line-dark);
         }
         .tinymce-frontend-wrapper .tox-tinymce:focus-within {
-          outline: 2px solid #c8102e;
-          outline-offset: -1px;
+          border-color: var(--color-brand);
+          box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-brand) 16%, transparent);
+        }
+        /* The toolbar is a header for the field, not a panel of its own. */
+        .tinymce-frontend-wrapper .tox .tox-editor-header {
+          box-shadow: none !important;
+          border-bottom: 1px solid var(--color-line);
+          background: var(--color-paper) !important;
+        }
+        .dark .tinymce-frontend-wrapper .tox .tox-editor-header {
+          border-bottom-color: var(--color-line-dark);
+          background: var(--color-surface) !important;
+        }
+        .tinymce-frontend-wrapper .tox .tox-toolbar,
+        .tinymce-frontend-wrapper .tox .tox-toolbar__primary,
+        .tinymce-frontend-wrapper .tox .tox-toolbar-overlord {
+          background: transparent !important;
+        }
+        .tinymce-frontend-wrapper .tox .tox-tbtn {
+          border-radius: 0.375rem;
+        }
+        .tinymce-frontend-wrapper .tox .tox-tbtn--enabled,
+        .tinymce-frontend-wrapper .tox .tox-tbtn--enabled:hover {
+          background: color-mix(in oklab, var(--color-brand) 12%, transparent);
+          color: var(--color-brand);
+        }
+        .tinymce-frontend-wrapper .tox .tox-tbtn--enabled svg {
+          fill: var(--color-brand);
         }
       `}</style>
     </div>

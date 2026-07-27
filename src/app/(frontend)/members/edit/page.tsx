@@ -81,14 +81,14 @@ export default function EditProfilePage() {
 
   if (fetching) {
     return (
-      <div className="bg-neutral-50 dark:bg-surface min-h-screen flex items-center justify-center">
+      <div className="bg-paper dark:bg-surface min-h-screen flex items-center justify-center">
         <p className="text-neutral-500 dark:text-neutral-400">Loading...</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
+    <div className="bg-paper dark:bg-surface min-h-screen">
       <div className="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-12">
         <nav className="text-sm mb-6">
           <Link href="/" className="text-neutral-500 dark:text-neutral-400 hover:text-brand">
@@ -105,15 +105,21 @@ export default function EditProfilePage() {
         <div className="panel p-6">
           <h1 className="display-2 mb-6 text-ink dark:text-surface-text">Edit Profile</h1>
 
-          {error && <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-lg mb-6">{error}</div>}
+          {error && (
+            <div className="alert alert-error mb-6" role="alert">
+              {error}
+            </div>
+          )}
           {success && (
-            <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-4 rounded-lg mb-6">{success}</div>
+            <div className="alert alert-success mb-6" role="alert">
+              {success}
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                <label htmlFor="name" className="field-label">
                   First Name *
                 </label>
                 <input
@@ -127,10 +133,7 @@ export default function EditProfilePage() {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="surname"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-                >
+                <label htmlFor="surname" className="field-label">
                   Last Name *
                 </label>
                 <input
@@ -146,7 +149,7 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              <label htmlFor="phone" className="field-label">
                 Phone
               </label>
               <input
@@ -160,10 +163,7 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <label
-                htmlFor="description"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="description" className="field-label">
                 About Me
               </label>
               <textarea
@@ -176,11 +176,11 @@ export default function EditProfilePage() {
               />
             </div>
 
-            <hr className="my-6 border-neutral-200 dark:border-neutral-700" />
+            <hr className="my-6 border-line dark:border-line-dark" />
             <h2 className="text-lg font-semibold text-ink dark:text-surface-text">Company Information</h2>
 
             <div>
-              <label htmlFor="company" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              <label htmlFor="company" className="field-label">
                 Company Name *
               </label>
               <input
@@ -196,10 +196,7 @@ export default function EditProfilePage() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label
-                  htmlFor="companyPhone"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-                >
+                <label htmlFor="companyPhone" className="field-label">
                   Company Phone
                 </label>
                 <input
@@ -212,10 +209,7 @@ export default function EditProfilePage() {
                 />
               </div>
               <div>
-                <label
-                  htmlFor="companyEmail"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-                >
+                <label htmlFor="companyEmail" className="field-label">
                   Company Email
                 </label>
                 <input
@@ -230,7 +224,7 @@ export default function EditProfilePage() {
             </div>
 
             <div>
-              <label htmlFor="website" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              <label htmlFor="website" className="field-label">
                 Website
               </label>
               <input
@@ -252,10 +246,7 @@ export default function EditProfilePage() {
               >
                 {loading ? 'SAVING...' : 'SAVE CHANGES'}
               </button>
-              <Link
-                href="/members"
-                className="px-6 py-3 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold"
-              >
+              <Link href="/members" className="btn btn-line">
                 Cancel
               </Link>
             </div>

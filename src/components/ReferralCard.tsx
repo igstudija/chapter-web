@@ -147,21 +147,21 @@ export function ReferralCard({
     switch (referral.status) {
       case 'success':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-500/12 text-emerald-700 dark:text-emerald-300">
             <CheckCircle className="h-3 w-3" />
             {t('activities', 'statusSuccess')}
           </span>
         )
       case 'failed':
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-rose-500/12 text-rose-700 dark:text-rose-300">
             <XCircle className="h-3 w-3" />
             {t('activities', 'statusFailed')}
           </span>
         )
       default:
         return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-500/14 text-amber-700 dark:text-amber-300">
             <Clock className="h-3 w-3" />
             {t('activities', 'statusPending')}
           </span>

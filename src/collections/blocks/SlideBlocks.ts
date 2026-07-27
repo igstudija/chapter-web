@@ -17,6 +17,22 @@ const customSlideSecondsField = {
   },
 } as const
 
+/**
+ * Strips a member slide down to its media — no photo, name, contacts, figures
+ * or special request. For chapters that let members present their own slide and
+ * don't want the profile furniture around it.
+ */
+const hideMemberInfoField = {
+  name: 'hideMemberInfo',
+  type: 'checkbox',
+  label: 'Slides without member info',
+  defaultValue: false,
+  admin: {
+    description:
+      'The member slides this entry produces show only the image or video, filling the whole slide.',
+  },
+} as const
+
 export const LogoWallBlock: Block = {
   slug: 'logoWall',
   dbName: 'lw',
@@ -57,6 +73,7 @@ export const SpeechMasterBlock: Block = {
       filterOptions: () => ({ status: { equals: 'active' } }),
     },
     customSlideSecondsField,
+    hideMemberInfoField,
   ],
 }
 
@@ -119,6 +136,7 @@ export const PowerGroupBlock: Block = {
         width: '50%',
       },
     },
+    hideMemberInfoField,
   ],
 }
 

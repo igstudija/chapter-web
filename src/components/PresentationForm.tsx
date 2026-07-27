@@ -1,19 +1,49 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Upload, Loader2, HelpCircle, X, Maximize2, Minimize2 } from 'lucide-react'
+import {
+  Loader2,
+  HelpCircle,
+  X,
+  Maximize2,
+  Minimize2,
+  ImageIcon,
+  Film,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  EyeOff,
+  PanelBottom,
+  MessageSquare,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react'
 import { useTranslations } from './TranslationsProvider'
 import { slideImageHelp } from './slideImageHelp'
 import { resizeImage, resizePresets } from '@/lib/resizeImage'
+import { isSupportedSlideVideoUrl } from '@/lib/slideVideo'
+import { ColorPicker } from './ColorPicker'
+import { MAX_SLIDE_IMAGES, type MemberSlideTemplate, type SlideMediaType } from '@/lib/buildSlides'
+
+/** One uploaded slide image: the media id we save, plus its URL for previews. */
+export interface SlideImageRef {
+  id: string
+  url: string
+}
 
 interface PresentationFormProps {
   readonly initialData: {
     readonly tyfcbGiven: number | null
     readonly tyfcbReceived: number | null
-    readonly slideImageUrl: string | null
-    readonly slideImageId: string | null
+    readonly slideImages: readonly SlideImageRef[]
+    readonly slideMediaType: SlideMediaType
+    readonly slideVideoUrl: string | null
+    readonly slideTemplate: MemberSlideTemplate
+    readonly slideSpecialRequestDisplay: string
+    readonly slideNextSpeakerPosition: string
     readonly slideBackgroundColor?: string
+    readonly slideBackgroundColorRight?: string
     readonly slideImageMode?: 'contain' | 'cover'
     readonly profileImageUrl: string | null
     readonly logoUrl: string | null
@@ -22,22 +52,101 @@ interface PresentationFormProps {
     readonly company: string
   }
   readonly siteId?: string
+  /** The chapter's values, used to show what an untouched member is getting. */
+  readonly chapterRequestDisplay?: string
+  readonly chapterNextPosition?: string
   readonly businessGivenMin?: number
   readonly businessReceivedMin?: number
   readonly onColorChange?: (color: string) => void
+  readonly onColorRightChange?: (color: string) => void
   readonly onImageModeChange?: (mode: 'contain' | 'cover') => void
-  readonly onImageChange?: (imageUrl: string | null) => void
+  readonly onImagesChange?: (images: readonly SlideImageRef[]) => void
+  readonly onMediaTypeChange?: (mediaType: SlideMediaType) => void
+  readonly onVideoUrlChange?: (url: string | null) => void
+  readonly onTemplateChange?: (template: MemberSlideTemplate) => void
+  readonly onSpecialRequestDisplayChange?: (value: string) => void
+  readonly onNextSpeakerPositionChange?: (value: string) => void
   readonly onTyfcbChange?: (field: 'tyfcbGiven' | 'tyfcbReceived', value: number | null) => void
+}
+
+const TEMPLATES: MemberSlideTemplate[] = ['classic', 'cover', 'reels']
+
+/**
+ * Per-member overrides. There is no "chapter default" button: a member who has
+ * never touched these still sees the setting they are actually getting, because
+ * the highlighted button is resolved against the chapter's value below. Their
+ * first click just writes that choice down explicitly.
+ */
+const REQUEST_OPTIONS = [
+  { value: 'bar', labelKey: 'requestBar', Icon: PanelBottom },
+  { value: 'flash', labelKey: 'requestBalloon', Icon: MessageSquare },
+  { value: 'off', labelKey: 'requestHide', Icon: EyeOff },
+] as const
+
+const NEXT_POSITION_OPTIONS = [
+  { value: 'top', labelKey: 'positionTop', Icon: ArrowUp },
+  { value: 'bottom', labelKey: 'positionBottom', Icon: ArrowDown },
+] as const
+
+const segmentClass = (active: boolean) =>
+  `h-12 w-12 flex items-center justify-center rounded-lg border-2 transition-all ${
+    active
+      ? 'border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+      : 'border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400'
+  }`
+
+/** Miniature of each layout, so the choice is visual rather than a word. */
+function TemplateThumb({ template }: { readonly template: MemberSlideTemplate }) {
+  const block = 'rounded-[2px] bg-current'
+
+  // Full-bleed media with an information layer down the left edge.
+  if (template === 'reels') {
+    return (
+      <div className="relative h-7 w-11 overflow-hidden rounded-[2px]">
+        <div className={`${block} absolute inset-0 opacity-70`} />
+        <div className={`${block} absolute inset-y-0 left-0 w-[22px] opacity-100`} />
+        <div className="absolute left-[3px] top-[4px] flex flex-col gap-[2px]">
+          <div className="h-[9px] w-[9px] rounded-[3px] bg-white/85" />
+          <div className="mt-[1px] h-[3px] w-[16px] rounded-[1px] bg-white/85" />
+          <div className="h-[2px] w-[11px] rounded-[1px] bg-white/50" />
+        </div>
+        <div className="absolute bottom-[4px] left-[3px] flex gap-[2px]">
+          <div className="h-[2px] w-[7px] rounded-[1px] bg-white/85" />
+          <div className="h-[2px] w-[7px] rounded-[1px] bg-white/35" />
+        </div>
+      </div>
+    )
+  }
+
+  // Two columns: text left, media right.
+  return (
+    <div className="flex h-7 w-11 gap-[3px]">
+      <div className="flex w-[18px] flex-col justify-center gap-[3px]">
+        <div className={`${block} h-[8px] w-[8px] self-center rounded-full opacity-70`} />
+        <div className={`${block} h-[3px] w-full opacity-35`} />
+        <div className={`${block} h-[3px] w-[12px] self-center opacity-25`} />
+      </div>
+      <div className={`${block} flex-1 opacity-70`} />
+    </div>
+  )
 }
 
 export function PresentationForm({
   initialData,
   siteId,
+  chapterRequestDisplay = 'bar',
+  chapterNextPosition = 'top',
   businessGivenMin = 0,
   businessReceivedMin = 0,
   onColorChange,
+  onColorRightChange,
   onImageModeChange,
-  onImageChange,
+  onImagesChange,
+  onMediaTypeChange,
+  onVideoUrlChange,
+  onTemplateChange,
+  onSpecialRequestDisplayChange,
+  onNextSpeakerPositionChange,
   onTyfcbChange,
 }: PresentationFormProps) {
   const router = useRouter()
@@ -46,17 +155,24 @@ export function PresentationForm({
 
   const [tyfcbGiven, setTyfcbGiven] = useState<number | null>(initialData.tyfcbGiven)
   const [tyfcbReceived, setTyfcbReceived] = useState<number | null>(initialData.tyfcbReceived)
-  const [slideImageUrl, setSlideImageUrl] = useState(initialData.slideImageUrl)
-  const [slideImageId, setSlideImageId] = useState(initialData.slideImageId)
+  const [slideImages, setSlideImages] = useState<SlideImageRef[]>([...initialData.slideImages])
+  const [mediaType, setMediaType] = useState<SlideMediaType>(initialData.slideMediaType)
+  const [videoUrl, setVideoUrl] = useState(initialData.slideVideoUrl || '')
+  const [template, setTemplate] = useState<MemberSlideTemplate>(initialData.slideTemplate)
+  const [requestDisplay, setRequestDisplay] = useState(initialData.slideSpecialRequestDisplay)
+  const [nextPosition, setNextPosition] = useState(initialData.slideNextSpeakerPosition)
+  const [videoError, setVideoError] = useState(false)
   const [slideBackgroundColor, setSlideBackgroundColor] = useState(
     initialData.slideBackgroundColor || '#ffffff',
+  )
+  const [slideBackgroundColorRight, setSlideBackgroundColorRight] = useState(
+    initialData.slideBackgroundColorRight || initialData.slideBackgroundColor || '#ffffff',
   )
   const [slideImageMode, setSlideImageMode] = useState(initialData.slideImageMode || 'contain')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showHelp, setShowHelp] = useState(false)
-  const colorInputRef = useRef<HTMLInputElement>(null)
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   // Detect language from messages
@@ -104,7 +220,52 @@ export function PresentationForm({
   const originalGiven = useRef(initialData.tyfcbGiven)
   const originalReceived = useRef(initialData.tyfcbReceived)
   const originalColor = useRef(initialData.slideBackgroundColor || '#ffffff')
+  const originalColorRight = useRef(
+    initialData.slideBackgroundColorRight || initialData.slideBackgroundColor || '#ffffff',
+  )
   const originalImageMode = useRef(initialData.slideImageMode || 'contain')
+  const originalVideoUrl = useRef(initialData.slideVideoUrl || '')
+
+  /** PATCH the current member's membership; returns whether it stuck. */
+  const patchMembership = useCallback(
+    async (data: Record<string, unknown>): Promise<boolean> => {
+      setSaving(true)
+      setError(null)
+      try {
+        const response = await fetch('/api/users/me', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ ...data, siteId }),
+        })
+        if (!response.ok) throw new Error('Failed to save')
+        router.refresh()
+        return true
+      } catch {
+        setError(t('profile', 'saveFailed'))
+        return false
+      } finally {
+        setSaving(false)
+      }
+    },
+    [router, siteId, t],
+  )
+
+  /**
+   * Persist the image list. `slideImage` mirrors the first entry so anything
+   * still reading the legacy single-image field stays correct.
+   */
+  const saveImages = useCallback(
+    async (images: SlideImageRef[]) => {
+      setSlideImages(images)
+      onImagesChange?.(images)
+      await patchMembership({
+        slideImages: images.map((image) => image.id),
+        slideImage: images[0]?.id ?? null,
+      })
+    },
+    [onImagesChange, patchMembership],
+  )
 
   // Save field on blur (when user leaves the input)
   const handleFieldBlur = async (field: 'tyfcbGiven' | 'tyfcbReceived') => {
@@ -114,98 +275,50 @@ export function PresentationForm({
     // Only save if value changed
     if (currentValue === originalValue) return
 
-    setSaving(true)
-    setError(null)
+    const saved = await patchMembership({ [field]: currentValue })
+    if (!saved) return
 
-    try {
-      const response = await fetch('/api/users/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          [field]: currentValue,
-          siteId,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to save')
-      }
-
-      // Update original value after successful save
-      if (field === 'tyfcbGiven') {
-        originalGiven.current = currentValue
-      } else {
-        originalReceived.current = currentValue
-      }
-
-      router.refresh()
-    } catch {
-      setError(t('profile', 'saveFailed'))
-    } finally {
-      setSaving(false)
+    if (field === 'tyfcbGiven') {
+      originalGiven.current = currentValue
+    } else {
+      originalReceived.current = currentValue
     }
   }
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const selected = Array.from(e.target.files || [])
+    if (selected.length === 0) return
+
+    // Take only what still fits, and say so rather than dropping files quietly.
+    const room = MAX_SLIDE_IMAGES - slideImages.length
+    const files = selected.slice(0, Math.max(room, 0))
 
     setUploading(true)
-    setError(null)
+    setError(files.length < selected.length ? t('presentation', 'imagesLimit') : null)
 
     try {
-      // Resize image on client side before upload
-      const resizedFile = await resizeImage(file, resizePresets.hero)
+      const uploaded: SlideImageRef[] = []
+      for (const file of files) {
+        // Resize client-side so a phone photo doesn't travel at full size
+        const resizedFile = await resizeImage(file, resizePresets.hero)
 
-      // Upload resized file to media
-      const formData = new FormData()
-      formData.append('file', resizedFile)
+        const formData = new FormData()
+        formData.append('file', resizedFile)
 
-      const uploadResponse = await fetch('/api/media', {
-        method: 'POST',
-        body: formData,
-      })
+        const uploadResponse = await fetch('/api/media', {
+          method: 'POST',
+          body: formData,
+        })
 
-      if (!uploadResponse.ok) {
-        throw new Error('Upload failed')
-      }
-
-      const uploadedMedia = await uploadResponse.json()
-      const newMediaId = uploadedMedia.doc.id
-
-      // Update membership with new slide image
-      const updateResponse = await fetch('/api/users/me', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          slideImage: newMediaId,
-          siteId,
-        }),
-      })
-
-      if (!updateResponse.ok) {
-        throw new Error('Failed to update user')
-      }
-
-      // Delete old media file if it existed
-      if (slideImageId) {
-        try {
-          await fetch(`/api/media/${slideImageId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-          })
-        } catch {
-          // Ignore deletion errors - old file may already be deleted
-          console.warn('Could not delete old slide image')
+        if (!uploadResponse.ok) {
+          throw new Error('Upload failed')
         }
+
+        const uploadedMedia = await uploadResponse.json()
+        uploaded.push({ id: String(uploadedMedia.doc.id), url: uploadedMedia.doc.url })
       }
 
-      setSlideImageUrl(uploadedMedia.doc.url)
-      setSlideImageId(newMediaId)
-      onImageChange?.(uploadedMedia.doc.url)
-      router.refresh()
+      await saveImages([...slideImages, ...uploaded])
     } catch {
       setError(t('profile', 'uploadFailed'))
     } finally {
@@ -216,15 +329,95 @@ export function PresentationForm({
     }
   }
 
-  const hasExistingImage = !!slideImageUrl
+  const handleRemoveImage = async (index: number) => {
+    const removed = slideImages[index]
+    const remaining = slideImages.filter((_, i) => i !== index)
+    await saveImages(remaining)
+
+    // Drop the file too — it exists only for this slide.
+    try {
+      await fetch(`/api/media/${removed.id}`, { method: 'DELETE', credentials: 'include' })
+    } catch {
+      console.warn('Could not delete slide image media')
+    }
+  }
+
+  const handleMoveImage = async (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target < 0 || target >= slideImages.length) return
+    const reordered = [...slideImages]
+    ;[reordered[index], reordered[target]] = [reordered[target], reordered[index]]
+    await saveImages(reordered)
+  }
+
+  const handleMediaTypeChange = async (next: SlideMediaType) => {
+    if (next === mediaType) return
+    setMediaType(next)
+    onMediaTypeChange?.(next)
+    await patchMembership({ slideMediaType: next })
+  }
+
+  // What the slide will actually do right now, whether or not it was chosen.
+  const effectiveRequest = requestDisplay === 'inherit' ? chapterRequestDisplay : requestDisplay
+  const effectiveNextPosition = nextPosition === 'inherit' ? chapterNextPosition : nextPosition
+
+  const handleRequestDisplayChange = async (next: string) => {
+    if (next === requestDisplay) return
+    setRequestDisplay(next)
+    onSpecialRequestDisplayChange?.(next)
+    await patchMembership({ slideSpecialRequestDisplay: next })
+  }
+
+  const handleNextPositionChange = async (next: string) => {
+    if (next === nextPosition) return
+    setNextPosition(next)
+    onNextSpeakerPositionChange?.(next)
+    await patchMembership({ slideNextSpeakerPosition: next })
+  }
+
+  const handleTemplateChange = async (next: MemberSlideTemplate) => {
+    if (next === template) return
+    setTemplate(next)
+    onTemplateChange?.(next)
+    await patchMembership({ slideTemplate: next })
+  }
+
+  const handleVideoUrlBlur = async () => {
+    const trimmed = videoUrl.trim()
+    if (trimmed === originalVideoUrl.current) return
+
+    if (trimmed !== '' && !isSupportedSlideVideoUrl(trimmed)) {
+      setVideoError(true)
+      return
+    }
+
+    setVideoError(false)
+    onVideoUrlChange?.(trimmed || null)
+    const saved = await patchMembership({ slideVideoUrl: trimmed || null })
+    if (saved) originalVideoUrl.current = trimmed
+  }
 
   const formatMinAmount = (value: number) =>
     `${new Intl.NumberFormat('lv-LV', { maximumFractionDigits: 0 }).format(value)} €`
   const minHint = (min: number) =>
     t('profile', 'minBusinessHint').replace('{amount}', formatMinAmount(min))
 
+  const templateLabel = (value: MemberSlideTemplate) => {
+    if (value === 'cover') return t('presentation', 'templateCover')
+    if (value === 'reels') return t('presentation', 'templateReels')
+    return t('presentation', 'templateClassic')
+  }
+
+
+  const toggleClass = (active: boolean) =>
+    `flex h-12 w-12 items-center justify-center rounded-lg border-2 transition-all ${
+      active
+        ? 'border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+        : 'border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400'
+    }`
+
   return (
-    <div className="panel p-6">
+    <div>
       {/* Error Messages */}
       {error && (
         <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg">
@@ -232,184 +425,72 @@ export function PresentationForm({
         </div>
       )}
 
-      {/* All Settings in One Row */}
-      <div>
-        <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-end justify-between">
-          {/* Left side: TYFCB Fields */}
-          <div className="flex gap-4 items-end">
-            {/* TYFCB Given */}
-            <div>
-              <label
-                htmlFor="tyfcbGiven"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
-                {t('profile', 'businessGiven')}
-              </label>
-              <input
-                type="number"
-                id="tyfcbGiven"
-                value={tyfcbGiven ?? ''}
-                onChange={(e) => {
-                  if (e.target.value === '') { setTyfcbGiven(null); onTyfcbChange?.('tyfcbGiven', null); return }
-                  const num = Number(e.target.value)
-                  if (num > 99000000) return
-                  setTyfcbGiven(num)
-                  onTyfcbChange?.('tyfcbGiven', num)
-                }}
-                min={0}
-                max={99000000}
-                className="w-36 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2"
-              />
-              {businessGivenMin > 0 && (
-                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400 max-w-36">
-                  {minHint(businessGivenMin)}
-                </p>
-              )}
-            </div>
-
-            {/* TYFCB Received */}
-            <div>
-              <label
-                htmlFor="tyfcbReceived"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
-                {t('profile', 'businessReceived')}
-              </label>
-              <input
-                type="number"
-                id="tyfcbReceived"
-                value={tyfcbReceived ?? ''}
-                onChange={(e) => {
-                  if (e.target.value === '') { setTyfcbReceived(null); onTyfcbChange?.('tyfcbReceived', null); return }
-                  const num = Number(e.target.value)
-                  if (num > 99000000) return
-                  setTyfcbReceived(num)
-                  onTyfcbChange?.('tyfcbReceived', num)
-                }}
-                min={0}
-                max={99000000}
-                className="w-36 border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2"
-              />
-              {businessReceivedMin > 0 && (
-                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400 max-w-36">
-                  {minHint(businessReceivedMin)}
-                </p>
-              )}
-            </div>
-
-            {/* Save Button - only show if values changed */}
-            {(tyfcbGiven !== originalGiven.current ||
-              tyfcbReceived !== originalReceived.current) && (
+      {/* Media: images or video */}
+      <div className="mt-8">
+        {/* Layout first: the arrangement frames what the media has to fill, so
+            it is chosen before the media is picked. Colour, fit and the request
+            toggle ride along on the same line — they describe the arrangement,
+            and the row had the space. */}
+        <div className="flex flex-wrap items-end gap-6">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+              {t('presentation', 'template')}
+            </label>
+            <div className="flex flex-wrap gap-3">
+            {TEMPLATES.map((value) => (
               <button
+                key={value}
                 type="button"
-                onClick={async () => {
-                  await handleFieldBlur('tyfcbGiven')
-                  await handleFieldBlur('tyfcbReceived')
-                }}
-                disabled={saving}
-                className="btn btn-primary h-10 px-4 py-0 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => handleTemplateChange(value)}
+                aria-pressed={template === value}
+                title={templateLabel(value)}
+                aria-label={templateLabel(value)}
+                className={`flex h-12 w-16 items-center justify-center rounded-lg border-2 transition-all ${
+                  template === value
+                    ? 'border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                    : 'border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400'
+                }`}
               >
-                {saving ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{t('common', 'saving')}</span>
-                  </>
-                ) : (
-                  <span>{t('common', 'save')}</span>
-                )}
+                <TemplateThumb template={value} />
               </button>
-            )}
+              ))}
+            </div>
           </div>
 
-          {/* Right side: Slide Settings */}
-          <div className="flex flex-wrap gap-4 items-end justify-end">
-            {/* Background Color */}
+          <div className="ml-auto flex flex-wrap gap-4 items-end justify-end">
+            {/* Two background colours, on every layout. Classic puts them side
+                by side; the full-bleed layouts stack them — the first carries
+                the type, the second sits behind the media. Both under one
+                heading: which swatch is which is in their tooltips, not in a
+                pair of long labels that push the row apart. */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                 {t('common', 'background')}
               </label>
               <div className="flex gap-2">
-                <div className="relative">
-                  <input
-                    ref={colorInputRef}
-                    type="color"
-                    value={slideBackgroundColor}
-                    onChange={(e) => {
-                      setSlideBackgroundColor(e.target.value)
-                      onColorChange?.(e.target.value)
-                    }}
-                    className="absolute opacity-0 w-0 h-0"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => colorInputRef.current?.click()}
-                    className="h-10 w-10 flex items-center justify-center border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
-                    title={slideBackgroundColor}
-                  >
-                    <div
-                      className="w-6 h-6 rounded border border-neutral-300 dark:border-neutral-500"
-                      style={{ backgroundColor: slideBackgroundColor }}
-                    />
-                  </button>
-                </div>
-                <input
-                  type="text"
+                <ColorPicker
                   value={slideBackgroundColor}
-                  onChange={(e) => {
-                    const v = e.target.value
-                    // Allow typing in progress (partial hex codes)
-                    if (v === '' || /^#[0-9a-fA-F]{0,6}$/.test(v)) {
-                      setSlideBackgroundColor(v)
-                      if (/^#[0-9a-fA-F]{6}$/.test(v)) onColorChange?.(v)
-                    }
+                  title={t('presentation', 'backgroundLeft')}
+                  onChange={(color) => {
+                    setSlideBackgroundColor(color)
+                    onColorChange?.(color)
                   }}
-                  onBlur={() => {
-                    if (!/^#[0-9a-fA-F]{6}$/.test(slideBackgroundColor)) {
-                      setSlideBackgroundColor('#ffffff')
-                      onColorChange?.('#ffffff')
-                    }
+                />
+                <ColorPicker
+                  value={slideBackgroundColorRight}
+                  title={t('presentation', 'backgroundRight')}
+                  onChange={(color) => {
+                    setSlideBackgroundColorRight(color)
+                    onColorRightChange?.(color)
                   }}
-                  className="w-[90px] border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-3 py-2 font-mono text-xs"
-                  placeholder="#ffffff"
-                  maxLength={7}
                 />
-              </div>
-            </div>
-
-            {/* Slide Image Upload */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                {t('presentation', 'image')}
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                />
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading}
-                  className="flex items-center gap-2 bg-neutral-100 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 px-4 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors disabled:opacity-50 h-10"
-                >
-                  {uploading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Upload className="w-4 h-4" />
-                  )}
-                  <span className="text-sm">
-                    {hasExistingImage ? t('presentation', 'update') : t('presentation', 'upload')}
-                  </span>
-                </button>
               </div>
             </div>
 
             {/* Image Mode Buttons */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-                {t('presentation', 'position')}
+                {t('presentation', 'imageFit')}
               </label>
               <div className="flex gap-2">
                 <button
@@ -418,7 +499,7 @@ export function PresentationForm({
                     setSlideImageMode('contain')
                     onImageModeChange?.('contain')
                   }}
-                  className={`h-10 w-10 flex items-center justify-center rounded-lg border-2 transition-all ${
+                  className={`h-12 w-12 flex items-center justify-center rounded-lg border-2 transition-all ${
                     slideImageMode === 'contain'
                       ? 'border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                       : 'border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400'
@@ -433,7 +514,7 @@ export function PresentationForm({
                     setSlideImageMode('cover')
                     onImageModeChange?.('cover')
                   }}
-                  className={`h-10 w-10 flex items-center justify-center rounded-lg border-2 transition-all ${
+                  className={`h-12 w-12 flex items-center justify-center rounded-lg border-2 transition-all ${
                     slideImageMode === 'cover'
                       ? 'border-red-600 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
                       : 'border-neutral-300 dark:border-neutral-600 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400'
@@ -445,41 +526,76 @@ export function PresentationForm({
               </div>
             </div>
 
+            {/* Both of these overrule the chapter's choice for this member's
+                slide only, so each group starts with "chapter default" rather
+                than silently pretending the member picked what they inherited. */}
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                {t('presentation', 'specialRequest')}
+              </label>
+              <div className="flex gap-2">
+                {REQUEST_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleRequestDisplayChange(option.value)}
+                    aria-pressed={effectiveRequest === option.value}
+                    title={t('presentation', option.labelKey)}
+                    className={segmentClass(effectiveRequest === option.value)}
+                  >
+                    <option.Icon className="w-4 h-4" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                {t('presentation', 'nextSpeaker')}
+              </label>
+              <div className="flex gap-2">
+                {NEXT_POSITION_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleNextPositionChange(option.value)}
+                    aria-pressed={effectiveNextPosition === option.value}
+                    title={t('presentation', option.labelKey)}
+                    className={segmentClass(effectiveNextPosition === option.value)}
+                  >
+                    <option.Icon className="w-4 h-4" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {/* Save Slide Settings Button */}
             {(slideBackgroundColor !== originalColor.current ||
+              slideBackgroundColorRight !== originalColorRight.current ||
               slideImageMode !== originalImageMode.current) && (
               <div className="flex items-end">
                 <button
                   type="button"
                   onClick={async () => {
-                    setSaving(true)
-                    setError(null)
-                    try {
-                      const updateData: Record<string, string | undefined> = { siteId }
-                      if (slideBackgroundColor !== originalColor.current) {
-                        updateData.slideBackgroundColor = slideBackgroundColor
-                      }
-                      if (slideImageMode !== originalImageMode.current) {
-                        updateData.slideImageMode = slideImageMode
-                      }
-                      const response = await fetch('/api/users/me', {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include',
-                        body: JSON.stringify(updateData),
-                      })
-                      if (!response.ok) throw new Error('Failed to save')
+                    const updateData: Record<string, string> = {}
+                    if (slideBackgroundColor !== originalColor.current) {
+                      updateData.slideBackgroundColor = slideBackgroundColor
+                    }
+                    if (slideBackgroundColorRight !== originalColorRight.current) {
+                      updateData.slideBackgroundColorRight = slideBackgroundColorRight
+                    }
+                    if (slideImageMode !== originalImageMode.current) {
+                      updateData.slideImageMode = slideImageMode
+                    }
+                    const saved = await patchMembership(updateData)
+                    if (saved) {
                       originalColor.current = slideBackgroundColor
+                      originalColorRight.current = slideBackgroundColorRight
                       originalImageMode.current = slideImageMode
-                      router.refresh()
-                    } catch {
-                      setError(t('profile', 'saveFailed'))
-                    } finally {
-                      setSaving(false)
                     }
                   }}
                   disabled={saving}
-                  className="btn btn-primary h-10 px-4 py-0 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn btn-primary h-12 px-5 py-0 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? (
                     <>
@@ -493,68 +609,256 @@ export function PresentationForm({
               </div>
             )}
 
-            {/* Help Button - Last */}
-            <div className="flex items-end">
+          </div>
+        </div>
+
+        {/* Media: images or video */}
+        <div className="mt-6 flex flex-wrap items-end gap-6">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+              {t('presentation', 'mediaType')}
+            </label>
+            <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setShowHelp(true)}
-                className="h-10 w-10 flex items-center justify-center text-red-600 hover:text-red-700 transition-colors rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700"
-                title="Image requirements"
+                onClick={() => handleMediaTypeChange('image')}
+                title={t('presentation', 'mediaImages')}
+                aria-label={t('presentation', 'mediaImages')}
+                className={toggleClass(mediaType === 'image')}
               >
-                <HelpCircle className="w-5 h-5" />
+                <ImageIcon className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleMediaTypeChange('video')}
+                title={t('presentation', 'mediaVideo')}
+                aria-label={t('presentation', 'mediaVideo')}
+                className={toggleClass(mediaType === 'video')}
+              >
+                <Film className="w-4 h-4" />
               </button>
             </div>
+          </div>
 
+          {mediaType === 'image' ? (
+            <div className="flex-1 min-w-[280px]">
+              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+                {t('presentation', 'images')}
+              </label>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              {/* Thumbnails and the add tile share one row and one size — the
+                  add action is the last tile rather than a button of its own. */}
+              <ul className="flex flex-wrap items-center gap-3">
+                {slideImages.map((image, index) => (
+                  <li
+                    key={image.id}
+                    className="group relative h-12 w-16 overflow-hidden rounded-lg border border-neutral-300 dark:border-neutral-600"
+                  >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={image.url}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                        <span className="absolute left-1 top-1 rounded bg-black/60 px-1 text-[10px] font-semibold text-white">
+                          {index + 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(index)}
+                          title={t('presentation', 'removeImage')}
+                          className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                        <div className="absolute inset-x-0 bottom-0 flex justify-between opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
+                          <button
+                            type="button"
+                            onClick={() => handleMoveImage(index, -1)}
+                            disabled={index === 0}
+                            title={t('presentation', 'moveImageLeft')}
+                            className="flex h-5 w-1/2 items-center justify-center bg-black/60 text-white disabled:opacity-30"
+                          >
+                            <ChevronLeft className="h-3 w-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveImage(index, 1)}
+                            disabled={index === slideImages.length - 1}
+                            title={t('presentation', 'moveImageRight')}
+                            className="flex h-5 w-1/2 items-center justify-center bg-black/60 text-white disabled:opacity-30"
+                          >
+                            <ChevronRight className="h-3 w-3" />
+                          </button>
+                        </div>
+                  </li>
+                ))}
+
+                {slideImages.length < MAX_SLIDE_IMAGES && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      title={t('presentation', 'addImages')}
+                      aria-label={t('presentation', 'addImages')}
+                      className="flex h-12 w-16 items-center justify-center rounded-lg border-2 border-dashed border-neutral-300 text-neutral-500 transition-colors hover:border-neutral-400 hover:text-neutral-700 disabled:opacity-50 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-neutral-200"
+                    >
+                      {uploading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Plus className="h-5 w-5" />
+                      )}
+                    </button>
+                  </li>
+                )}
+              </ul>
+            </div>
+          ) : (
+            <div className="flex-1 min-w-[280px]">
+              <label
+                htmlFor="slideVideoUrl"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+              >
+                {t('presentation', 'videoUrl')}
+              </label>
+              <input
+                type="url"
+                id="slideVideoUrl"
+                value={videoUrl}
+                onChange={(e) => {
+                  setVideoUrl(e.target.value)
+                  setVideoError(false)
+                  // Feed the live preview as soon as the link becomes valid.
+                  if (isSupportedSlideVideoUrl(e.target.value)) {
+                    onVideoUrlChange?.(e.target.value.trim())
+                  } else if (e.target.value.trim() === '') {
+                    onVideoUrlChange?.(null)
+                  }
+                }}
+                onBlur={handleVideoUrlBlur}
+                placeholder={t('presentation', 'videoPlaceholder')}
+                className={`h-12 w-full rounded-lg border bg-white dark:bg-surface px-4 text-neutral-900 dark:text-surface-text ${
+                  videoError
+                    ? 'border-red-500'
+                    : 'border-neutral-300 dark:border-neutral-600'
+                }`}
+              />
+              {/* Only speak up when something is wrong — the placeholder
+                  already shows what a valid link looks like. */}
+              {videoError && (
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
+                  {t('presentation', 'videoInvalid')}
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="ml-auto flex gap-4 items-end">
+            {/* TYFCB Given */}
+            <div>
+              <label
+                htmlFor="tyfcbGiven"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+              >
+                {t('profile', 'businessGiven')}
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  id="tyfcbGiven"
+                  value={tyfcbGiven ?? ''}
+                  onChange={(e) => {
+                    if (e.target.value === '') { setTyfcbGiven(null); onTyfcbChange?.('tyfcbGiven', null); return }
+                    const num = Number(e.target.value)
+                    if (num > 99000000) return
+                    setTyfcbGiven(num)
+                    onTyfcbChange?.('tyfcbGiven', num)
+                  }}
+                  min={0}
+                  max={99000000}
+                  className={`h-12 rounded-lg border border-neutral-300 bg-white pl-4 text-neutral-900 dark:border-neutral-600 dark:bg-surface dark:text-surface-text ${
+                    businessGivenMin > 0 ? 'w-56 pr-28' : 'w-36 pr-4'
+                  }`}
+                />
+                {/* The minimum lives inside the field: as a line underneath it
+                    pushed the inputs out of line with the rest of the row. */}
+                {businessGivenMin > 0 && (
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-neutral-100 px-2 py-1 text-[11px] text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400">
+                    {minHint(businessGivenMin)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* TYFCB Received */}
+            <div>
+              <label
+                htmlFor="tyfcbReceived"
+                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+              >
+                {t('profile', 'businessReceived')}
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  id="tyfcbReceived"
+                  value={tyfcbReceived ?? ''}
+                  onChange={(e) => {
+                    if (e.target.value === '') { setTyfcbReceived(null); onTyfcbChange?.('tyfcbReceived', null); return }
+                    const num = Number(e.target.value)
+                    if (num > 99000000) return
+                    setTyfcbReceived(num)
+                    onTyfcbChange?.('tyfcbReceived', num)
+                  }}
+                  min={0}
+                  max={99000000}
+                  className={`h-12 rounded-lg border border-neutral-300 bg-white pl-4 text-neutral-900 dark:border-neutral-600 dark:bg-surface dark:text-surface-text ${
+                    businessReceivedMin > 0 ? 'w-56 pr-28' : 'w-36 pr-4'
+                  }`}
+                />
+                {/* The minimum lives inside the field: as a line underneath it
+                    pushed the inputs out of line with the rest of the row. */}
+                {businessReceivedMin > 0 && (
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 whitespace-nowrap rounded-md bg-neutral-100 px-2 py-1 text-[11px] text-neutral-500 dark:bg-neutral-700 dark:text-neutral-400">
+                    {minHint(businessReceivedMin)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Save Button - only show if values changed */}
+            {(tyfcbGiven !== originalGiven.current ||
+              tyfcbReceived !== originalReceived.current) && (
+              <button
+                type="button"
+                onClick={async () => {
+                  await handleFieldBlur('tyfcbGiven')
+                  await handleFieldBlur('tyfcbReceived')
+                }}
+                disabled={saving}
+                className="btn btn-primary h-12 px-5 py-0 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{t('common', 'saving')}</span>
+                  </>
+                ) : (
+                  <span>{t('common', 'save')}</span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Help Modal */}
-      <dialog
-        ref={dialogRef}
-        aria-labelledby="help-modal-title"
-        onClose={() => setShowHelp(false)}
-        className="backdrop:bg-black/50 bg-white dark:bg-surface-raised rounded-lg shadow-xl max-w-2xl w-full p-6 m-auto"
-      >
-        <div className="relative">
-          <div className="flex items-center justify-between mb-4">
-            <h3
-              id="help-modal-title"
-              className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-            >
-              {helpText.title}
-            </h3>
-            <button
-              type="button"
-              onClick={() => setShowHelp(false)}
-              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              aria-label={t('common', 'close')}
-            >
-              <X className="w-5 h-5" aria-hidden="true" />
-            </button>
-          </div>
-
-          <div className="text-gray-700 dark:text-gray-300">
-            <h4 className="font-semibold mb-2">{helpText.specs}</h4>
-            <ul className="list-disc list-inside space-y-1 ml-2">
-              <li>{helpText.dimensions}</li>
-              <li>{helpText.aspectRatio}</li>
-              <li>{helpText.format}</li>
-              <li>{helpText.fileSize}</li>
-            </ul>
-          </div>
-
-          <div className="mt-6 flex justify-end">
-            <button
-              type="button"
-              onClick={() => setShowHelp(false)}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-            >
-              {helpText.button}
-            </button>
-          </div>
-        </div>
-      </dialog>
     </div>
   )
 }

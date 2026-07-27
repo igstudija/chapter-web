@@ -60,7 +60,7 @@ export default function ChangePasswordPage() {
   }
 
   return (
-    <div className="bg-neutral-50 dark:bg-surface min-h-screen">
+    <div className="bg-paper dark:bg-surface min-h-screen">
       <div className="mx-auto max-w-md px-4 sm:px-6 lg:px-8 py-12">
         <nav className="text-sm mb-6">
           <Link href="/" className="text-neutral-500 dark:text-neutral-400 hover:text-brand">
@@ -77,17 +77,20 @@ export default function ChangePasswordPage() {
         <div className="panel p-6">
           <h1 className="display-2 mb-6 text-ink dark:text-surface-text">Change Password</h1>
 
-          {error && <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-lg mb-6">{error}</div>}
+          {error && (
+            <div className="alert alert-error mb-6" role="alert">
+              {error}
+            </div>
+          )}
           {success && (
-            <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-4 rounded-lg mb-6">{success}</div>
+            <div className="alert alert-success mb-6" role="alert">
+              {success}
+            </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label
-                htmlFor="currentPassword"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="currentPassword" className="field-label">
                 Current Password *
               </label>
               <input
@@ -102,10 +105,7 @@ export default function ChangePasswordPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="newPassword"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="newPassword" className="field-label">
                 New Password *
               </label>
               <input
@@ -120,10 +120,7 @@ export default function ChangePasswordPage() {
             </div>
 
             <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="confirmPassword" className="field-label">
                 Confirm New Password *
               </label>
               <input
@@ -145,10 +142,7 @@ export default function ChangePasswordPage() {
               >
                 {loading ? 'CHANGING...' : 'CHANGE PASSWORD'}
               </button>
-              <Link
-                href="/members"
-                className="px-6 py-3 border border-neutral-300 dark:border-neutral-600 rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 font-semibold"
-              >
+              <Link href="/members" className="btn btn-line">
                 Cancel
               </Link>
             </div>

@@ -7,6 +7,7 @@ import type { PowerGroup } from '@/payload-types'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
+import { memberRating, groupRating } from '@/lib/memberRating'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -46,6 +47,7 @@ type MemberWithCounts = {
   logo?: { url: string; alt?: string | null } | null
   powerGroup?: PowerGroup | number | string | null
   top40Count: number
+  top20Count: number
   specialRequestsCount: number
 }
 
@@ -66,8 +68,8 @@ export default async function MembersPage() {
   const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
-  // Fetch memberships, top40, and special requests in parallel
-  const [membershipsData, top40Data, specialRequestsData] = await Promise.all([
+  // Fetch memberships, top40, top20, and special requests in parallel
+  const [membershipsData, top40Data, top20Data, specialRequestsData] = await Promise.all([
     payload.find({
       collection: 'members',
       limit: 100,
@@ -76,13 +78,20 @@ export default async function MembersPage() {
       },
       depth: 1, // Only need user.name/surname and powerGroup.title
     }),
-    // Both are reduced to a count per member below and nothing else is read
-    // from them. `depth: 0` leaves the relation as a raw id rather than
+    // These three are reduced to a count per member below and nothing else is
+    // read from them. `depth: 0` leaves the relation as a raw id rather than
     // fetching each related user, and `select` narrows the row to the single
     // column that gets looked at — the difference between transferring
     // thousands of full records and thousands of integers.
     payload.find({
       collection: 'top40',
+      where: {},
+      limit: 5000,
+      depth: 0,
+      select: { submittedBy: true },
+    }),
+    payload.find({
+      collection: 'top20',
       where: {},
       limit: 5000,
       depth: 0,
@@ -97,22 +106,20 @@ export default async function MembersPage() {
     }),
   ])
 
-  // Count top40 and special requests per user
-  const top40CountByUser = new Map<string, number>()
-  for (const entry of top40Data.docs) {
-    const userId = extractUserId(entry.submittedBy)
-    if (userId) {
-      top40CountByUser.set(userId, (top40CountByUser.get(userId) || 0) + 1)
+  const countByUser = (docs: { submittedBy?: unknown; requestedBy?: unknown }[], key: 'submittedBy' | 'requestedBy') => {
+    const counts = new Map<string, number>()
+    for (const entry of docs) {
+      const userId = extractUserId(entry[key])
+      if (userId) {
+        counts.set(userId, (counts.get(userId) || 0) + 1)
+      }
     }
+    return counts
   }
 
-  const specialRequestsCountByUser = new Map<string, number>()
-  for (const entry of specialRequestsData.docs) {
-    const userId = extractUserId(entry.requestedBy)
-    if (userId) {
-      specialRequestsCountByUser.set(userId, (specialRequestsCountByUser.get(userId) || 0) + 1)
-    }
-  }
+  const top40CountByUser = countByUser(top40Data.docs, 'submittedBy')
+  const top20CountByUser = countByUser(top20Data.docs, 'submittedBy')
+  const specialRequestsCountByUser = countByUser(specialRequestsData.docs, 'requestedBy')
 
   // Transform memberships to members with counts
   const membersWithCounts: MemberWithCounts[] = membershipsData.docs.map((membership) => {
@@ -136,6 +143,7 @@ export default async function MembersPage() {
       logo,
       powerGroup: membership.powerGroup,
       top40Count: top40CountByUser.get(userIdStr) || 0,
+      top20Count: top20CountByUser.get(userIdStr) || 0,
       specialRequestsCount: specialRequestsCountByUser.get(userIdStr) || 0,
     }
   })
@@ -154,13 +162,9 @@ export default async function MembersPage() {
         acc[groupId] = {
           title: groupTitle,
           members: [],
-          totalTop40: 0,
-          totalSpecialRequests: 0,
         }
       }
       acc[groupId].members.push(member)
-      acc[groupId].totalTop40 += member.top40Count
-      acc[groupId].totalSpecialRequests += member.specialRequestsCount
       return acc
     },
     {} as Record<
@@ -168,23 +172,17 @@ export default async function MembersPage() {
       {
         title: string
         members: MemberWithCounts[]
-        totalTop40: number
-        totalSpecialRequests: number
       }
     >,
   )
 
-  // Calculate rating for each group, sort members within groups, and sort groups by rating
+  // A group's rating is the mean of its members' completion, not the mean of
+  // their row counts. Summing raw rows let one member with a full Top 40 carry
+  // a group where nobody else had filed anything, and ignored Top 20 entirely.
   const sortedGroups = Object.entries(groupedMembers)
     .map(([groupId, group]) => {
-      const rating =
-        group.members.length > 0
-          ? (group.totalTop40 + group.totalSpecialRequests) / group.members.length
-          : 0
-      // Sort members within group by their individual rating (top40 + specialRequests)
-      const sortedMembers = [...group.members].sort(
-        (a, b) => b.top40Count + b.specialRequestsCount - (a.top40Count + a.specialRequestsCount),
-      )
+      const rating = groupRating(group.members)
+      const sortedMembers = [...group.members].sort((a, b) => memberRating(b) - memberRating(a))
       return { groupId, ...group, members: sortedMembers, rating }
     })
     .sort((a, b) => {

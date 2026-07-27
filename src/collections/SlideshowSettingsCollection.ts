@@ -59,6 +59,61 @@ export const SlideshowSettingsCollection: CollectionConfig = {
       },
     },
     {
+      name: 'slideImageSeconds',
+      type: 'number',
+      label: 'Photo Sequence Length (seconds)',
+      defaultValue: 30,
+      min: 2,
+      admin: {
+        description:
+          'How long a member\'s whole photo set takes to play through. Each photo gets an equal share — 2 photos change every 15s, 3 every 10s, and so on.',
+      },
+    },
+    {
+      name: 'slideChrome',
+      type: 'select',
+      label: 'Slideshow Controls',
+      defaultValue: 'bar',
+      options: [
+        { label: 'Bar — solid control bar along the bottom', value: 'bar' },
+        { label: 'Minimal — time strip at the very bottom, controls on hover', value: 'minimal' },
+      ],
+      admin: {
+        description:
+          'Minimal hands the full 1080px height to the slide and floats the counter, countdown and next speaker as badges. Presenters can switch live with C.',
+      },
+    },
+    {
+      name: 'nextSpeakerPosition',
+      type: 'select',
+      label: 'Next Speaker Badge',
+      defaultValue: 'top',
+      options: [
+        { label: 'Top right', value: 'top' },
+        { label: 'Bottom right', value: 'bottom' },
+      ],
+      admin: {
+        description:
+          'Minimal controls only. Bottom right sits closer to where a presenter looks between slides; top right stays clear of the request bar.',
+      },
+    },
+    {
+      name: 'specialRequestDisplay',
+      type: 'select',
+      label: 'Special Request',
+      defaultValue: 'bar',
+      options: [
+        { label: 'Red bar along the bottom of the member slide', value: 'bar' },
+        { label: 'Its own slide, right after the member', value: 'slide' },
+        { label: 'Flashed in the middle for the last 5 seconds', value: 'flash' },
+        { label: 'Not shown', value: 'off' },
+      ],
+      admin: {
+        description:
+          'The bar is always on screen; a dedicated slide gives the ask the whole screen; the flash keeps the slide clean until the member is nearly out of time.',
+      },
+    },
+    {
       name: 'businessGivenMin',
       type: 'number',
       label: 'Show Given Business only if amount is at least (€)',

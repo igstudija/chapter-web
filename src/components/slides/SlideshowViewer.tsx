@@ -9,24 +9,115 @@ import { GuestsSlide } from './GuestsSlide'
 import { GuestDetailSlide } from './GuestDetailSlide'
 import { SpeechMasterCeremonySlide } from './SpeechMasterCeremonySlide'
 import { CustomImageSlide } from './CustomImageSlide'
+import { SpecialRequestFlash, SpecialRequestSlide } from './SpecialRequestSlide'
+import { memberSlideImages } from './SlideMedia'
+import { parseSlideVideo } from '@/lib/slideVideo'
+import { getThumbnailUrl } from '@/lib/getThumbnailUrl'
 import {
   buildSlidesFromBlocks,
+  type MemberSlideTemplate,
   type SlideBlockData,
   type BuildSlidesContext,
+  type SlideChrome,
   type SlideData,
   type SlideMember,
   type SlidePowerGroup,
 } from '@/lib/buildSlides'
 import {
-  ChevronLeft,
-  ChevronRight,
-  Home,
-  Maximize,
-  Minimize,
-  Video,
-  Presentation,
-  UsersRound,
-} from 'lucide-react'
+  BarChrome,
+  MinimalChrome,
+  SLIDE_WIDTH,
+  SLIDE_HEIGHT,
+  BOTTOM_BAR_HEIGHT,
+  PROGRESS_BAR_HEIGHT,
+  type ChromeProps,
+} from './SlideshowChrome'
+
+/** Presenter's live chrome choice, remembered per device. */
+const CHROME_STORAGE_KEY = 'slideshow-chrome'
+/** How long the minimal chrome's controls linger after the pointer stops. */
+const CONTROLS_IDLE_MS = 2600
+/** Tail of a member's slide during which their request is flashed. */
+const SPECIAL_REQUEST_FLASH_SECONDS = 5
+
+/**
+ * What the slide after this one will need on screen.
+ *
+ * Fetching it while the current slide is still up is the difference between a
+ * cut and a wait: a member's photo or an embedded player that starts loading
+ * only when its slide appears leaves the room looking at an empty frame.
+ */
+function slideMediaToPreload(slide: SlideData | undefined): {
+  images: string[]
+  video: string | null
+} {
+  if (!slide) return { images: [], video: null }
+
+  if (slide.type === 'member') {
+    const { member } = slide.data as { member: SlideMember }
+    const video =
+      member.slideMediaType === 'video'
+        ? (parseSlideVideo(member.slideVideoUrl)?.embedUrl ?? null)
+        : null
+    const portrait = member.profileImage?.url
+    return {
+      images: [
+        ...(video ? [] : memberSlideImages(member)),
+        ...(portrait ? [getThumbnailUrl(portrait, 'medium') || portrait] : []),
+      ],
+      video,
+    }
+  }
+
+  if (slide.type === 'group') {
+    // A group slide puts every member of the group up at once. `next/image` is
+    // configured `unoptimized`, so these are the plain storage URLs and a
+    // preload hits the same cache entry the slide will read.
+    const { members } = slide.data as { members: SlideMember[] }
+    return {
+      images: members
+        .flatMap((m) => [m.profileImage?.url, m.logo?.url])
+        .filter((url): url is string => !!url),
+      video: null,
+    }
+  }
+
+  if (slide.type === 'intro') {
+    // The logo wall puts eighty small images up at once — the slide where a
+    // cold cache is most obvious. These are plain URLs, so a preload lands on
+    // exactly the entry the wall will read.
+    const { members } = slide.data as { members: SlideMember[] }
+    return {
+      images: members.map((m) => m.logo?.url).filter((url): url is string => !!url),
+      video: null,
+    }
+  }
+
+  if (slide.type === 'custom-image') {
+    const { imageUrl } = slide.data as { imageUrl: string }
+    return { images: imageUrl ? [imageUrl] : [], video: null }
+  }
+
+  if (slide.type === 'special-request') {
+    const { member } = slide.data as { member: SlideMember }
+    const portrait = member.profileImage?.url
+    return {
+      images: portrait ? [getThumbnailUrl(portrait, 'thumbnail') || portrait] : [],
+      video: null,
+    }
+  }
+
+  return { images: [], video: null }
+}
+
+/** Slide kinds that run a countdown and auto-advance. */
+function isTimedSlide(slide: SlideData | undefined): boolean {
+  return (
+    slide?.type === 'member' ||
+    slide?.type === 'guest-detail' ||
+    slide?.type === 'special-request'
+  )
+}
 
 interface SlideshowTranslations {
   businessGiven: string
@@ -35,6 +126,8 @@ interface SlideshowTranslations {
   businessTotal: string
   groupSubtitle?: string
   lookingForPartners?: string
+  /** Heading over the last-seconds request flash. */
+  specialRequest?: string
   /* Group-slide totals. Distinct from the member-slide pair above: those label
      one member's figures, these label a whole power group's. */
   groupBusinessReceived?: string
@@ -47,9 +140,17 @@ interface SlideshowViewerProps {
   transitionSoundUrl?: string | null
   startMemberId?: string | null
   overrideBackgroundColor?: string
+  overrideBackgroundColorRight?: string
   overrideImageMode?: 'contain' | 'cover'
+  overrideTemplate?: MemberSlideTemplate
   enableActivities?: boolean
   translations?: SlideshowTranslations
+  /**
+   * Bump to send the viewer back to `startMemberId`. Lets the presentation
+   * editor offer "open my slide" after the presenter has browsed elsewhere,
+   * without the page reload that used to be the only way back.
+   */
+  focusStartMemberSignal?: number
 }
 
 const defaultTranslations: SlideshowTranslations = {
@@ -59,6 +160,7 @@ const defaultTranslations: SlideshowTranslations = {
   businessTotal: 'Total business',
   groupSubtitle: 'Our experts. For your growth.',
   lookingForPartners: 'Looking for collaboration partners',
+  specialRequest: 'Special request',
   groupBusinessReceived: 'Business received',
   groupBusinessGiven: 'Business given',
 }
@@ -69,12 +171,18 @@ export function SlideshowViewer({
   transitionSoundUrl,
   startMemberId,
   overrideBackgroundColor,
+  overrideBackgroundColorRight,
   overrideImageMode,
+  overrideTemplate,
   enableActivities = false,
   translations = defaultTranslations,
+  focusStartMemberSignal = 0,
 }: Readonly<SlideshowViewerProps>) {
   const [initialSlideSet, setInitialSlideSet] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [chrome, setChrome] = useState<SlideChrome>(buildContext.settings.slideChrome ?? 'bar')
+  const [controlsVisible, setControlsVisible] = useState(false)
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [timeRemaining, setTimeRemaining] = useState(buildContext.settings.slideSeconds)
   const [progressStarted, setProgressStarted] = useState(false)
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'onsite' | 'online'>('all')
@@ -112,6 +220,15 @@ export function SlideshowViewer({
     }
   }, [userSlideIndex, initialSlideSet])
 
+  // "Open my slide": every bump of the signal jumps back to the member's own
+  // slide, wherever the presenter has navigated to since.
+  useEffect(() => {
+    if (focusStartMemberSignal <= 0) return
+    setCurrentSlideIndex(userSlideIndex)
+    setTimeRemaining(slides[userSlideIndex]?.duration || buildContext.settings.slideSeconds)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusStartMemberSignal])
+
   useEffect(() => {
     if (prevAttendanceFilterRef.current !== attendanceFilter) {
       setCurrentSlideIndex(0)
@@ -138,6 +255,57 @@ export function SlideshowViewer({
     goToSlide(currentSlideIndex === 0 ? totalSlides - 1 : currentSlideIndex - 1)
   }, [currentSlideIndex, totalSlides, goToSlide])
 
+  // A presenter's chrome choice belongs to the room they present in, not to the
+  // chapter's settings — so it lives on the device and beats the site default.
+  useEffect(() => {
+    const stored = globalThis.localStorage?.getItem(CHROME_STORAGE_KEY)
+    if (stored === 'bar' || stored === 'minimal') setChrome(stored)
+  }, [])
+
+  const toggleChrome = useCallback(() => {
+    setChrome((prev) => {
+      const next: SlideChrome = prev === 'bar' ? 'minimal' : 'bar'
+      globalThis.localStorage?.setItem(CHROME_STORAGE_KEY, next)
+      return next
+    })
+  }, [])
+
+  /** Reveal the minimal chrome's controls, then fade them out once idle. */
+  const notePointerActivity = useCallback(() => {
+    setControlsVisible(true)
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    idleTimerRef.current = setTimeout(() => setControlsVisible(false), CONTROLS_IDLE_MS)
+  }, [])
+
+  useEffect(() => () => {
+    if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+  }, [])
+
+  // Warm the next slide while this one is on screen.
+  const preload = useMemo(
+    () => slideMediaToPreload(slides[(currentSlideIndex + 1) % (slides.length || 1)]),
+    [slides, currentSlideIndex],
+  )
+  const preloadImageKey = preload.images.join('|')
+
+  useEffect(() => {
+    if (preloadImageKey === '') return
+    // Detached image elements rather than hidden nodes: no layout, no chance of
+    // the browser deprioritising a zero-sized element, and they land in the same
+    // HTTP cache the real <img> reads from a moment later.
+    //
+    // `document.createElement` rather than `new Image()`: `Image` is next/image
+    // in this module, and the constructor call silently resolves to that.
+    //
+    // No cleanup. Clearing `src` on unmount aborted whatever was still in
+    // flight — and the moment this effect re-runs is the moment the presenter
+    // advanced, so the fetch being cancelled was the one for the slide now on
+    // screen. The elements are unreferenced afterwards and collected anyway.
+    for (const url of preloadImageKey.split('|')) {
+      document.createElement('img').src = url
+    }
+  }, [preloadImageKey])
+
   const goToFirst = useCallback(() => goToSlide(0), [goToSlide])
   const goToLast = useCallback(() => goToSlide(totalSlides - 1), [goToSlide, totalSlides])
 
@@ -163,7 +331,7 @@ export function SlideshowViewer({
     setProgressStarted(false)
     const timeout = setTimeout(() => {
       const slide = slides[currentSlideIndex]
-      if ((slide?.type === 'member' || slide?.type === 'guest-detail') && !slide?.disableTimer) {
+      if (isTimedSlide(slide) && !slide?.disableTimer) {
         setProgressStarted(true)
       }
     }, 50)
@@ -175,7 +343,7 @@ export function SlideshowViewer({
     const slide = slides[currentSlideIndex]
     if (
       timeRemaining === 1 &&
-      (slide?.type === 'member' || slide?.type === 'guest-detail') &&
+      isTimedSlide(slide) &&
       !slide?.disableTimer &&
       transitionSoundUrl
     ) {
@@ -186,7 +354,7 @@ export function SlideshowViewer({
 
   useEffect(() => {
     const slide = slides[currentSlideIndex]
-    if (slide?.type !== 'member' && slide?.type !== 'guest-detail') return
+    if (!isTimedSlide(slide)) return
     if (slide?.disableTimer) return
 
     const interval = setInterval(() => {
@@ -262,6 +430,10 @@ export function SlideshowViewer({
         case 'F':
           toggleFullscreen()
           break
+        case 'c':
+        case 'C':
+          toggleChrome()
+          break
         case 'Escape':
           if (isFullscreen) {
             exitFullscreen()
@@ -272,7 +444,16 @@ export function SlideshowViewer({
 
     globalThis.addEventListener('keydown', handleKeyDown)
     return () => globalThis.removeEventListener('keydown', handleKeyDown)
-  }, [nextSlide, prevSlide, goToFirst, goToLast, isFullscreen, toggleFullscreen, exitFullscreen])
+  }, [
+    nextSlide,
+    prevSlide,
+    goToFirst,
+    goToLast,
+    isFullscreen,
+    toggleFullscreen,
+    exitFullscreen,
+    toggleChrome,
+  ])
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -345,21 +526,74 @@ export function SlideshowViewer({
     )
   }
 
-  const progressPercent = progressStarted ? 100 : 0
   const slideDuration = currentSlide?.duration || buildContext.settings.slideSeconds
+  const showTimer = isTimedSlide(currentSlide) && !currentSlide?.disableTimer
 
-  const SLIDE_WIDTH = 1920
-  const SLIDE_HEIGHT = 1080
-  const BOTTOM_BAR_HEIGHT = 60
-  const PROGRESS_BAR_HEIGHT = 4
+  // Both of these were resolved against the chapter default at build time, so
+  // the member's own choice is already baked into the slide.
+  const memberSlideData =
+    currentSlide?.type === 'member'
+      ? (currentSlide.data as {
+          member: SlideMember
+          specialRequestDisplay?: string
+          nextSpeakerPosition?: 'top' | 'bottom'
+          hideSpecialRequest?: boolean
+        })
+      : null
+
+  // Appears with five seconds to go and stays put until the presenter moves on.
+  // Slides do not auto-advance, so the countdown parks at zero — gating on
+  // `timeRemaining > 0` made the request vanish at the exact moment the member
+  // was wrapping up and the room was finally looking at it.
+  const flashRequest =
+    memberSlideData?.specialRequestDisplay === 'flash' &&
+    showTimer &&
+    timeRemaining <= SPECIAL_REQUEST_FLASH_SECONDS
+      ? memberSlideData.member.specialRequest
+      : null
 
   const logoUrl = buildContext.settings.logoUrl
   const chapterName = buildContext.settings.chapterName
 
+  const chromeProps: ChromeProps = {
+    onFirst: goToFirst,
+    onPrev: prevSlide,
+    onNext: nextSlide,
+    onToggleFullscreen: toggleFullscreen,
+    isFullscreen,
+    onToggleChrome: toggleChrome,
+    chrome,
+    attendanceEnabled: enableAttendance,
+    attendance: attendanceFilter,
+    onAttendanceChange: setAttendanceFilter,
+    showTimer,
+    timeRemaining,
+    slideDuration,
+    progressStarted,
+    groupName: getCurrentGroupName() || chapterName,
+    nextName: getNextMemberName(),
+    nextPosition:
+      memberSlideData?.nextSpeakerPosition ?? buildContext.settings.nextSpeakerPosition ?? 'top',
+    requestBarVisible: Boolean(
+      memberSlideData &&
+        !memberSlideData.hideSpecialRequest &&
+        memberSlideData.member.specialRequest,
+    ),
+    slideNumber: currentSlideIndex + 1,
+    totalSlides,
+    controlsVisible,
+    onPointerActivity: notePointerActivity,
+  }
+
+  // Minimal chrome is overlaid end to end, so the slide keeps all 1080px.
+  const contentHeight =
+    chrome === 'bar' ? SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT : SLIDE_HEIGHT
+
   return (
     <div
       ref={containerRef}
-      className={`bg-neutral-950 flex items-center justify-center ${
+      onMouseMove={notePointerActivity}
+      className={`relative bg-neutral-950 flex items-center justify-center ${
         isFullscreen
           ? 'fixed inset-0 z-50 h-screen w-screen'
           : 'w-full rounded-xl shadow-2xl aspect-video'
@@ -370,12 +604,7 @@ export function SlideshowViewer({
         className="w-full h-full"
         preserveAspectRatio="xMidYMid meet"
       >
-        <foreignObject
-          x="0"
-          y="0"
-          width={SLIDE_WIDTH}
-          height={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT}
-        >
+        <foreignObject x="0" y="0" width={SLIDE_WIDTH} height={contentHeight}>
           <div className="w-full h-full relative">
             {logoUrl && currentSlide.type !== 'intro' && currentSlide.type !== 'custom-image' && (
               <div className="absolute left-6 top-6 z-10 bg-white rounded-lg p-2 shadow-md">
@@ -389,7 +618,7 @@ export function SlideshowViewer({
               </div>
             )}
 
-            <div className="w-full h-full p-3">
+            <div className="w-full h-full">
               {currentSlide.type === 'intro' && (
                 <IntroSlide
                   members={(currentSlide.data as { members: SlideMember[] }).members}
@@ -460,6 +689,8 @@ export function SlideshowViewer({
                   member: SlideMember
                   isSpeechMaster: boolean
                   group?: SlidePowerGroup
+                  hideMemberInfo?: boolean
+                  hideSpecialRequest?: boolean
                 }
                 const isStartMember =
                   String(memberData.member.id) === String(startMemberId)
@@ -467,9 +698,16 @@ export function SlideshowViewer({
                   <MemberSlide
                     member={memberData.member}
                     isSpeechMaster={memberData.isSpeechMaster}
+                    hideMemberInfo={memberData.hideMemberInfo}
+                    hideSpecialRequest={memberData.hideSpecialRequest}
+                    imageSeconds={buildContext.settings.slideImageSeconds ?? 30}
                     showAttendanceIcon={enableAttendance}
                     overrideBackgroundColor={isStartMember ? overrideBackgroundColor : undefined}
+                    overrideBackgroundColorRight={
+                      isStartMember ? overrideBackgroundColorRight : undefined
+                    }
                     overrideImageMode={isStartMember ? overrideImageMode : undefined}
+                    overrideTemplate={isStartMember ? overrideTemplate : undefined}
                     enableActivities={enableActivities}
                     translations={translations}
                     businessGivenMin={buildContext.settings.businessGivenMin ?? 0}
@@ -489,6 +727,12 @@ export function SlideshowViewer({
                   />
                 )
               })()}
+              {currentSlide.type === 'special-request' && (
+                <SpecialRequestSlide
+                  member={(currentSlide.data as { member: SlideMember }).member}
+                  title={translations.lookingForPartners}
+                />
+              )}
               {currentSlide.type === 'custom-image' && (() => {
                 const imageData = currentSlide.data as {
                   imageUrl: string
@@ -504,30 +748,14 @@ export function SlideshowViewer({
                 )
               })()}
             </div>
+
+            {flashRequest && (
+              <SpecialRequestFlash request={flashRequest} title={translations.specialRequest} />
+            )}
           </div>
         </foreignObject>
 
-        {(currentSlide?.type === 'member' || currentSlide?.type === 'guest-detail') && !currentSlide?.disableTimer && (
-          <>
-            <rect
-              x="0"
-              y={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT}
-              width={SLIDE_WIDTH}
-              height={PROGRESS_BAR_HEIGHT}
-              fill="#334155"
-            />
-            <rect
-              x="0"
-              y={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT}
-              width={(progressPercent / 100) * SLIDE_WIDTH}
-              height={PROGRESS_BAR_HEIGHT}
-              fill="url(#progressGradient)"
-              style={{
-                transition: progressStarted ? `width ${slideDuration}s linear` : 'none',
-              }}
-            />
-          </>
-        )}
+        {chrome === 'bar' ? <BarChrome {...chromeProps} /> : <MinimalChrome {...chromeProps} />}
 
         <defs>
           <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -535,130 +763,24 @@ export function SlideshowViewer({
             <stop offset="100%" stopColor="#b91c1c" />
           </linearGradient>
         </defs>
-
-        <foreignObject
-          x="0"
-          y={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT}
-          width={SLIDE_WIDTH}
-          height={BOTTOM_BAR_HEIGHT}
-        >
-          <div className="w-full h-full bg-neutral-900/50 backdrop-blur-sm px-6 flex items-center justify-between text-white">
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={goToFirst}
-                title="Go to home"
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
-              >
-                <Home className="h-5 w-5" />
-              </button>
-              <button
-                onClick={prevSlide}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-              <button
-                onClick={toggleFullscreen}
-                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 transition-colors hover:bg-white/20"
-              >
-                {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
-              </button>
-
-              {enableAttendance && (
-                <>
-                  <button
-                    onClick={() => setAttendanceFilter('onsite')}
-                    title="On-site"
-                    className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                      attendanceFilter === 'onsite'
-                        ? 'bg-brand text-white'
-                        : 'bg-white/10 hover:bg-white/20'
-                    }`}
-                  >
-                    <Presentation className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => setAttendanceFilter('online')}
-                    title="Online"
-                    className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                      attendanceFilter === 'online'
-                        ? 'bg-brand text-white'
-                        : 'bg-white/10 hover:bg-white/20'
-                    }`}
-                  >
-                    <Video className="h-5 w-5" />
-                  </button>
-                  <button
-                    onClick={() => setAttendanceFilter('all')}
-                    title="All"
-                    className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
-                      attendanceFilter === 'all'
-                        ? 'bg-brand text-white'
-                        : 'bg-white/10 hover:bg-white/20'
-                    }`}
-                  >
-                    <UsersRound className="h-5 w-5" />
-                  </button>
-                </>
-              )}
-            </div>
-
-            <div className="absolute left-1/2 -translate-x-1/2 text-center">
-              <span className="text-white font-semibold text-2xl">
-                {getCurrentGroupName() || chapterName}
-              </span>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {(currentSlide?.type === 'member' || currentSlide?.type === 'guest-detail') && !currentSlide?.disableTimer && (
-                <span className="font-mono font-bold text-3xl">{timeRemaining}s</span>
-              )}
-              {getNextMemberName() && (
-                <div className="rounded-lg px-4 py-2">
-                  <span className="ml-2 font-normal text-white text-3xl flex items-center gap-2">
-                    <span>
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-10 w-10"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          fill="currentColor"
-                          d="M7.58 16.89l5.77-4.07c.56-.4.56-1.24 0-1.63L7.58 7.11C6.91 6.65 6 7.12 6 7.93v8.14c0 .81.91 1.28 1.58.82M16 7v10c0 .55.45 1 1 1s1-.45 1-1V7c0-.55-.45-1-1-1s-1 .45-1 1"
-                        />
-                      </svg>
-                    </span>
-                    <span>{getNextMemberName()}</span>
-                  </span>
-                </div>
-              )}
-              <div className="text-neutral-200 text-lg">
-                <span className="font-semibold">{currentSlideIndex + 1}</span>
-                <span className="mx-1">/</span>
-                <span>{totalSlides}</span>
-              </div>
-            </div>
-          </div>
-        </foreignObject>
-
-        {(currentSlide?.type === 'member' || currentSlide?.type === 'guest-detail') && !currentSlide?.disableTimer && (
-          <circle
-            cx={(progressPercent / 100) * SLIDE_WIDTH}
-            cy={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT / 2}
-            r="10"
-            fill="#b91c1c"
-            style={{
-              transition: progressStarted ? `cx ${slideDuration}s linear` : 'none',
-            }}
-          />
-        )}
       </svg>
+
+      {/*
+        The next slide's player, mounted a slide early so YouTube or Vimeo has
+        already fetched its script, poster and first segments. One pixel and
+        invisible: enough for the embed to initialise, not enough to be seen.
+      */}
+      {preload.video && (
+        <iframe
+          key={preload.video}
+          src={preload.video}
+          title=""
+          aria-hidden
+          tabIndex={-1}
+          allow="autoplay; encrypted-media"
+          className="pointer-events-none absolute h-px w-px border-0 opacity-0"
+        />
+      )}
     </div>
   )
 }

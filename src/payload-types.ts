@@ -257,13 +257,41 @@ export interface Member {
   description?: string | null;
   logo?: (number | null) | Media;
   /**
-   * Image for slideshow presentation (recommended: 4:3 aspect ratio, 2000px width minimum)
+   * Whether the slide shows a photo sequence or an embedded video
+   */
+  slideMediaType?: ('image' | 'video') | null;
+  /**
+   * Kept in sync with the first entry of Presentation Slide Images. Edit that field instead.
    */
   slideImage?: (number | null) | Media;
+  /**
+   * Shown in order, cross-fading through the whole set. Recommended: 4:3 aspect ratio, 2000px width minimum.
+   */
+  slideImages?: (number | Media)[] | null;
+  /**
+   * YouTube or Vimeo link. Plays muted and looping — browsers block autoplay with sound.
+   */
+  slideVideoUrl?: string | null;
+  /**
+   * Overrides the chapter's choice for this member's slide only.
+   */
+  slideSpecialRequestDisplay?: ('inherit' | 'bar' | 'flash' | 'off') | null;
+  /**
+   * Where the "up next" badge sits while this member is on screen.
+   */
+  slideNextSpeakerPosition?: ('inherit' | 'top' | 'bottom') | null;
+  /**
+   * Layout of the member slide. All templates show the same information.
+   */
+  slideTemplate?: ('classic' | 'cover' | 'reels') | null;
   /**
    * Background color for slide image area (default: white)
    */
   slideBackgroundColor?: string | null;
+  /**
+   * The colour behind the media on every template: Classic's media column, and the canvas a contained photo does not cover on Cover and Reels. Empty falls back to the main slide colour.
+   */
+  slideBackgroundColorRight?: string | null;
   /**
    * How the image should fit in the 4:3 area
    */
@@ -1469,6 +1497,22 @@ export interface SlideshowSettingsCollection {
    */
   speechMasterMultiplier?: number | null;
   /**
+   * How long a member's whole photo set takes to play through. Each photo gets an equal share — 2 photos change every 15s, 3 every 10s, and so on.
+   */
+  slideImageSeconds?: number | null;
+  /**
+   * Minimal hands the full 1080px height to the slide and floats the counter, countdown and next speaker as badges. Presenters can switch live with C.
+   */
+  slideChrome?: ('bar' | 'minimal') | null;
+  /**
+   * Minimal controls only. Bottom right sits closer to where a presenter looks between slides; top right stays clear of the request bar.
+   */
+  nextSpeakerPosition?: ('top' | 'bottom') | null;
+  /**
+   * The bar is always on screen; a dedicated slide gives the ask the whole screen; the flash keeps the slide clean until the member is nearly out of time.
+   */
+  specialRequestDisplay?: ('bar' | 'slide' | 'flash' | 'off') | null;
+  /**
    * Members whose given business is below this amount will not show the row on their slide. 0 = always show.
    */
   businessGivenMin?: number | null;
@@ -1503,6 +1547,10 @@ export interface SlideshowSettingsCollection {
              * Override slide duration (leave empty to use default)
              */
             customSlideSeconds?: number | null;
+            /**
+             * The member slides this entry produces show only the image or video, filling the whole slide.
+             */
+            hideMemberInfo?: boolean | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'speechMaster';
@@ -1531,6 +1579,10 @@ export interface SlideshowSettingsCollection {
              * Override slide duration (leave empty to use default)
              */
             customSlideSeconds?: number | null;
+            /**
+             * The member slides this entry produces show only the image or video, filling the whole slide.
+             */
+            hideMemberInfo?: boolean | null;
             id?: string | null;
             blockName?: string | null;
             blockType: 'powerGroup';
@@ -2091,8 +2143,15 @@ export interface MembersSelect<T extends boolean = true> {
   profileImage?: T;
   description?: T;
   logo?: T;
+  slideMediaType?: T;
   slideImage?: T;
+  slideImages?: T;
+  slideVideoUrl?: T;
+  slideSpecialRequestDisplay?: T;
+  slideNextSpeakerPosition?: T;
+  slideTemplate?: T;
   slideBackgroundColor?: T;
+  slideBackgroundColorRight?: T;
   slideImageMode?: T;
   company?: T;
   companyPhone?: T;
@@ -2711,6 +2770,10 @@ export interface SlideshowSettingsCollectionSelect<T extends boolean = true> {
   internalTitle?: T;
   slideSeconds?: T;
   speechMasterMultiplier?: T;
+  slideImageSeconds?: T;
+  slideChrome?: T;
+  nextSpeakerPosition?: T;
+  specialRequestDisplay?: T;
   businessGivenMin?: T;
   businessReceivedMin?: T;
   slides?:
@@ -2729,6 +2792,7 @@ export interface SlideshowSettingsCollectionSelect<T extends boolean = true> {
           | {
               member?: T;
               customSlideSeconds?: T;
+              hideMemberInfo?: T;
               id?: T;
               blockName?: T;
             };
@@ -2747,6 +2811,7 @@ export interface SlideshowSettingsCollectionSelect<T extends boolean = true> {
               powerGroup?: T;
               disableTimer?: T;
               customSlideSeconds?: T;
+              hideMemberInfo?: T;
               id?: T;
               blockName?: T;
             };

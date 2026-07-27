@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { Building2, Globe, Mail, Phone, Users, FileText } from 'lucide-react'
+import { Building2, Globe, Mail, Phone, FileText } from 'lucide-react'
 import { getThumbnailUrl } from '@/lib/getThumbnailUrl'
+import { LIST_TARGETS, memberRating } from '@/lib/memberRating'
+import { useTranslations } from './TranslationsProvider'
 
 interface MemberCardProps {
   id: string
@@ -27,14 +29,14 @@ interface MemberCardProps {
   companyPhone?: string
   specialRequestsCount?: number
   top40Count?: number
+  top20Count?: number
 }
 
 /**
- * Badge colours still carry the same three states they always did — the
- * thresholds are unchanged — but they are no longer solid blocks of saturated
- * colour sitting on the corner of every card. A tinted field with a matching
- * ring says the same thing at a glance and lets twenty of these sit in a grid
- * without the page turning into a traffic light.
+ * Badge colours carry three states — done, started, empty. They are tinted
+ * fields with a matching ring rather than solid blocks of saturated colour, so
+ * twenty of these can sit in a grid without the page turning into a traffic
+ * light.
  */
 const BADGE_TONE = {
   good: 'bg-emerald-500/12 text-emerald-700 ring-emerald-600/25 dark:text-emerald-400 dark:ring-emerald-400/25',
@@ -42,13 +44,15 @@ const BADGE_TONE = {
   low: 'bg-rose-500/12 text-rose-700 ring-rose-600/25 dark:text-rose-400 dark:ring-rose-400/25',
 } as const
 
-function getTop40BadgeColor(count: number): string {
-  if (count >= 40) return BADGE_TONE.good
-  if (count >= 20) return BADGE_TONE.mid
+/** Done when the target is met, started when there is anything at all. */
+function listTone(count: number, target: number): string {
+  if (count >= target) return BADGE_TONE.good
+  if (count > 0) return BADGE_TONE.mid
   return BADGE_TONE.low
 }
 
-function getSpecialRequestsBadgeColor(count: number): string {
+/** A member either has special requests on file or does not; there is no target. */
+function requestTone(count: number): string {
   return count > 0 ? BADGE_TONE.good : BADGE_TONE.low
 }
 
@@ -65,38 +69,38 @@ export function MemberCard({
   phone,
   email,
   website,
-  companyEmail,
-  companyPhone,
   specialRequestsCount = 0,
   top40Count = 0,
+  top20Count = 0,
 }: Readonly<MemberCardProps>) {
+  const { t } = useTranslations()
+  // The card and the group heading read from one formula, so the two figures
+  // can never disagree about the same member.
+  const pct = memberRating({ top40Count, top20Count, specialRequestsCount })
+
   const renderImage = () => {
     if (profileImage) {
       return (
-        <div className="relative mb-4 h-20 w-20 shrink-0">
-          <img
-            src={getThumbnailUrl(profileImage.url, 'thumbnail') || profileImage.url}
-            alt={profileImage.alt || `${name} ${surname}`}
-            className="h-full w-full rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
-          />
-        </div>
+        <img
+          src={getThumbnailUrl(profileImage.url, 'thumbnail') || profileImage.url}
+          alt={profileImage.alt || `${name} ${surname}`}
+          className="h-20 w-20 rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
+        />
       )
     }
 
     if (logo) {
       return (
-        <div className="relative mb-4 h-20 w-20 shrink-0">
-          <img
-            src={getThumbnailUrl(logo.url, 'thumbnail') || logo.url}
-            alt={logo.alt || company}
-            className="h-full w-full rounded-full bg-neutral-100 object-contain p-2 ring-1 ring-line dark:bg-neutral-900 dark:ring-line-dark"
-          />
-        </div>
+        <img
+          src={getThumbnailUrl(logo.url, 'thumbnail') || logo.url}
+          alt={logo.alt || company}
+          className="h-20 w-20 rounded-full bg-white object-contain p-2 ring-1 ring-line dark:ring-line-dark"
+        />
       )
     }
 
     return (
-      <div className="mb-4 flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-neutral-100 ring-1 ring-line dark:bg-neutral-900 dark:ring-line-dark">
+      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-neutral-100 ring-1 ring-line dark:bg-neutral-900 dark:ring-line-dark">
         <Building2 className="h-8 w-8 text-neutral-400" />
       </div>
     )
@@ -109,31 +113,41 @@ export function MemberCard({
     // a hydration error, and which browsers recover from unpredictably. The
     // card is a plain element with a stretched overlay link behind it instead;
     // the contact links sit above the overlay and stay independently clickable.
-    <div className="card-surface group relative flex h-full flex-col p-6">
+    <div className="card-surface group relative flex h-full flex-col overflow-hidden p-6 pb-5">
       <Link
         href={`/members/${id}`}
         aria-label={`${name} ${surname}`}
         className="absolute inset-0 z-0 rounded-xl"
       />
 
-      {/* Badges */}
-      <div className="absolute right-3 top-3 flex items-center gap-1.5">
+      {/* Three lists, three badges, stacked down the corner. Side by side they
+          ran into the name on a narrow card and there was no room for a third. */}
+      <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
         <span
-          className={`${getSpecialRequestsBadgeColor(specialRequestsCount)} tabular flex items-center gap-1 rounded-md px-1.5 py-1 font-mono text-[11px] font-medium ring-1 ring-inset`}
+          className={`${requestTone(specialRequestsCount)} tabular flex items-center gap-1 rounded-md px-1.5 py-0.5 font-mono text-[11px] font-medium ring-1 ring-inset`}
+          title={`${t('members', 'specialRequests')}: ${specialRequestsCount}`}
         >
           <FileText className="h-3 w-3" aria-hidden="true" />
           {specialRequestsCount}
         </span>
         <span
-          className={`${getTop40BadgeColor(top40Count)} tabular flex items-center gap-1 rounded-md px-1.5 py-1 font-mono text-[11px] font-medium ring-1 ring-inset`}
+          className={`${listTone(top40Count, LIST_TARGETS.top40)} tabular rounded-md px-1.5 py-0.5 font-mono text-[11px] font-medium ring-1 ring-inset`}
+          title={`${t('members', 'top40')}: ${top40Count}/${LIST_TARGETS.top40}`}
         >
-          <Users className="h-3 w-3" aria-hidden="true" />
           {top40Count}
+          <span className="opacity-50">/{LIST_TARGETS.top40}</span>
+        </span>
+        <span
+          className={`${listTone(top20Count, LIST_TARGETS.top20)} tabular rounded-md px-1.5 py-0.5 font-mono text-[11px] font-medium ring-1 ring-inset`}
+          title={`${t('members', 'top20')}: ${top20Count}/${LIST_TARGETS.top20}`}
+        >
+          {top20Count}
+          <span className="opacity-50">/{LIST_TARGETS.top20}</span>
         </span>
       </div>
 
-      <div className="flex flex-col items-center text-center">
-        {renderImage()}
+      <div className="flex flex-col items-center pt-1 text-center">
+        <div className="relative mb-4 shrink-0">{renderImage()}</div>
         <div className="min-w-0">
           <h3 className="font-display font-semibold tracking-tight text-ink transition-colors group-hover:text-brand dark:text-surface-text">
             {name} {surname}
@@ -183,13 +197,33 @@ export function MemberCard({
         )}
       </div>
 
-      {orgRole && (
-        <div className="mt-auto pt-5">
-          <span className="eyebrow inline-block rounded-full border border-brand/35 px-2.5 py-1 text-brand">
+      <div className="mt-auto pt-5">
+        {orgRole && (
+          <span className="eyebrow mb-3 inline-block rounded-full border border-brand/35 px-2.5 py-1 text-brand">
             {orgRole}
           </span>
+        )}
+        {/* The three badges say what is filed; this says how far along that is.
+            One hairline, the same figure the group heading is rated by. */}
+        <div className="flex items-center gap-2.5">
+          <div
+            className="h-1 flex-1 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800"
+            role="progressbar"
+            aria-valuenow={Math.round(pct)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-label={`${name} ${surname}`}
+          >
+            <div
+              className="h-full rounded-full bg-brand transition-[width] duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <span className="tabular font-mono text-[11px] text-ink-soft dark:text-neutral-400">
+            {Math.round(pct)}%
+          </span>
         </div>
-      )}
+      </div>
     </div>
   )
 }

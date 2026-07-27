@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import { Building2, Phone, Mail, Globe } from 'lucide-react'
+import { Building2, Phone, Mail, Globe, ArrowUpRight } from 'lucide-react'
 import { GalleryLightbox } from './GalleryLightbox'
 
 interface GalleryItem {
@@ -37,166 +37,196 @@ interface MemberAboutViewProps {
   }
 }
 
-export function MemberAboutView({ member, labels }: Readonly<MemberAboutViewProps>) {
+/** The mono label with a brand tick that opens every section on the site. */
+function SectionLabel({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <div className="grid md:grid-cols-3 gap-6 overflow-hidden">
-      {/* About Section - Takes 2 columns */}
-      <div className="md:col-span-2 space-y-6 min-w-0">
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg p-6 overflow-hidden">
-          <h3 className="text-lg font-semibold text-ink dark:text-surface-text mb-4">
-            {labels.about}
-          </h3>
+    <p className="eyebrow mb-5 flex items-center gap-3">
+      <span aria-hidden="true" className="h-px w-8 shrink-0 bg-brand" />
+      {children}
+    </p>
+  )
+}
+
+/** One contact line: hairline-ruled row, small icon, no chrome around it. */
+function ContactRow({
+  href,
+  icon,
+  children,
+  external = false,
+  mono = false,
+}: Readonly<{
+  href: string
+  icon: React.ReactNode
+  children: React.ReactNode
+  external?: boolean
+  mono?: boolean
+}>) {
+  return (
+    <a
+      href={href}
+      {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+      className="group flex items-center gap-3 border-b border-line py-3 text-sm text-ink-soft transition-colors last:border-b-0 hover:text-brand dark:border-line-dark dark:text-neutral-400"
+    >
+      <span aria-hidden="true" className="shrink-0 text-ink-soft/70 transition-colors group-hover:text-brand dark:text-neutral-500">
+        {icon}
+      </span>
+      <span className={`min-w-0 break-all ${mono ? 'tabular font-mono text-xs' : ''}`}>
+        {children}
+      </span>
+      {external && (
+        <ArrowUpRight
+          aria-hidden="true"
+          className="ml-auto h-3.5 w-3.5 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+        />
+      )}
+    </a>
+  )
+}
+
+/**
+ * The "About" tab of a member's profile.
+ *
+ * This used to be three shadowed white boxes on grey — the treatment the
+ * masthead above it already gave up — with every heading at the same
+ * `text-lg font-semibold` and each phone number wrapped in a 40px grey
+ * circle. Nothing said which part mattered, and the contact card floated as a
+ * mostly empty rectangle next to a full column of text.
+ *
+ * It is one continuous surface now: sections opened by the mono eyebrow and
+ * separated by hairlines, the contact details as a ruled list in a rail that
+ * follows the reader down the page.
+ */
+export function MemberAboutView({ member, labels }: Readonly<MemberAboutViewProps>) {
+  const hasPersonalContact = Boolean(member.phone || member.loginEmail)
+  const hasCompanyContact = Boolean(member.companyPhone || member.companyEmail || member.website)
+  const gallery = member.gallery ?? []
+
+  return (
+    <div className="grid gap-x-14 gap-y-12 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <div className="min-w-0">
+        {/* About */}
+        <section>
+          <SectionLabel>{labels.about}</SectionLabel>
           {member.description ? (
             <div
-              className="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-300 break-word overflow-hidden"
+              className="prose max-w-[68ch] overflow-hidden break-words"
               dangerouslySetInnerHTML={{ __html: member.description }}
             />
           ) : (
-            <p className="text-neutral-400 dark:text-neutral-500 italic">{labels.noDescription}</p>
+            <p className="text-sm text-ink-soft/70 dark:text-neutral-500">
+              {labels.noDescription}
+            </p>
           )}
-        </div>
+        </section>
 
-        {/* Company Info */}
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg p-6 overflow-hidden">
-          <h3 className="text-lg font-semibold text-ink dark:text-surface-text mb-4">
-            {labels.company}
-          </h3>
-          <div className="flex items-start gap-4 mb-4">
+        {/* Company */}
+        <section className="mt-12 border-t border-line pt-12 dark:border-line-dark">
+          <SectionLabel>{labels.company}</SectionLabel>
+
+          <div className="mb-6 flex items-center gap-5">
             {member.logoUrl ? (
               <Image
                 src={member.logoUrl}
                 alt={member.company}
-                width={80}
-                height={80}
-                className="w-20 h-20 object-contain rounded-lg p-2 bg-white shrink-0"
+                width={112}
+                height={112}
+                className="h-16 w-16 shrink-0 rounded-xl border border-line bg-white object-contain p-2.5 dark:border-line-dark"
               />
             ) : (
-              <div className="w-20 h-20 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center shrink-0">
-                <Building2 className="h-8 w-8 text-neutral-400" />
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl border border-line dark:border-line-dark">
+                <Building2 className="h-6 w-6 text-ink-soft/60 dark:text-neutral-500" aria-hidden="true" />
               </div>
             )}
-            <div className="min-w-0">
-              <h4 className="text-xl font-semibold text-ink dark:text-surface-text break-word">
-                {member.company}
-              </h4>
-            </div>
+            {/* The website lives in the contact rail; repeating it here would
+                be its third appearance on one screen. */}
+            <h3 className="min-w-0 break-words font-display text-2xl font-bold tracking-tight text-ink dark:text-surface-text">
+              {member.company}
+            </h3>
           </div>
+
           {member.companyDescription && (
             <div
-              className="prose prose-sm dark:prose-invert max-w-none text-neutral-600 dark:text-neutral-300 break-word overflow-hidden"
+              className="prose max-w-[68ch] overflow-hidden break-words"
               dangerouslySetInnerHTML={{ __html: member.companyDescription }}
             />
           )}
-        </div>
+        </section>
 
         {/* Gallery */}
-        {member.gallery && member.gallery.length > 0 && (
-          <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-ink dark:text-surface-text mb-4">
-              {labels.gallery}
-            </h3>
-            <GalleryLightbox gallery={member.gallery} />
-          </div>
+        {gallery.length > 0 && (
+          <section className="mt-12 border-t border-line pt-12 dark:border-line-dark">
+            <SectionLabel>{labels.gallery}</SectionLabel>
+            <GalleryLightbox gallery={gallery} />
+          </section>
         )}
       </div>
 
-      {/* Contact Card - Takes 1 column */}
-      <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-600 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-ink dark:text-surface-text mb-4">
-          {labels.contact}
-        </h3>
+      {/*
+        The contact rail. It carries no box of its own — the hairlines between
+        the rows are enough structure — and sticks while the description and
+        gallery scroll past, which is the one thing the old card could not do.
+      */}
+      {(hasPersonalContact || hasCompanyContact) && (
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+          <SectionLabel>{labels.contact}</SectionLabel>
 
-        <div className="space-y-4">
-          {/* Personal Contact Section */}
-          {(member.phone || member.loginEmail) && (
-            <>
+          {hasPersonalContact && (
+            <div className="mb-8">
               {labels.personalContact && (
-                <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                <h4 className="eyebrow mb-1 text-[0.625rem] opacity-70">
                   {labels.personalContact}
                 </h4>
               )}
-
-              {/* Personal Phone */}
               {member.phone && (
-                <a
-                  href={`tel:${member.phone}`}
-                  className="flex items-center gap-3 text-neutral-600 dark:text-neutral-300 hover:text-brand transition-colors"
-                >
-                  <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />
-                  </div>
-                  <span>{member.phone}</span>
-                </a>
+                <ContactRow href={`tel:${member.phone}`} icon={<Phone className="h-4 w-4" />} mono>
+                  {member.phone}
+                </ContactRow>
               )}
-
-              {/* Personal Email (Login Email) */}
               {member.loginEmail && (
-                <a
-                  href={`mailto:${member.loginEmail}`}
-                  className="flex items-center gap-3 text-neutral-600 dark:text-neutral-300 hover:text-brand transition-colors"
-                >
-                  <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />
-                  </div>
-                  <span className="break-all">{member.loginEmail}</span>
-                </a>
+                <ContactRow href={`mailto:${member.loginEmail}`} icon={<Mail className="h-4 w-4" />}>
+                  {member.loginEmail}
+                </ContactRow>
               )}
-            </>
+            </div>
           )}
 
-          {/* Company Contact Section */}
-          {(member.companyPhone || member.companyEmail || member.website) && (
-            <>
-              {labels.companyContact && (member.phone || member.loginEmail) && (
-                <h4 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 uppercase tracking-wide mt-6">
+          {hasCompanyContact && (
+            <div>
+              {labels.companyContact && hasPersonalContact && (
+                <h4 className="eyebrow mb-1 text-[0.625rem] opacity-70">
                   {labels.companyContact}
                 </h4>
               )}
-
-              {/* Company Phone */}
               {member.companyPhone && (
-                <a
+                <ContactRow
                   href={`tel:${member.companyPhone}`}
-                  className="flex items-center gap-3 text-neutral-600 dark:text-neutral-300 hover:text-brand transition-colors"
+                  icon={<Phone className="h-4 w-4" />}
+                  mono
                 >
-                  <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
-                    <Phone className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />
-                  </div>
-                  <span>{member.companyPhone}</span>
-                </a>
+                  {member.companyPhone}
+                </ContactRow>
               )}
-
-              {/* Company Email */}
               {member.companyEmail && (
-                <a
+                <ContactRow
                   href={`mailto:${member.companyEmail}`}
-                  className="flex items-center gap-3 text-neutral-600 dark:text-neutral-300 hover:text-brand transition-colors"
+                  icon={<Mail className="h-4 w-4" />}
                 >
-                  <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
-                    <Mail className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />
-                  </div>
-                  <span className="break-all">{member.companyEmail}</span>
-                </a>
+                  {member.companyEmail}
+                </ContactRow>
               )}
-
-              {/* Website */}
               {member.website && (
-                <a
+                <ContactRow
                   href={`https://${member.website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 text-neutral-600 dark:text-neutral-300 hover:text-brand transition-colors"
+                  icon={<Globe className="h-4 w-4" />}
+                  external
                 >
-                  <div className="w-10 h-10 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
-                    <Globe className="h-5 w-5 text-neutral-500 dark:text-neutral-300" />
-                  </div>
-                  <span className="break-all">{member.website}</span>
-                </a>
+                  {member.website}
+                </ContactRow>
               )}
-            </>
+            </div>
           )}
-        </div>
-      </div>
+        </aside>
+      )}
     </div>
   )
 }

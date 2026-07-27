@@ -1,6 +1,6 @@
 import React from 'react'
 import { headers } from 'next/headers'
-import { Bricolage_Grotesque, IBM_Plex_Mono, Instrument_Sans } from 'next/font/google'
+import { Figtree, IBM_Plex_Mono, Outfit } from 'next/font/google'
 import './styles.css'
 import { Header } from '@/components/Header'
 import { Footer } from '@/components/Footer'
@@ -39,13 +39,13 @@ export const dynamic = 'force-dynamic'
  * - data    — eyebrows, dates, times, counts; anything that wants to line up
  *             in a column. Loaded at three weights because it is not variable.
  */
-const displayFont = Bricolage_Grotesque({
+const displayFont = Figtree({
   subsets: ['latin', 'latin-ext'],
   display: 'swap',
   variable: '--font-display-face',
 })
 
-const bodyFont = Instrument_Sans({
+const bodyFont = Outfit({
   subsets: ['latin', 'latin-ext'],
   display: 'swap',
   variable: '--font-body-face',

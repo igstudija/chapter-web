@@ -7,7 +7,7 @@ import { PhoneInput } from './PhoneInput'
 import { WebsiteInput } from './WebsiteInput'
 import { CountrySelect } from './CountrySelect'
 import { Toast } from './Toast'
-import { Camera, Upload, X, Plus, Loader2, Mail, Pencil } from 'lucide-react'
+import { X, Plus, Loader2, Mail, Pencil } from 'lucide-react'
 import { useTranslations } from './TranslationsProvider'
 import { getThumbnailUrl } from '@/lib/getThumbnailUrl'
 import { EmailChangeModal } from './EmailChangeModal'
@@ -66,151 +66,34 @@ export function AboutMeForm({
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [formData, setFormData] = useState<UserData>(initialData)
-  const [profileImage, setProfileImage] = useState<File | null>(null)
-  const [profilePreview, setProfilePreview] = useState<string | null>(
-    initialData.profileImageUrl || null,
-  )
-  const [removeProfileImage, setRemoveProfileImage] = useState(false)
-  const [logo, setLogo] = useState<File | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(initialData.logoUrl || null)
-  const [removeLogo, setRemoveLogo] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [galleryFiles, setGalleryFiles] = useState<
     { file: File; preview: string; caption: string }[]
   >([])
   const [existingGallery, setExistingGallery] = useState<GalleryItem[]>(initialData.gallery || [])
-  const profileInputRef = useRef<HTMLInputElement>(null)
-  const logoInputRef = useRef<HTMLInputElement>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
   const [emailModalOpen, setEmailModalOpen] = useState(false)
+  /**
+   * Whether the member has touched a field since the last time this form was
+   * seeded from the server.
+   *
+   * The profile picture and logo save on their own from the masthead, and each
+   * of those calls `router.refresh()`. Without this guard that refresh hands
+   * down a fresh `initialData` and the effect below wipes out whatever was
+   * half-typed in the fields — a new avatar would silently discard an unsaved
+   * bio.
+   */
+  const dirtyRef = useRef(false)
 
   useEffect(() => {
+    if (dirtyRef.current) return
     setFormData(initialData)
-    setProfilePreview(initialData.profileImageUrl || null)
-    setLogoPreview(initialData.logoUrl || null)
     setExistingGallery(initialData.gallery || [])
-    setRemoveProfileImage(false)
-    setRemoveLogo(false)
   }, [initialData])
 
-  const handleProfileImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      try {
-        const resizedFile = await resizeImage(file, resizePresets.profile)
-        setProfileImage(resizedFile)
-        setProfilePreview(URL.createObjectURL(resizedFile))
-        setRemoveProfileImage(false)
-      } catch (err) {
-        console.error('Failed to resize image:', err)
-        // Fallback to original file
-        setProfileImage(file)
-        setProfilePreview(URL.createObjectURL(file))
-        setRemoveProfileImage(false)
-      }
-    }
-  }
-
-  const handleProfileImageRemove = async () => {
-    if (!initialData.profileImageUrl) {
-      setProfileImage(null)
-      setProfilePreview(null)
-      return
-    }
-
-    setDeleting('profile')
-    try {
-      const url = siteId ? `/api/users/me?siteId=${siteId}` : '/api/users/me'
-      const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        // profileImage is stored in membership, not user
-        const mediaId = data.membership?.profileImage?.id || data.membership?.profileImage
-        if (mediaId && typeof mediaId === 'string') {
-          const deleteRes = await fetch(`/api/media/${mediaId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-          })
-          if (deleteRes.ok) {
-            setSuccess(t('profile', 'profilePhotoDeleted'))
-          } else {
-            throw new Error('Failed to delete')
-          }
-        }
-      }
-      setProfileImage(null)
-      setProfilePreview(null)
-      setRemoveProfileImage(true)
-      if (profileInputRef.current) {
-        profileInputRef.current.value = ''
-      }
-      router.refresh()
-    } catch (err) {
-      console.error('Failed to delete profile image:', err)
-      setError(t('profile', 'failedDeletePhoto'))
-    } finally {
-      setDeleting(null)
-    }
-  }
-
-  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      try {
-        const resizedFile = await resizeImage(file, resizePresets.logo)
-        setLogo(resizedFile)
-        setLogoPreview(URL.createObjectURL(resizedFile))
-        setRemoveLogo(false)
-      } catch (err) {
-        console.error('Failed to resize logo:', err)
-        // Fallback to original file
-        setLogo(file)
-        setLogoPreview(URL.createObjectURL(file))
-        setRemoveLogo(false)
-      }
-    }
-  }
-
-  const handleLogoRemove = async () => {
-    if (!initialData.logoUrl) {
-      setLogo(null)
-      setLogoPreview(null)
-      return
-    }
-
-    setDeleting('logo')
-    try {
-      const url = siteId ? `/api/users/me?siteId=${siteId}` : '/api/users/me'
-      const res = await fetch(url)
-      if (res.ok) {
-        const data = await res.json()
-        // logo is stored in membership, not user
-        const mediaId = data.membership?.logo?.id || data.membership?.logo
-        if (mediaId && typeof mediaId === 'string') {
-          const deleteRes = await fetch(`/api/media/${mediaId}`, {
-            method: 'DELETE',
-            credentials: 'include',
-          })
-          if (deleteRes.ok) {
-            setSuccess(t('profile', 'companyLogoDeleted'))
-          } else {
-            throw new Error('Failed to delete')
-          }
-        }
-      }
-      setLogo(null)
-      setLogoPreview(null)
-      setRemoveLogo(true)
-      if (logoInputRef.current) {
-        logoInputRef.current.value = ''
-      }
-      router.refresh()
-    } catch (err) {
-      console.error('Failed to delete logo:', err)
-      setError(t('profile', 'failedDeleteLogo'))
-    } finally {
-      setDeleting(null)
-    }
+  const updateForm = (patch: Partial<UserData>) => {
+    dirtyRef.current = true
+    setFormData((prev) => ({ ...prev, ...patch }))
   }
 
   const handleGalleryAdd = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -377,24 +260,20 @@ export function AboutMeForm({
     return [...existingItems, ...uploadedItems]
   }
 
-  const buildUpdatePayload = (
-    profileImageId?: string,
-    logoId?: string,
-    galleryData?: { image: number; caption: string }[],
-  ) => {
+  const buildUpdatePayload = (galleryData?: { image: number; caption: string }[]) => {
     // tyfcbGiven/tyfcbReceived are also editable on the Presentation tab. Only
     // send them when changed here, so a full About Me save doesn't clobber a
     // value edited on the other surface.
-    const { tyfcbGiven, tyfcbReceived, ...rest } = formData
+    //
+    // profileImage/logo are deliberately absent: they belong to the masthead
+    // and save themselves, so this form must never send them — doing so would
+    // reinstate whatever picture was on screen when it was first rendered.
+    const { tyfcbGiven, tyfcbReceived, profileImageUrl, logoUrl, ...rest } = formData
     return {
       ...rest,
       ...(tyfcbGiven !== initialData.tyfcbGiven && { tyfcbGiven }),
       ...(tyfcbReceived !== initialData.tyfcbReceived && { tyfcbReceived }),
       ...(galleryData && { gallery: galleryData }),
-      ...(profileImageId && { profileImage: profileImageId }),
-      ...(removeProfileImage && { profileImage: null }),
-      ...(logoId && { logo: logoId }),
-      ...(removeLogo && { logo: null }),
       siteId,
     }
   }
@@ -413,11 +292,9 @@ export function AboutMeForm({
     }
 
     try {
-      const profileImageId = profileImage ? await uploadMediaFile(profileImage) : undefined
-      const logoId = logo ? await uploadMediaFile(logo) : undefined
       const uploadedGalleryItems = await uploadGalleryFiles()
       const galleryData = prepareGalleryData(uploadedGalleryItems)
-      const payload = buildUpdatePayload(profileImageId, logoId, galleryData)
+      const payload = buildUpdatePayload(galleryData)
 
       const res = await fetch('/api/users/me', {
         method: 'PATCH',
@@ -433,6 +310,9 @@ export function AboutMeForm({
 
       setSuccess(t('profile', 'profileUpdated'))
       setGalleryFiles([])
+      // Saved: the server is now the source of truth again, so let the next
+      // `initialData` through.
+      dirtyRef.current = false
       router.refresh()
     } catch (err) {
       console.error('Profile update error:', err)
@@ -446,18 +326,18 @@ export function AboutMeForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const value = e.target.name === 'companyEmail' ? e.target.value.toLowerCase() : e.target.value
-    setFormData((prev) => ({ ...prev, [e.target.name]: value }))
+    updateForm({ [e.target.name]: value } as Partial<UserData>)
   }
 
   const handleBusinessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     if (value === '') {
-      setFormData((prev) => ({ ...prev, [name]: null }))
+      updateForm({ [name]: null } as Partial<UserData>)
       return
     }
     const num = Number(value)
     if (Number.isNaN(num) || num < 0 || num > 99000000) return
-    setFormData((prev) => ({ ...prev, [name]: num }))
+    updateForm({ [name]: num } as Partial<UserData>)
   }
 
   return (
@@ -474,79 +354,42 @@ export function AboutMeForm({
         />
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      {/*
+        Layout: a label rail on the left, the fields on the right.
+
+        The form used to be two stacked cards of full-bleed inputs, which is
+        the shape every CMS edit screen has had since 2010 — and boxing it or
+        centring it only changes how wide the same shape is. This is the
+        settings-page layout instead: the section name sits in its own column
+        and stays with you while that section scrolls, the fields keep a
+        readable measure without the page having to shrink around them, and the
+        sections are separated by the same hairline rules the rest of the site
+        uses rather than by another border-radius.
+      */}
+      <form onSubmit={handleSubmit} className="w-full">
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-4 rounded-lg">
+          <div className="alert alert-error mb-6" role="alert">
             {error}
           </div>
         )}
 
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-ink dark:text-surface-text mb-4">
-            {t('profile', 'personalInfo')}
-          </h3>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              {t('profile', 'profilePhoto')}
-            </label>
-            <div className="flex items-center gap-4">
-              <div className="relative group">
-                {profilePreview ? (
-                  <>
-                    <img
-                      src={getThumbnailUrl(profilePreview, 'thumbnail') || profilePreview}
-                      alt="Profile"
-                      className={`w-24 h-24 rounded-full object-cover border-2 border-neutral-200 ${deleting === 'profile' ? 'opacity-50' : ''}`}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleProfileImageRemove}
-                      disabled={deleting === 'profile'}
-                      className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100"
-                    >
-                      {deleting === 'profile' ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <X className="h-4 w-4" />
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border-2 border-dashed border-neutral-300 dark:border-neutral-600">
-                    <Camera className="h-8 w-8 text-neutral-400" />
-                  </div>
-                )}
-              </div>
-              <div>
-                <input
-                  ref={profileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfileImageChange}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => profileInputRef.current?.click()}
-                  className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors text-sm font-medium"
-                >
-                  <Upload className="h-4 w-4 inline mr-2" />
-                  {t('profile', 'uploadPhoto')}
-                </button>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                  {t('profile', 'photoHint')}
-                </p>
-              </div>
-            </div>
+        {/*
+          No rule above the first section: the tab bar already closes on one,
+          and two hairlines a few pixels apart read as a mistake rather than as
+          structure. Every later section opens with its own.
+        */}
+        <section className="grid gap-x-12 gap-y-6 pb-10 md:grid-cols-[minmax(160px,220px)_minmax(0,1fr)]">
+          <div className="md:sticky md:top-24 md:self-start">
+            <h3 className="eyebrow flex items-center gap-3">
+              <span className="h-px w-6 shrink-0 bg-brand" aria-hidden="true" />
+              {t('profile', 'personalInfo')}
+            </h3>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="max-w-3xl space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="name" className="field-label">
                 {t('profile', 'firstName')} *
               </label>
               <input
@@ -560,10 +403,7 @@ export function AboutMeForm({
               />
             </div>
             <div>
-              <label
-                htmlFor="surname"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="surname" className="field-label">
                 {t('profile', 'lastName')} *
               </label>
               <input
@@ -578,25 +418,19 @@ export function AboutMeForm({
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4 mt-4">
+          <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label
-                htmlFor="phone"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="phone" className="field-label">
                 {t('profile', 'phone')}
               </label>
               <PhoneInput
                 id="phone"
                 value={formData.phone}
-                onChange={(value) => setFormData((prev) => ({ ...prev, phone: value }))}
+                onChange={(value) => updateForm({ phone: value })}
               />
             </div>
             <div>
-              <label
-                htmlFor="orgRole"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="orgRole" className="field-label">
                 {t('profile', 'orgRole')}
               </label>
               <input
@@ -610,12 +444,9 @@ export function AboutMeForm({
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4 mt-4">
+          <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label
-                htmlFor="tyfcbGiven"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="tyfcbGiven" className="field-label">
                 {t('profile', 'businessGiven')}
               </label>
               <input
@@ -630,10 +461,7 @@ export function AboutMeForm({
               />
             </div>
             <div>
-              <label
-                htmlFor="tyfcbReceived"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="tyfcbReceived" className="field-label">
                 {t('profile', 'businessReceived')}
               </label>
               <input
@@ -649,16 +477,21 @@ export function AboutMeForm({
             </div>
           </div>
 
-          {/* Email Section */}
+          {/*
+            The login address is the one thing on this screen that cannot be
+            typed over — it changes through a verification round trip. A panel
+            nested inside a panel said "another form"; an inset row on the
+            section's own surface says "a value, and a way to change it".
+          */}
           {userEmail && (
-            <div className="mt-4 p-4 bg-neutral-50 dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-700">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
-                  <div>
-                    <p className="text-neutral-900 dark:text-surface-text">{userEmail}</p>
+            <div className="rounded-xl border border-line bg-card p-4 dark:border-line-dark dark:bg-surface-raised">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-ink-soft dark:text-neutral-400" />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm text-ink dark:text-surface-text">{userEmail}</p>
                     {pendingEmail && (
-                      <p className="text-sm text-yellow-600 dark:text-yellow-400 mt-1">
+                      <p className="mt-1 text-sm text-amber-600 dark:text-amber-400">
                         {t('profile', 'pendingEmailChange')}: {pendingEmail}
                       </p>
                     )}
@@ -667,23 +500,20 @@ export function AboutMeForm({
                 <button
                   type="button"
                   onClick={() => setEmailModalOpen(true)}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
+                  className="btn btn-line px-3 py-2 text-sm"
                 >
                   <Pencil className="h-4 w-4" />
                   {t('profile', 'changeEmail')}
                 </button>
               </div>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2">
+              <p className="mt-3 text-xs text-ink-soft dark:text-neutral-400">
                 {t('profile', 'emailChangeInfo')}
               </p>
             </div>
           )}
 
-          <div className="mt-4">
-            <label
-              htmlFor="powerGroup"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-            >
+          <div>
+            <label htmlFor="powerGroup" className="field-label">
               {t('common', 'powerGroup')}
             </label>
             <select
@@ -702,84 +532,29 @@ export function AboutMeForm({
             </select>
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              {t('profile', 'aboutMeField')}
-            </label>
+          <div>
+            <label className="field-label">{t('profile', 'aboutMeField')}</label>
             <RichTextEditor
               value={formData.description}
-              onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
+              onChange={(value) => updateForm({ description: value })}
               placeholder={t('profile', 'aboutMePlaceholder')}
             />
           </div>
-        </div>
+          </div>
+        </section>
 
-        <div className="bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-ink dark:text-surface-text mb-4">
-            {t('profile', 'companyInfo')}
-          </h3>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              {t('profile', 'companyLogo')}
-            </label>
-            <div className="flex items-center gap-4">
-              <div className="relative group">
-                {logoPreview ? (
-                  <>
-                    <img
-                      src={getThumbnailUrl(logoPreview, 'thumbnail') || logoPreview}
-                      alt="Company Logo"
-                      className={`w-32 h-20 object-contain border-2 border-neutral-200 rounded bg-white p-2 ${deleting === 'logo' ? 'opacity-50' : ''}`}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleLogoRemove}
-                      disabled={deleting === 'logo'}
-                      className="absolute -top-1 -right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100"
-                    >
-                      {deleting === 'logo' ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <X className="h-4 w-4" />
-                      )}
-                    </button>
-                  </>
-                ) : (
-                  <div className="w-32 h-16 bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg">
-                    <Upload className="h-6 w-6 text-neutral-400" />
-                  </div>
-                )}
-              </div>
-              <div>
-                <input
-                  ref={logoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => logoInputRef.current?.click()}
-                  className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors text-sm font-medium"
-                >
-                  <Upload className="h-4 w-4 inline mr-2" />
-                  {t('profile', 'uploadLogo')}
-                </button>
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-                  {t('profile', 'logoHint')}
-                </p>
-              </div>
-            </div>
+        <section className="grid gap-x-12 gap-y-6 border-t border-line py-10 dark:border-line-dark md:grid-cols-[minmax(160px,220px)_minmax(0,1fr)]">
+          <div className="md:sticky md:top-24 md:self-start">
+            <h3 className="eyebrow flex items-center gap-3">
+              <span className="h-px w-6 shrink-0 bg-brand" aria-hidden="true" />
+              {t('profile', 'companyInfo')}
+            </h3>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="max-w-3xl space-y-5">
+          <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label
-                htmlFor="company"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="company" className="field-label">
                 {t('profile', 'companyName')} *
               </label>
               <input
@@ -793,10 +568,7 @@ export function AboutMeForm({
               />
             </div>
             <div>
-              <label
-                htmlFor="jobPosition"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="jobPosition" className="field-label">
                 {t('profile', 'jobPosition')}
               </label>
               <input
@@ -810,25 +582,19 @@ export function AboutMeForm({
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4 mt-4">
+          <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label
-                htmlFor="companyPhone"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="companyPhone" className="field-label">
                 {t('profile', 'companyPhone')}
               </label>
               <PhoneInput
                 id="companyPhone"
                 value={formData.companyPhone}
-                onChange={(value) => setFormData((prev) => ({ ...prev, companyPhone: value }))}
+                onChange={(value) => updateForm({ companyPhone: value })}
               />
             </div>
             <div>
-              <label
-                htmlFor="companyEmail"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="companyEmail" className="field-label">
                 {t('profile', 'companyEmail')}
               </label>
               <input
@@ -842,57 +608,47 @@ export function AboutMeForm({
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4 mt-4">
+          <div className="grid gap-5 md:grid-cols-2">
             <div>
-              <label
-                htmlFor="country"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="country" className="field-label">
                 {t('profile', 'country')}
               </label>
               <CountrySelect
                 id="country"
                 value={formData.country}
-                onChange={(value) => setFormData((prev) => ({ ...prev, country: value }))}
+                onChange={(value) => updateForm({ country: value })}
                 placeholder={t('profile', 'countryPlaceholder')}
                 searchPlaceholder={t('common', 'search')}
               />
             </div>
             <div>
-              <label
-                htmlFor="website"
-                className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
-              >
+              <label htmlFor="website" className="field-label">
                 {t('profile', 'website')}
               </label>
               <WebsiteInput
                 id="website"
                 value={formData.website}
-                onChange={(value) => setFormData((prev) => ({ ...prev, website: value }))}
+                onChange={(value) => updateForm({ website: value })}
                 placeholder="example.com"
               />
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
+              <p className="mt-1.5 text-xs text-ink-soft dark:text-neutral-400">
                 {t('profile', 'websiteHint')}
               </p>
             </div>
           </div>
 
-          <div className="mt-4">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
-              {t('profile', 'companyDescription')}
-            </label>
+          <div>
+            <label className="field-label">{t('profile', 'companyDescription')}</label>
             <RichTextEditor
               value={formData.companyDescription}
-              onChange={(value) => setFormData((prev) => ({ ...prev, companyDescription: value }))}
+              onChange={(value) => updateForm({ companyDescription: value })}
               placeholder={t('profile', 'companyDescPlaceholder')}
             />
           </div>
 
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-              {t('profile', 'gallery')}
-            </label>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-3">
+          <div className="border-t border-line pt-5 dark:border-line-dark">
+            <label className="field-label">{t('profile', 'gallery')}</label>
+            <p className="-mt-1 mb-4 text-xs text-ink-soft dark:text-neutral-400">
               {t('profile', 'galleryHint')}
             </p>
 
@@ -901,7 +657,15 @@ export function AboutMeForm({
               const imageUrl = typeof item.image === 'object' ? item.image.url : ''
               return !!imageUrl
             }) && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              /*
+                Tiles are one object: picture and caption inside a single
+                hairline frame, with the caption as the frame's bottom edge
+                rather than a stray input floating underneath it. The remove
+                control is a legible chip that is always there — the old red
+                circle only existed while a mouse was over the tile, which on a
+                phone meant it did not exist at all.
+              */
+              <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">
                 {existingGallery.map((item, index) => {
                   const imageUrl = typeof item.image === 'object' ? item.image.url : ''
                   if (!imageUrl) return null
@@ -909,33 +673,39 @@ export function AboutMeForm({
                   const itemKey = item.id || imageId || `fallback-${index}`
                   const isDeleting = deleting === `gallery-${index}`
                   return (
-                    <div key={itemKey} className="relative group">
-                      <img
-                        src={getThumbnailUrl(imageUrl, 'card') || imageUrl}
-                        alt={item.caption || 'Gallery image'}
-                        className={`w-full h-48 object-cover rounded-lg ${isDeleting ? 'opacity-50' : ''}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleExistingGalleryRemove(index)}
-                        disabled={isDeleting}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-100"
-                      >
-                        {isDeleting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <X className="h-4 w-4" />
-                        )}
-                      </button>
+                    <figure
+                      key={itemKey}
+                      className="overflow-hidden rounded-xl border border-line dark:border-line-dark"
+                    >
+                      <div className="relative">
+                        <img
+                          src={getThumbnailUrl(imageUrl, 'card') || imageUrl}
+                          alt={item.caption || 'Gallery image'}
+                          className={`h-40 w-full object-cover ${isDeleting ? 'opacity-50' : ''}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleExistingGalleryRemove(index)}
+                          disabled={isDeleting}
+                          aria-label={t('common', 'delete')}
+                          className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-neutral-950/60 text-white backdrop-blur-sm transition-colors hover:bg-neutral-950/85 disabled:opacity-70"
+                        >
+                          {isDeleting ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <X className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
                       <input
                         type="text"
                         value={item.caption || ''}
                         onChange={(e) => handleExistingGalleryCaptionChange(index, e.target.value)}
                         placeholder={t('profile', 'caption')}
-                        className="mt-1 w-full text-xs border border-neutral-200 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded px-2 py-1"
+                        className="field rounded-none border-0 border-t border-line px-3 py-2 text-xs dark:border-line-dark"
                         disabled={isDeleting}
                       />
-                    </div>
+                    </figure>
                   )
                 })}
               </div>
@@ -943,29 +713,35 @@ export function AboutMeForm({
 
             {/* New gallery images to upload */}
             {galleryFiles.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div className="mb-4 grid grid-cols-2 gap-4 md:grid-cols-4">
                 {galleryFiles.map((item, index) => (
-                  <div key={item.preview} className="relative group">
-                    <img
-                      src={item.preview}
-                      alt="Gallery preview"
-                      className="w-full h-48 object-cover rounded-lg"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleGalleryRemove(index)}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
+                  <figure
+                    key={item.preview}
+                    className="overflow-hidden rounded-xl border border-brand/40"
+                  >
+                    <div className="relative">
+                      <img
+                        src={item.preview}
+                        alt="Gallery preview"
+                        className="h-40 w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleGalleryRemove(index)}
+                        aria-label={t('common', 'delete')}
+                        className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-lg bg-neutral-950/60 text-white backdrop-blur-sm transition-colors hover:bg-neutral-950/85"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
                     <input
                       type="text"
                       value={item.caption}
                       onChange={(e) => handleGalleryCaptionChange(index, e.target.value)}
                       placeholder={t('profile', 'caption')}
-                      className="mt-1 w-full text-xs border border-neutral-200 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded px-2 py-1"
+                      className="field rounded-none border-0 border-t border-line px-3 py-2 text-xs dark:border-line-dark"
                     />
-                  </div>
+                  </figure>
                 ))}
               </div>
             )}
@@ -982,23 +758,53 @@ export function AboutMeForm({
             <button
               type="button"
               onClick={() => galleryInputRef.current?.click()}
-              className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-neutral-300 dark:border-neutral-600 rounded-lg text-neutral-600 dark:text-neutral-300 hover:border-brand hover:text-brand transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg border border-dashed border-line-strong px-4 py-2.5 text-sm font-medium text-ink-soft transition-colors hover:border-brand hover:text-brand dark:border-line-dark dark:text-neutral-400"
             >
-              <Plus className="h-5 w-5" />
+              <Plus className="h-4 w-4" />
               {t('profile', 'addImages')}
             </button>
           </div>
-        </div>
+          </div>
+        </section>
 
-        {/* Sticky save button - stays at bottom when scrolling */}
-        <div className="sticky bottom-4 pt-6">
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn btn-primary w-full py-3.5 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? t('profile', 'savingChanges') : t('profile', 'saveChangesBtn')}
-          </button>
+        {/*
+          The action bar follows the page instead of sitting at the end of it,
+          but it is a bar, not a billboard: a full-bleed red slab the width of
+          the viewport was the loudest element on a screen whose job is quiet
+          data entry. It also sits on the same grid as everything above it, so
+          the button lands under the fields it saves rather than out at the
+          edge of the page.
+        */}
+        {/*
+          A docked action bar, not a floating button.
+
+          Sticky is right — this form is long enough that the save has to travel
+          with you — but a lone button pinned over the middle of the page has
+          nothing holding it up and reads as debris. Bleeding the bar out to the
+          content edges and giving it a top hairline and a surface of its own
+          makes it the floor of the screen: everything scrolls behind it, and
+          the button sits on the same grid column as the fields it saves.
+        */}
+        <div className="sticky bottom-0 z-20 -mx-4 mt-4 border-t border-line bg-paper/90 px-4 py-4 backdrop-blur-md dark:border-line-dark dark:bg-surface/90 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+          <div className="grid gap-x-12 md:grid-cols-[minmax(160px,220px)_minmax(0,1fr)]">
+            <div className="hidden md:block" />
+            {/*
+              Left-aligned, on the same edge the fields start from. The eye
+              travels down that edge through the whole form, so the action
+              belongs at the end of it rather than across the page where
+              nothing else lives.
+            */}
+            <div className="flex max-w-3xl justify-start">
+              <button
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary w-full px-8 py-3 sm:w-auto disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading ? t('profile', 'savingChanges') : t('profile', 'saveChangesBtn')}
+              </button>
+            </div>
+          </div>
         </div>
       </form>
     </>

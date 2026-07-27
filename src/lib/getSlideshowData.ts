@@ -1,5 +1,12 @@
 import type { Payload, Where } from 'payload'
-import type { BuildSlidesContext, SlideBlockData, SlideMember, SlidePowerGroup } from './buildSlides'
+import type {
+  BuildSlidesContext,
+  MemberSlideTemplate,
+  SlideBlockData,
+  SlideMediaType,
+  SlideMember,
+  SlidePowerGroup,
+} from './buildSlides'
 import { DEFAULT_ORG_NAME } from './branding'
 
 interface SiteForSlides {
@@ -101,6 +108,14 @@ export async function getSlideshowData(
     const profileImage = asObj(membership.profileImage)
     const logo = asObj(membership.logo)
     const slideImage = asObj(membership.slideImage)
+    // `slideImages` supersedes the single `slideImage`; older members who never
+    // opened the new editor still have only the legacy field populated.
+    const slideImages = (Array.isArray(membership.slideImages) ? membership.slideImages : [])
+      .map((entry: unknown) => mediaToUrl(asObj(entry)))
+      .filter((entry): entry is { url: string } => entry !== null)
+    const resolvedSlideImages = slideImages.length > 0
+      ? slideImages
+      : [mediaToUrl(slideImage)].filter((entry): entry is { url: string } => entry !== null)
 
     return {
       membershipId: String(membership.id),
@@ -119,8 +134,15 @@ export async function getSlideshowData(
       profileImage: mediaToUrl(profileImage),
       logo: mediaToUrl(logo),
       slideImage: mediaToUrl(slideImage),
+      slideImages: resolvedSlideImages,
+      slideMediaType: (membership.slideMediaType || 'image') as SlideMediaType,
+      slideVideoUrl: membership.slideVideoUrl || null,
+      slideTemplate: (membership.slideTemplate || 'classic') as MemberSlideTemplate,
       slideBackgroundColor: membership.slideBackgroundColor || null,
+      slideBackgroundColorRight: membership.slideBackgroundColorRight || null,
       slideImageMode: (membership.slideImageMode || null) as 'contain' | 'cover' | null,
+      slideSpecialRequestDisplay: membership.slideSpecialRequestDisplay || 'inherit',
+      slideNextSpeakerPosition: membership.slideNextSpeakerPosition || 'inherit',
       powerGroup: powerGroup
         ? { id: String(powerGroup.id), title: powerGroup.title as string }
         : null,
@@ -266,6 +288,7 @@ export async function getSlideshowData(
             id: block.id,
             member: memberId,
             customSlideSeconds: block.customSlideSeconds ?? null,
+            hideMemberInfo: block.hideMemberInfo === true,
           })
         }
         break
@@ -292,6 +315,7 @@ export async function getSlideshowData(
             powerGroup: groupId,
             disableTimer: block.disableTimer === true,
             customSlideSeconds: block.customSlideSeconds ?? null,
+            hideMemberInfo: block.hideMemberInfo === true,
           })
         }
         break
@@ -356,6 +380,14 @@ export async function getSlideshowData(
         speechMasterMultiplier: settings.speechMasterMultiplier || 2,
         businessGivenMin: settings.businessGivenMin || 0,
         businessReceivedMin: settings.businessReceivedMin || 0,
+        slideImageSeconds: settings.slideImageSeconds || 30,
+        slideChrome: settings.slideChrome === 'minimal' ? 'minimal' : 'bar',
+        nextSpeakerPosition: settings.nextSpeakerPosition === 'bottom' ? 'bottom' : 'top',
+        specialRequestDisplay: (['bar', 'slide', 'flash', 'off'] as const).includes(
+          settings.specialRequestDisplay,
+        )
+          ? settings.specialRequestDisplay
+          : 'bar',
         logoUrl:
           siteSettings?.siteLogo && typeof siteSettings.siteLogo === 'object'
             ? // eslint-disable-next-line @typescript-eslint/no-explicit-any

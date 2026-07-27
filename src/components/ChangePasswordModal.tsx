@@ -70,14 +70,14 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="modal-scrim">
       <button
         type="button"
-        className="fixed inset-0 bg-neutral-950/55 backdrop-blur-sm"
+        className="fixed inset-0"
         onClick={onClose}
         aria-label="Close modal"
       />
-      <div className="relative bg-white dark:bg-neutral-800 rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+      <div className="modal-panel relative w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">
             {t('changePassword', 'title')}
@@ -91,12 +91,12 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
         </div>
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-lg mb-6">
+          <div className="alert alert-error mb-6" role="alert">
             {error}
           </div>
         )}
         {success && (
-          <div className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 p-4 rounded-lg mb-6">
+          <div className="alert alert-success mb-6" role="alert">
             {success}
           </div>
         )}
@@ -105,7 +105,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
           <div>
             <label
               htmlFor="newPassword"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+              className="field-label"
             >
               {t('changePassword', 'newPassword')} *
             </label>
@@ -133,7 +133,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+              className="field-label"
             >
               {t('changePassword', 'confirmPassword')} *
             </label>

@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search } from 'lucide-react'
+import { Users } from 'lucide-react'
 import { MemberCard } from './MemberCard'
+import { ListSearch } from './ListSearch'
 import { useTranslations } from './TranslationsProvider'
 import slugify from 'slugify'
 
@@ -30,6 +31,7 @@ interface Member {
     | string
     | null
   top40Count: number
+  top20Count: number
   specialRequestsCount: number
 }
 
@@ -73,32 +75,41 @@ export function MembersSearch({ groups }: MembersSearchProps) {
       .filter((group) => group.members.length > 0)
   }, [groups, searchQuery])
 
+  const visibleMemberCount = filteredGroups.reduce((sum, g) => sum + g.members.length, 0)
+  const totalMemberCount = groups.reduce((sum, g) => sum + g.members.length, 0)
+
   return (
     <>
-      <div className="relative mb-8">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
-        <input
-          type="text"
-          placeholder={t('common', 'searchPlaceholder')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="field py-3 pl-12"
-        />
-      </div>
+      <ListSearch
+        value={searchQuery}
+        onChange={setSearchQuery}
+        placeholder={t('common', 'searchPlaceholder')}
+        resultCount={visibleMemberCount}
+        totalCount={totalMemberCount}
+        sticky
+        className="mb-8"
+      />
 
       {filteredGroups.length === 0 ? (
-        <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">
-          {t('members', 'noMembers')}
-        </p>
+        <div className="panel empty-state">
+          <Users className="h-7 w-7 text-neutral-300 dark:text-neutral-600" aria-hidden="true" />
+          <p className="text-sm">{t('members', 'noMembers')}</p>
+        </div>
       ) : (
         filteredGroups.map((group) => (
           <section key={group.groupId} className="mb-12">
-            <div className="flex items-center gap-3 mb-6">
+            {/* The group's rating is a number to compare across groups, so it is
+                set in tabular figures beside the name rather than dropped into a
+                grey lozenge that reads like a tag. */}
+            <div className="mb-6 flex items-baseline gap-3">
               <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text">
                 {group.title}
               </h2>
-              <span className="bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm px-3 py-1 rounded-full">
-                {group.rating.toFixed(2)}
+              <span className="tabular font-mono text-sm text-brand">
+                {Math.round(group.rating)}%
+              </span>
+              <span className="tabular ml-auto font-mono text-xs text-neutral-400 dark:text-neutral-500">
+                {group.members.length}
               </span>
             </div>
 
@@ -129,6 +140,7 @@ export function MembersSearch({ groups }: MembersSearchProps) {
                   }
                   specialRequestsCount={member.specialRequestsCount}
                   top40Count={member.top40Count}
+                  top20Count={member.top20Count}
                 />
               ))}
             </div>

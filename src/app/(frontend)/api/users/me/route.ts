@@ -3,8 +3,26 @@ import { getSettings } from '@/lib/getSiteSettings'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import { MAX_SLIDE_IMAGES } from '@/lib/buildSlides'
 
 export const dynamic = 'force-dynamic'
+
+/**
+ * Coerce whatever the client sent for a relationship — id, numeric string, or
+ * populated doc — into the numeric id Postgres needs. `null` for "no relation".
+ */
+function toRelationId(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null
+  if (typeof value === 'number') return Number.isNaN(value) ? null : value
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10)
+    return Number.isNaN(parsed) ? null : parsed
+  }
+  if (typeof value === 'object' && 'id' in value) {
+    return toRelationId((value as { id: unknown }).id)
+  }
+  return null
+}
 
 /**
  * GET /api/users/me
@@ -55,7 +73,14 @@ export async function PATCH(request: Request) {
       'tyfcbGiven',
       'tyfcbReceived',
       'slideImage',
+      'slideImages',
+      'slideMediaType',
+      'slideVideoUrl',
+      'slideTemplate',
+      'slideSpecialRequestDisplay',
+      'slideNextSpeakerPosition',
       'slideBackgroundColor',
+      'slideBackgroundColorRight',
       'slideImageMode',
       'company',
       'phone',
@@ -113,6 +138,18 @@ export async function PATCH(request: Request) {
               }
             }
             // Skip invalid values
+          } else if (field === 'slideImages') {
+            // Upload relations need numeric IDs on Postgres; the browser sends
+            // them as strings. Drop anything that isn't an ID.
+            const value = data[field]
+            membershipUpdateData[field] = Array.isArray(value)
+              ? value
+                  .map(toRelationId)
+                  .filter((id): id is number => id !== null)
+                  .slice(0, MAX_SLIDE_IMAGES)
+              : []
+          } else if (field === 'slideImage') {
+            membershipUpdateData[field] = toRelationId(data[field])
           } else {
             membershipUpdateData[field] = data[field]
           }

@@ -1,5 +1,20 @@
 import { parseGuests, getGroupGuests, type ParsedGuest } from './parseGuests'
 
+/** Member slides can carry a photo sequence or an embedded video, never both. */
+export type SlideMediaType = 'image' | 'video'
+
+/** Layouts a member can pick for their slide. All show the same information. */
+export type MemberSlideTemplate = 'classic' | 'cover' | 'reels'
+
+/**
+ * Ceiling on a member's photo sequence. The set has to play through in one
+ * slide's worth of time, so past a handful each photo is on screen too briefly
+ * to register.
+ */
+export const MAX_SLIDE_IMAGES = 5
+
+export const MEMBER_SLIDE_TEMPLATES: MemberSlideTemplate[] = ['classic', 'cover', 'reels']
+
 export interface SlideMember {
   id: string
   membershipId?: string | null
@@ -18,8 +33,17 @@ export interface SlideMember {
   profileImage?: { url?: string | null } | null
   logo?: { url?: string | null } | null
   slideImage?: { url?: string | null } | null
+  slideImages?: Array<{ url?: string | null }> | null
+  slideMediaType?: SlideMediaType | null
+  slideVideoUrl?: string | null
+  slideTemplate?: MemberSlideTemplate | null
   slideBackgroundColor?: string | null
+  /** Classic only: colour behind the media column. Falls back to the main one. */
+  slideBackgroundColorRight?: string | null
   slideImageMode?: 'contain' | 'cover' | null
+  /** Per-member overrides of the chapter's slideshow choices. */
+  slideSpecialRequestDisplay?: SpecialRequestDisplay | 'inherit' | null
+  slideNextSpeakerPosition?: NextSpeakerPosition | 'inherit' | null
   powerGroup?: { id: string; title: string } | string | null
   powerGroupLead?: boolean | null
   specialRequest?: string | null
@@ -46,6 +70,7 @@ export type SlideBlockData =
       id?: string
       member: string | { id: string }
       customSlideSeconds?: number | null
+      hideMemberInfo?: boolean | null
     }
   | {
       blockType: 'speechMasterCeremony'
@@ -60,6 +85,7 @@ export type SlideBlockData =
       powerGroup: string | { id: string }
       disableTimer?: boolean | null
       customSlideSeconds?: number | null
+      hideMemberInfo?: boolean | null
     }
   | {
       blockType: 'guests'
@@ -86,10 +112,20 @@ export interface SlideData {
     | 'guest-detail'
     | 'speech-master-ceremony'
     | 'custom-image'
+    | 'special-request'
   data: unknown
   duration: number
   disableTimer?: boolean
 }
+
+/** Where the slideshow puts its controls. */
+export type SlideChrome = 'bar' | 'minimal'
+
+/** How a member's ask reaches the room. */
+export type SpecialRequestDisplay = 'bar' | 'slide' | 'flash' | 'off'
+
+/** Corner the minimal chrome parks the next-speaker badge in. */
+export type NextSpeakerPosition = 'top' | 'bottom'
 
 export interface BuildSlidesContext {
   members: SlideMember[]
@@ -103,6 +139,11 @@ export interface BuildSlidesContext {
     chapterName: string
     businessGivenMin: number
     businessReceivedMin: number
+    /** Full photo-sequence length; each photo gets `this / count`. */
+    slideImageSeconds: number
+    slideChrome: SlideChrome
+    nextSpeakerPosition: NextSpeakerPosition
+    specialRequestDisplay: SpecialRequestDisplay
   }
   skipFromSlidesIds: string[]
   attendanceFilter: 'all' | 'onsite' | 'online'
@@ -125,6 +166,54 @@ function memberFromMembership(
   const userId = ctx.membershipToUserId[membershipId]
   if (!userId) return null
   return ctx.members.find((m) => String(m.id) === String(userId)) || null
+}
+
+/**
+ * A member contributes one slide — plus a second one for their special request
+ * when the chapter has chosen to give the ask its own screen instead of a strip
+ * of small type along the bottom of the profile.
+ */
+function memberSlides(
+  member: SlideMember,
+  slide: Omit<SlideData, 'type'> & { data: Record<string, unknown> },
+  ctx: BuildSlidesContext,
+): SlideData[] {
+  // The chapter sets the default; a member may overrule it for their own slide.
+  const display =
+    member.slideSpecialRequestDisplay && member.slideSpecialRequestDisplay !== 'inherit'
+      ? member.slideSpecialRequestDisplay
+      : ctx.settings.specialRequestDisplay
+  const nextSpeakerPosition =
+    member.slideNextSpeakerPosition && member.slideNextSpeakerPosition !== 'inherit'
+      ? member.slideNextSpeakerPosition
+      : ctx.settings.nextSpeakerPosition
+
+  const ownSlide = display === 'slide'
+  const slides: SlideData[] = [
+    {
+      ...slide,
+      type: 'member',
+      data: {
+        ...slide.data,
+        // Only the bar lives on the member slide itself; the rest is resolved
+        // here so the viewer never has to redo the inheritance.
+        hideSpecialRequest: display !== 'bar',
+        specialRequestDisplay: display,
+        nextSpeakerPosition,
+      },
+    },
+  ]
+
+  if (ownSlide && member.specialRequest) {
+    slides.push({
+      type: 'special-request',
+      data: { member },
+      duration: slide.duration,
+      disableTimer: slide.disableTimer,
+    })
+  }
+
+  return slides
 }
 
 function filterByAttendance(member: SlideMember, filter: BuildSlidesContext['attendanceFilter']) {
@@ -193,23 +282,26 @@ function buildLogoWallSlide(
   }
 }
 
-function buildSpeechMasterSlide(
+function buildSpeechMasterSlides(
   block: Extract<SlideBlockData, { blockType: 'speechMaster' }>,
   ctx: BuildSlidesContext,
-): SlideData | null {
+): SlideData[] {
   const membershipId = relId(block.member)
   const member = memberFromMembership(membershipId, ctx)
-  if (!member) return null
+  if (!member) return []
 
   const duration =
     block.customSlideSeconds ||
     ctx.settings.slideSeconds * ctx.settings.speechMasterMultiplier
 
-  return {
-    type: 'member',
-    data: { member, isSpeechMaster: true },
-    duration,
-  }
+  return memberSlides(
+    member,
+    {
+      data: { member, isSpeechMaster: true, hideMemberInfo: block.hideMemberInfo === true },
+      duration,
+    },
+    ctx,
+  )
 }
 
 function buildSpeechMasterCeremonySlide(
@@ -266,12 +358,22 @@ function buildPowerGroupSlides(
   for (const member of members) {
     if (speechMasterUserIds.has(String(member.id))) continue
     if (ctx.skipFromSlidesIds.includes(String(member.id))) continue
-    slides.push({
-      type: 'member',
-      data: { member, isSpeechMaster: false, group: groupMeta },
-      duration,
-      disableTimer,
-    })
+    slides.push(
+      ...memberSlides(
+        member,
+        {
+          data: {
+            member,
+            isSpeechMaster: false,
+            group: groupMeta,
+            hideMemberInfo: block.hideMemberInfo === true,
+          },
+          duration,
+          disableTimer,
+        },
+        ctx,
+      ),
+    )
   }
 
   return slides
@@ -366,8 +468,7 @@ export function buildSlidesFromBlocks(
         break
       }
       case 'speechMaster': {
-        const slide = buildSpeechMasterSlide(block, ctx)
-        if (slide) result.push(slide)
+        result.push(...buildSpeechMasterSlides(block, ctx))
         break
       }
       case 'speechMasterCeremony': {

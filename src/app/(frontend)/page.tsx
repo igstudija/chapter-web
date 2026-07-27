@@ -173,11 +173,16 @@ export default async function HomePage() {
         It fills the viewport, the photograph is pushed back behind a heavy
         scrim and a layer of grain so it reads as the room this happens in
         rather than the subject, and the headline is given the full display
-        scale. The rail across the bottom carries the organisation's own
-        figures, so the first screen states who they are and what they have
-        produced at the same time.
+        scale.
+
+        The scrim follows the theme rather than being black in both. A hero
+        hard-coded to near-black under a white header and a white stats band
+        read as a foreign object dropped into the light theme — the one screen
+        on the site that ignored the toggle. Light mode washes the same
+        photograph towards paper and sets the type in ink; dark mode is
+        unchanged.
       */}
-      <section className="grain relative isolate flex min-h-[84svh] flex-col overflow-hidden bg-neutral-950 text-white">
+      <section className="grain grain-soft relative isolate flex min-h-[84svh] flex-col overflow-hidden border-b border-line bg-paper text-ink dark:border-line-dark dark:bg-neutral-950 dark:text-white">
         {/* Background Image */}
         {backgroundImage?.url ? (
           <>
@@ -193,22 +198,48 @@ export default async function HomePage() {
               A flat 60% black wash over the whole photo is what made this read
               as a stock-image banner. Two layers do the work now: an even wash
               deep enough to hold display type at any viewport width, and a
-              directional gradient on top that keeps the right-hand side of the
-              room readable. `enableOverlay` still does its job, layering more
-              darkening for images too busy to hold type on their own.
+              directional gradient on top that keeps the far side of the room
+              readable. `enableOverlay` still does its job, layering more of the
+              same for images too busy to hold type on their own.
+
+              Both layers are mirrored per theme — paper in light, near-black in
+              dark. The light wash is the heavier of the two because ink on a
+              thinned photograph needs more separation than white does; the
+              gradient still thins out past the measure so the room stays
+              visible on the trailing edge.
             */}
-            <div className="absolute inset-0 bg-neutral-950/72" aria-hidden="true" />
+            <div className="absolute inset-0 bg-paper/48 dark:bg-neutral-950/56" aria-hidden="true" />
             <div
-              className="absolute inset-0 bg-[linear-gradient(94deg,rgba(9,9,11,0.92)0%,rgba(9,9,11,0.72)42%,rgba(9,9,11,0.28)78%,rgba(9,9,11,0.4)100%)]"
+              className="absolute inset-0 bg-[linear-gradient(94deg,rgba(247,247,245,0.94)0%,rgba(247,247,245,0.74)42%,rgba(247,247,245,0.1)78%,rgba(247,247,245,0.26)100%)] dark:bg-[linear-gradient(94deg,rgba(9,9,11,0.9)0%,rgba(9,9,11,0.64)42%,rgba(9,9,11,0.14)78%,rgba(9,9,11,0.28)100%)]"
+              aria-hidden="true"
+            />
+            {/*
+              The directional gradient is measured in percentages of the
+              section, so on a phone the headline runs straight through the
+              thin end of it. One more even wash below the `md` breakpoint —
+              where the copy spans the full width and the photograph has no
+              room to be seen anyway — keeps the type off the picture.
+            */}
+            <div
+              className="absolute inset-0 bg-paper/34 dark:bg-neutral-950/25 md:hidden"
               aria-hidden="true"
             />
             {hero?.enableOverlay && (
-              <div className="absolute inset-0 bg-neutral-950/40" aria-hidden="true" />
+              <div
+                className="absolute inset-0 bg-paper/22 dark:bg-neutral-950/26"
+                aria-hidden="true"
+              />
             )}
           </>
         ) : (
+          /*
+            No photograph configured: the brand tint carries the hero on its
+            own. It is mixed far weaker in light mode — 32% of a saturated red
+            over near-black is a glow, over paper it is a pink wash that ink
+            type has to fight.
+          */
           <div
-            className="absolute inset-0 bg-[radial-gradient(120%_100%_at_12%_0%,color-mix(in_oklab,var(--color-brand)32%,transparent)0%,transparent60%)]"
+            className="absolute inset-0 bg-[radial-gradient(120%_100%_at_12%_0%,color-mix(in_oklab,var(--color-brand)13%,transparent)0%,transparent62%)] dark:bg-[radial-gradient(120%_100%_at_12%_0%,color-mix(in_oklab,var(--color-brand)32%,transparent)0%,transparent60%)]"
             aria-hidden="true"
           />
         )}
@@ -217,7 +248,7 @@ export default async function HomePage() {
         <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-4 pb-16 pt-28 sm:px-6 md:pb-24 md:pt-36 lg:px-8">
           <div className="max-w-4xl">
             <p
-              className="eyebrow rise-in flex items-center gap-3 text-white/55"
+              className="eyebrow rise-in flex items-center gap-3 dark:text-white/55"
               style={{ animationDelay: '60ms' }}
             >
               <span className="h-px w-8 bg-brand" aria-hidden="true" />
@@ -234,9 +265,12 @@ export default async function HomePage() {
                           letterforms. Brand red on near-black is close to the
                           contrast floor at body size and only just clears it
                           at display size; white on red clears it comfortably,
-                          and a solid mark reads louder than coloured text.
+                          and a solid mark reads louder than coloured text. The
+                          `text-white` is not inherited — in light mode the
+                          headline is ink, and ink on brand red is the one
+                          combination this page must not produce.
                         */
-                        <span className="relative inline-block whitespace-nowrap px-[0.12em]">
+                        <span className="relative inline-block whitespace-nowrap px-[0.12em] text-white">
                           <span
                             className="absolute inset-x-0 bottom-[0.1em] top-[0.06em] -z-10 bg-brand"
                             aria-hidden="true"
@@ -249,7 +283,7 @@ export default async function HomePage() {
                 : hero?.title}
             </h1>
             <p
-              className="rise-in mt-8 max-w-xl text-lg leading-relaxed text-white/70"
+              className="rise-in mt-8 max-w-xl text-lg leading-relaxed text-ink-soft dark:text-white/70"
               style={{ animationDelay: '220ms' }}
             >
               {hero?.description}
@@ -493,20 +527,25 @@ export default async function HomePage() {
 
         Both this band and the stats band used to be solid brand red, which is
         why the page read as two red stripes with content wedged between them.
-        Red now belongs to the one figure that earns it and to this button; the
-        band itself is ink, set at display size so the last thing on the page
-        is as loud as the first.
+        Red now belongs to the one figure that earns it, to the rule that opens
+        this band and to its button; the band itself is the theme's own paper,
+        set at display size so the last thing on the page is as loud as the
+        first.
+
+        Like the hero, it follows the theme rather than staying near-black in
+        both — the two of them were the only surfaces on the page that ignored
+        the toggle, which is exactly why they read as foreign.
       */}
-      <section className="grain relative isolate overflow-hidden bg-neutral-950 text-white">
+      <section className="grain grain-soft relative isolate overflow-hidden bg-paper text-ink dark:bg-neutral-950 dark:text-white">
         <div className="absolute inset-x-0 top-0 h-px bg-brand" aria-hidden="true" />
         <div
-          className="absolute inset-0 bg-[radial-gradient(80%_130%_at_50%_0%,color-mix(in_oklab,var(--color-brand)26%,transparent)0%,transparent62%)]"
+          className="absolute inset-0 bg-[radial-gradient(80%_130%_at_50%_0%,color-mix(in_oklab,var(--color-brand)11%,transparent)0%,transparent64%)] dark:bg-[radial-gradient(80%_130%_at_50%_0%,color-mix(in_oklab,var(--color-brand)26%,transparent)0%,transparent62%)]"
           aria-hidden="true"
         />
         <div className="relative mx-auto max-w-4xl px-4 py-28 text-center sm:px-6 md:py-36 lg:px-8">
           <Reveal>
             <h2 className="display-page">{cta?.title || t('home', 'ctaTitle')}</h2>
-            <p className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-white/65">
+            <p className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-ink-soft dark:text-white/65">
               {cta?.description || t('home', 'ctaDescription')}
             </p>
             <Link

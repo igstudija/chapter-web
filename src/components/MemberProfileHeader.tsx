@@ -3,8 +3,8 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { Mail, Phone, Globe, Eye } from 'lucide-react'
-import { getThumbnailUrl } from '@/lib/getThumbnailUrl'
 import { useTranslations } from './TranslationsProvider'
+import { ProfileMediaEditor } from './ProfileMediaEditor'
 
 interface MemberProfileHeaderProps {
   member: {
@@ -27,6 +27,12 @@ interface MemberProfileHeaderProps {
     alt?: string | null
   } | null
   previewLink?: string
+  /**
+   * True on the member's own profile: the picture and logo become editable in
+   * place, so the About Me form below does not have to carry a second copy of
+   * the same two images.
+   */
+  editable?: boolean
 }
 
 export function MemberProfileHeader({
@@ -34,6 +40,7 @@ export function MemberProfileHeader({
   profileImage,
   logo,
   previewLink,
+  editable = false,
 }: MemberProfileHeaderProps) {
   const { t } = useTranslations()
   return (
@@ -41,31 +48,20 @@ export function MemberProfileHeader({
       The masthead of the member area. It used to be a shadowed white card
       floating on a grey page — the same treatment as the content below it, so
       nothing established that this is the top of the screen. It is now the
-      page's own header: no card, a hairline closing it off, and the name at
-      display size so the hierarchy is stated once rather than repeated.
+      page's own header: no card and no closing rule — the tab row below opens
+      the content — with the name at display size so the hierarchy is stated
+      once rather than repeated.
     */
-    <header className="mb-8 border-b border-line pb-8 dark:border-line-dark">
+    <header className="mb-8 pb-8">
       <div className="flex flex-col items-start gap-6 md:flex-row md:gap-8">
         <div className="shrink-0">
-          {profileImage?.url ? (
-            <img
-              src={getThumbnailUrl(profileImage.url, 'card') || profileImage.url}
-              alt={member.name}
-              width={120}
-              height={120}
-              className="h-28 w-28 rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
-            />
-          ) : (
-            /*
-              A solid brand-red disc with white initials was the loudest thing
-              on the page and said nothing. Initials on a hairline circle read
-              as a placeholder, which is what it is.
-            */
-            <div className="flex h-28 w-28 items-center justify-center rounded-full border border-line font-display text-3xl font-bold tracking-tight text-brand dark:border-line-dark">
-              {member.name?.charAt(0)}
-              {member.surname?.charAt(0)}
-            </div>
-          )}
+          <ProfileMediaEditor
+            variant="avatar"
+            url={profileImage?.url}
+            alt={member.name}
+            initials={`${member.name?.charAt(0) ?? ''}${member.surname?.charAt(0) ?? ''}`}
+            editable={editable}
+          />
         </div>
 
         <div className="min-w-0 flex-1">
@@ -116,14 +112,18 @@ export function MemberProfileHeader({
           )}
         </div>
 
-        {logo?.url && (
-          <div className="hidden shrink-0 rounded-lg bg-white p-3 ring-1 ring-line md:block">
-            <img
-              src={getThumbnailUrl(logo.url, 'card') || logo.url}
+        {/*
+          On someone else's profile the logo is decoration and stays off small
+          screens. On your own it is a control, so it has to be reachable on a
+          phone as well.
+        */}
+        {(editable || logo?.url) && (
+          <div className={`shrink-0 ${editable ? 'block' : 'hidden md:block'}`}>
+            <ProfileMediaEditor
+              variant="logo"
+              url={logo?.url}
               alt={member.company}
-              width={140}
-              height={70}
-              className="max-h-16 object-contain"
+              editable={editable}
             />
           </div>
         )}

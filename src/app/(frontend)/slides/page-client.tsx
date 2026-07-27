@@ -3,12 +3,7 @@
 import { useEffect, useState } from 'react'
 import { SlideshowViewer } from '@/components/slides/SlideshowViewer'
 import type { BuildSlidesContext, SlideBlockData } from '@/lib/buildSlides'
-
-function isSafari(): boolean {
-  if (typeof window === 'undefined') return false
-  const ua = window.navigator.userAgent
-  return ua.includes('Safari') && !ua.includes('Chrome') && !ua.includes('Chromium')
-}
+import { isSafariBrowser } from '@/lib/browserDetect'
 
 interface SlideshowTranslations {
   businessGiven: string
@@ -38,10 +33,10 @@ export default function SlidesPageClient({ startMemberId }: { startMemberId?: st
   const [data, setData] = useState<SlidesData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isSafariBrowser, setIsSafariBrowser] = useState(false)
+  const [isSafari, setIsSafari] = useState(false)
 
   useEffect(() => {
-    setIsSafariBrowser(isSafari())
+    setIsSafari(isSafariBrowser())
   }, [])
 
   useEffect(() => {
@@ -79,7 +74,7 @@ export default function SlidesPageClient({ startMemberId }: { startMemberId?: st
     )
   }
 
-  if (isSafariBrowser && data) {
+  if (isSafari && data) {
     return (
       <div className="bg-neutral-900 min-h-screen flex items-center justify-center p-8">
         <div className="bg-white dark:bg-neutral-800 rounded-2xl shadow-2xl p-8 max-w-lg text-center">

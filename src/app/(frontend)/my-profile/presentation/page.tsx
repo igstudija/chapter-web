@@ -31,7 +31,18 @@ export default async function PresentationPage() {
 
   const tabCounts = await getProfileTabCounts(payload, String(user.id), String(settings.id))
 
-  const slideImage = extractMediaImage(membership?.slideImage)
+  // Editor works on the multi-image list; members who only ever set the legacy
+  // single image start from that one so nothing disappears on first open.
+  const slideImages = (Array.isArray(membership?.slideImages) ? membership.slideImages : []).flatMap(
+    (media) =>
+      typeof media === 'object' && media?.url ? [{ id: String(media.id), url: media.url }] : [],
+  )
+  const initialSlideImages =
+    slideImages.length > 0
+      ? slideImages
+      : membership?.slideImage && typeof membership.slideImage === 'object' && membership.slideImage.url
+        ? [{ id: String(membership.slideImage.id), url: membership.slideImage.url }]
+        : []
 
   // Minimum thresholds from slideshow settings — shown as "min:" hints under the inputs
   const slideshowSettingsResult = await payload.find({
@@ -42,6 +53,9 @@ export default async function PresentationPage() {
   })
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const slideshowSettings = (slideshowSettingsResult.docs[0] as any) || null
+  // Shown as the active state for members who have not overridden them.
+  const chapterRequestDisplay = slideshowSettings?.specialRequestDisplay || 'bar'
+  const chapterNextPosition = slideshowSettings?.nextSpeakerPosition || 'top'
   const businessGivenMin = slideshowSettings?.businessGivenMin || 0
   const businessReceivedMin = slideshowSettings?.businessReceivedMin || 0
 
@@ -66,12 +80,14 @@ export default async function PresentationPage() {
         initialData={{
           tyfcbGiven: membership?.tyfcbGiven ?? null,
           tyfcbReceived: membership?.tyfcbReceived ?? null,
-          slideImageUrl: slideImage?.url || null,
-          slideImageId:
-            membership?.slideImage && typeof membership.slideImage === 'object'
-              ? String(membership.slideImage.id)
-              : null,
+          slideImages: initialSlideImages,
+          slideMediaType: membership?.slideMediaType === 'video' ? 'video' : 'image',
+          slideVideoUrl: membership?.slideVideoUrl || null,
+          slideTemplate: membership?.slideTemplate || 'classic',
+          slideSpecialRequestDisplay: membership?.slideSpecialRequestDisplay || 'inherit',
+          slideNextSpeakerPosition: membership?.slideNextSpeakerPosition || 'inherit',
           slideBackgroundColor: membership?.slideBackgroundColor || undefined,
+          slideBackgroundColorRight: membership?.slideBackgroundColorRight || undefined,
           slideImageMode: membership?.slideImageMode || undefined,
           profileImageUrl: profileImage?.url || null,
           logoUrl: logo?.url || null,
@@ -82,6 +98,9 @@ export default async function PresentationPage() {
         siteId={String(settings.id)}
         memberId={String(user.id)}
         slidePreviewTitle={t('profile', 'slidePreview')}
+        openMySlideLabel={t('presentation', 'openMySlide')}
+        chapterRequestDisplay={chapterRequestDisplay}
+        chapterNextPosition={chapterNextPosition}
         businessGivenMin={businessGivenMin}
         businessReceivedMin={businessReceivedMin}
       />

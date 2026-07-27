@@ -416,13 +416,90 @@ export const Members: CollectionConfig = {
       },
     },
     {
+      name: 'slideMediaType',
+      label: 'Slide Media',
+      type: 'select',
+      defaultValue: 'image',
+      options: [
+        { label: 'Images', value: 'image' },
+        { label: 'Video (YouTube / Vimeo)', value: 'video' },
+      ],
+      admin: {
+        description: 'Whether the slide shows a photo sequence or an embedded video',
+      },
+    },
+    {
       name: 'slideImage',
-      label: 'Presentation Slide Image',
+      label: 'Presentation Slide Image (legacy)',
       type: 'upload',
       relationTo: 'media',
       admin: {
         description:
-          'Image for slideshow presentation (recommended: 4:3 aspect ratio, 2000px width minimum)',
+          'Kept in sync with the first entry of Presentation Slide Images. Edit that field instead.',
+      },
+    },
+    {
+      name: 'slideImages',
+      label: 'Presentation Slide Images',
+      type: 'upload',
+      relationTo: 'media',
+      hasMany: true,
+      admin: {
+        description:
+          'Shown in order, cross-fading through the whole set. Recommended: 4:3 aspect ratio, 2000px width minimum.',
+      },
+    },
+    {
+      name: 'slideVideoUrl',
+      label: 'Slide Video URL',
+      type: 'text',
+      admin: {
+        description:
+          'YouTube or Vimeo link. Plays muted and looping — browsers block autoplay with sound.',
+        condition: (_, siblingData) => siblingData?.slideMediaType === 'video',
+      },
+    },
+    {
+      name: 'slideSpecialRequestDisplay',
+      label: 'My Special Request',
+      type: 'select',
+      defaultValue: 'inherit',
+      options: [
+        { label: 'Chapter default', value: 'inherit' },
+        { label: 'Red bar along the bottom', value: 'bar' },
+        { label: 'Balloon in the middle, last 5 seconds', value: 'flash' },
+        { label: 'Not shown', value: 'off' },
+      ],
+      admin: {
+        description: "Overrides the chapter's choice for this member's slide only.",
+      },
+    },
+    {
+      name: 'slideNextSpeakerPosition',
+      label: 'Next Speaker Badge On My Slide',
+      type: 'select',
+      defaultValue: 'inherit',
+      options: [
+        { label: 'Chapter default', value: 'inherit' },
+        { label: 'Top right', value: 'top' },
+        { label: 'Bottom right', value: 'bottom' },
+      ],
+      admin: {
+        description: 'Where the "up next" badge sits while this member is on screen.',
+      },
+    },
+    {
+      name: 'slideTemplate',
+      label: 'Slide Template',
+      type: 'select',
+      defaultValue: 'classic',
+      options: [
+        { label: 'Classic (info left, 4:3 media right)', value: 'classic' },
+        { label: 'Cover (full-bleed media, info overlay)', value: 'cover' },
+        { label: 'Reels (full-bleed media, info layer on the left)', value: 'reels' },
+      ],
+      admin: {
+        description: 'Layout of the member slide. All templates show the same information.',
       },
     },
     {
@@ -432,6 +509,15 @@ export const Members: CollectionConfig = {
       defaultValue: '#ffffff',
       admin: {
         description: 'Background color for slide image area (default: white)',
+      },
+    },
+    {
+      name: 'slideBackgroundColorRight',
+      label: 'Slide Background Colour — Media Side',
+      type: 'text',
+      admin: {
+        description:
+          'The colour behind the media on every template: Classic\'s media column, and the canvas a contained photo does not cover on Cover and Reels. Empty falls back to the main slide colour.',
       },
     },
     {

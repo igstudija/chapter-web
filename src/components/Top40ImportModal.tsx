@@ -317,8 +317,8 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/55 p-4 backdrop-blur-sm">
-      <div className="panel flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl shadow-xl">
+    <div className="modal-scrim">
+      <div className="modal-panel flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
           <div className="flex items-center gap-3">
@@ -341,7 +341,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+            <div className="alert alert-error mb-4" role="alert">
               <AlertCircle className="h-5 w-5 shrink-0" />
               <span>{error}</span>
             </div>
@@ -357,7 +357,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
               <p className="text-neutral-500 dark:text-neutral-400 mb-6">
                 {t('top40Import', 'supportedFormats')}
               </p>
-              <label className="inline-flex items-center gap-2 px-6 py-3 bg-brand text-white rounded-lg hover:bg-brand/90 cursor-pointer transition-colors">
+              <label className="btn btn-primary cursor-pointer">
                 <Upload className="h-5 w-5" />
                 {t('top40Import', 'chooseFile')}
                 <input
@@ -387,7 +387,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
                 <div>
                   <label
                     htmlFor="header-row-select"
-                    className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                    className="field-label"
                   >
                     {t('top40Import', 'headerRow')}
                   </label>
@@ -395,7 +395,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
                     id="header-row-select"
                     value={headerRow}
                     onChange={(e) => setHeaderRow(Number.parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg text-sm"
+                    className="field text-sm"
                   >
                     {rawData.slice(0, 10).map((row, i) => (
                       <option key={`row-${i}-${row[0] || ''}`} value={i}>
@@ -407,7 +407,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
                 <div>
                   <label
                     htmlFor="start-column-select"
-                    className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                    className="field-label"
                   >
                     {t('top40Import', 'startColumn')}
                   </label>
@@ -415,7 +415,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
                     id="start-column-select"
                     value={startColumn}
                     onChange={(e) => setStartColumn(Number.parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-neutral-300 dark:border-neutral-600 bg-white text-ink dark:bg-surface dark:text-surface-text rounded-lg text-sm"
+                    className="field text-sm"
                   >
                     {Array.from({ length: 10 }, (_, i) => {
                       const colLetter = String.fromCodePoint(65 + i)
@@ -652,7 +652,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
             {step !== 'upload' && step !== 'importing' && (
               <button
                 onClick={() => setStep(step === 'preview' ? 'mapping' : 'upload')}
-                className="px-4 py-2 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+                className="btn btn-line"
               >
                 {t('top40Import', 'back')}
               </button>
@@ -664,7 +664,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
                 resetModal()
                 onClose()
               }}
-              className="px-4 py-2 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 rounded-lg transition-colors"
+              className="btn btn-line"
             >
               {t('top40Import', 'cancel')}
             </button>
@@ -672,7 +672,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
               <button
                 onClick={() => setStep('preview')}
                 disabled={!hasRequiredMappings}
-                className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t('top40Import', 'continue')}
               </button>
@@ -681,7 +681,7 @@ export function Top40ImportModal({ isOpen, onClose, onImport, title }: Top40Impo
               <button
                 onClick={handleImport}
                 disabled={previewEntries.length === 0 || importing}
-                className="px-4 py-2 bg-brand text-white rounded-lg hover:bg-brand/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Check className="h-4 w-4" />
                 {t('top40Import', 'importEntries').replace('{count}', previewEntries.length.toString())}

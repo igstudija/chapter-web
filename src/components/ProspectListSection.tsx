@@ -3,7 +3,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
-  Search,
   LayoutGrid,
   Table,
   Pencil,
@@ -11,6 +10,8 @@ import {
   Upload,
   Download,
   HelpCircle,
+  Plus,
+  Inbox,
   X,
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
@@ -18,6 +19,7 @@ import { Top40Modal } from './Top40Modal'
 import { Top40ImportModal, type ImportedEntry } from './Top40ImportModal'
 import { Top40EntryRow } from './Top40EntryRow'
 import { TagCloud } from './TagCloud'
+import { ListSearch } from './ListSearch'
 import { ConfirmDialog } from './ConfirmDialog'
 import { useTranslations } from './TranslationsProvider'
 
@@ -161,13 +163,23 @@ export function ProspectListSection({
 
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-display text-lg font-bold tracking-tight text-ink dark:text-surface-text">{heading}</h2>
+      {/* Header actions. Four buttons in four different styles — a grey block, a
+          red square with a text "+", another grey block — read as four unrelated
+          controls. One primary action, the rest outlined, and the count of what
+          you have sits with the heading where it belongs. */}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-baseline gap-2.5">
+          <h2 className="font-display text-lg font-bold tracking-tight text-ink dark:text-surface-text">
+            {heading}
+          </h2>
+          <span className="tabular font-mono text-sm text-brand">{entries.length}</span>
+        </div>
         <div className="flex items-center gap-2">
           {entries.length > 0 && (
             <button
+              type="button"
               onClick={handleExport}
-              className="flex items-center justify-center gap-2 px-4 h-10 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="btn btn-line h-9 px-3 text-sm"
               title={t('top40Table', 'exportExcel')}
             >
               <Download className="h-4 w-4" />
@@ -175,57 +187,64 @@ export function ProspectListSection({
             </button>
           )}
           <button
+            type="button"
             onClick={() => setShowImportModal(true)}
-            className="flex items-center justify-center gap-2 px-4 h-10 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors text-sm font-medium"
+            className="btn btn-line h-9 px-3 text-sm"
             title={t('common', 'import')}
           >
             <Upload className="h-4 w-4" />
             <span className="hidden sm:inline">{t('common', 'import')}</span>
           </button>
           <button
-            onClick={() => setShowModal(true)}
-            className="flex items-center justify-center w-10 h-10 bg-brand text-white rounded-lg hover:bg-brand-dark transition-colors"
+            type="button"
+            onClick={() => setShowImportHelp(true)}
+            className="icon-btn h-9 w-9"
+            title={t('top40Import', 'helpBtnTitle')}
+            aria-label={t('top40Import', 'helpBtnTitle')}
           >
-            <span className="text-xl">+</span>
+            <HelpCircle className="h-4.5 w-4.5" />
           </button>
           <button
-            onClick={() => setShowImportHelp(true)}
-            className="flex items-center justify-center w-10 h-10 bg-neutral-200 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
-            title={t('top40Import', 'helpBtnTitle')}
+            type="button"
+            onClick={() => setShowModal(true)}
+            className="btn btn-primary h-9 px-3 text-sm"
           >
-            <HelpCircle className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('common', 'add')}</span>
           </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-4 mb-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-400" />
-          <input
-            type="text"
-            placeholder={t('common', 'searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="field py-3 pl-12"
-          />
-        </div>
-        <div className="hidden lg:flex rounded-lg border border-neutral-300 dark:border-neutral-600 overflow-hidden">
+      <ListSearch
+        value={search}
+        onChange={setSearch}
+        placeholder={t('common', 'searchPlaceholder')}
+        resultCount={filteredEntries.length}
+        totalCount={entries.length}
+        sticky
+        className="mb-4"
+      >
+        <div className="segmented hidden lg:inline-flex">
           <button
+            type="button"
             onClick={() => setViewMode('grid')}
-            className={`flex items-center justify-center w-[46px] h-[46px] ${viewMode === 'grid' ? 'bg-brand text-white' : 'bg-white dark:bg-surface text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}
+            className="segmented-item h-[38px] w-[38px]"
+            data-active={viewMode === 'grid'}
             title={t('common', 'gridView')}
           >
-            <LayoutGrid className="h-5 w-5" />
+            <LayoutGrid className="h-4.5 w-4.5" />
           </button>
           <button
+            type="button"
             onClick={() => setViewMode('table')}
-            className={`flex items-center justify-center w-[46px] h-[46px] ${viewMode === 'table' ? 'bg-brand text-white' : 'bg-white dark:bg-surface text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'}`}
+            className="segmented-item h-[38px] w-[38px]"
+            data-active={viewMode === 'table'}
             title={t('common', 'tableView')}
           >
-            <Table className="h-5 w-5" />
+            <Table className="h-4.5 w-4.5" />
           </button>
         </div>
-      </div>
+      </ListSearch>
 
       {filteredEntries.length > 0 ? (
         <>
@@ -252,57 +271,61 @@ export function ProspectListSection({
             className={`grid gap-4 md:grid-cols-2 ${viewMode === 'table' ? 'lg:hidden' : 'lg:grid-cols-3'}`}
           >
             {filteredEntries.map((entry, index) => (
-              <div
-                key={entry.id}
-                className="card-surface p-4"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <span className="text-xs text-neutral-400 dark:text-neutral-500">
-                    #{index + 1}
-                  </span>
-                  <div className="flex gap-1">
+              <div key={entry.id} className="group panel flex flex-col p-4">
+                <div className="mb-1 flex items-start justify-between gap-2">
+                  <h3 className="font-display text-[0.9375rem] leading-snug font-semibold tracking-tight text-ink dark:text-surface-text">
+                    {entry.companyName}
+                  </h3>
+                  {/* The row actions stay out of the way until the card is
+                      pointed at; keyboard focus brings them back. */}
+                  <div className="flex shrink-0 gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 max-lg:opacity-100">
                     <button
+                      type="button"
                       onClick={() => {
                         setEditEntry(entry)
                         setShowModal(true)
                       }}
-                      className="p-1.5 border border-neutral-300 dark:border-neutral-600 rounded hover:bg-neutral-50 dark:hover:bg-neutral-600 transition-colors"
+                      className="icon-btn icon-btn-brand"
                       title={t('common', 'edit')}
+                      aria-label={t('common', 'edit')}
                     >
-                      <Pencil className="h-3.5 w-3.5 text-neutral-600 dark:text-neutral-400" />
+                      <Pencil className="h-3.5 w-3.5" />
                     </button>
                     <button
+                      type="button"
                       onClick={() => setConfirmDeleteId(entry.id)}
                       disabled={deleting === entry.id}
-                      className="p-1.5 border border-neutral-300 dark:border-neutral-600 rounded hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 transition-colors"
+                      className="icon-btn icon-btn-danger"
                       title={t('common', 'delete')}
+                      aria-label={t('common', 'delete')}
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-red-600 dark:text-red-500" />
+                      <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 </div>
-                <h3 className="font-semibold text-ink dark:text-surface-text">
-                  {entry.companyName}
-                </h3>
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">
-                  {entry.contactPerson}
-                </p>
-                {entry.position && (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400">{entry.position}</p>
+                {(entry.contactPerson || entry.position) && (
+                  <p className="text-sm text-ink-soft dark:text-neutral-400">
+                    {entry.contactPerson}
+                    {entry.contactPerson && entry.position && (
+                      <span className="text-neutral-300 dark:text-neutral-600"> · </span>
+                    )}
+                    {entry.position && <span className="text-xs">{entry.position}</span>}
+                  </p>
                 )}
                 {entry.notes && (
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-2 italic line-clamp-3">
+                  <p className="mt-2 line-clamp-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
                     {entry.notes}
                   </p>
                 )}
-                {entry.businessTags && <TagCloud tags={entry.businessTags} className="mt-1.5" />}
-                <div className="flex items-center justify-between mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-700">
+                {entry.businessTags && <TagCloud tags={entry.businessTags} className="mt-2" />}
+                <div className="mt-auto flex items-center gap-2 border-t border-line pt-3 dark:border-line-dark">
+                  <span className="list-index">{index + 1}</span>
                   {entry.registrationNumber && (
-                    <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                    <span className="tabular font-mono text-[11px] text-ink-soft dark:text-neutral-400">
                       {entry.registrationNumber}
                     </span>
                   )}
-                  <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-auto">
+                  <span className="tabular ml-auto font-mono text-[11px] text-neutral-400 dark:text-neutral-500">
                     {new Date(entry.createdAt).toLocaleDateString('lv-LV')}
                   </span>
                 </div>
@@ -311,9 +334,10 @@ export function ProspectListSection({
           </div>
         </>
       ) : (
-        <p className="text-neutral-500 dark:text-neutral-400 text-center py-8">
-          {search ? t('top40', 'noEntries') : emptyText}
-        </p>
+        <div className="panel empty-state">
+          <Inbox className="h-7 w-7 text-neutral-300 dark:text-neutral-600" aria-hidden="true" />
+          <p className="text-sm">{search ? t('top40', 'noEntries') : emptyText}</p>
+        </div>
       )}
 
       <Top40Modal
@@ -358,50 +382,72 @@ export function ProspectListSection({
         }}
       />
       {showImportHelp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-neutral-950/55 backdrop-blur-sm"
+        // Was a bespoke overlay with its own scrim colour and white panel, which
+        // meant it ignored the dark surface every other dialog uses. Same markup
+        // as the rest of the app's modals now.
+        <div className="modal-scrim" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="fixed inset-0"
             onClick={() => setShowImportHelp(false)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setShowImportHelp(false)
-            }}
-            role="button"
-            tabIndex={-1}
             aria-label={t('common', 'close')}
           />
-          <div className="relative bg-white dark:bg-neutral-900 rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-6">
+          <div className="modal-panel relative max-w-lg p-6">
             <button
+              type="button"
               onClick={() => setShowImportHelp(false)}
-              className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+              className="icon-btn absolute top-4 right-4"
+              aria-label={t('common', 'close')}
             >
-              <X className="h-5 w-5" />
+              <X className="h-4.5 w-4.5" />
             </button>
             <h3 className="font-display mb-3 text-lg font-bold tracking-tight text-ink dark:text-surface-text">
               {t('top40Import', 'helpTitle').replace('{label}', listLabel)}
             </h3>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-4">
+            <p className="mb-4 text-sm text-ink-soft dark:text-neutral-400">
               {t('top40Import', 'helpDescription')}
             </p>
-            <ul className="space-y-2 mb-4 text-sm text-neutral-700 dark:text-neutral-300">
-              <li className="flex gap-2"><span className="text-brand font-bold">•</span>{t('top40Import', 'helpColumnCompany')}</li>
-              <li className="flex gap-2"><span className="text-neutral-400 font-bold">•</span>{t('top40Import', 'helpColumnContact')}</li>
-              <li className="flex gap-2"><span className="text-neutral-400 font-bold">•</span>{t('top40Import', 'helpColumnPosition')}</li>
-              <li className="flex gap-2"><span className="text-neutral-400 font-bold">•</span>{t('top40Import', 'helpColumnRegNumber')}</li>
-              <li className="flex gap-2"><span className="text-neutral-400 font-bold">•</span>{t('top40Import', 'helpColumnNotes')}</li>
-              <li className="flex gap-2"><span className="text-neutral-400 font-bold">•</span>{t('top40Import', 'helpColumnTags')}</li>
+            {/* The required column is the one distinction that matters here, so
+                it is the only one that takes the brand colour. */}
+            <ul className="mb-4 space-y-1.5 text-sm text-ink dark:text-neutral-300">
+              <li className="flex gap-2">
+                <span className="font-bold text-brand">•</span>
+                {t('top40Import', 'helpColumnCompany')}
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-neutral-400">•</span>
+                {t('top40Import', 'helpColumnContact')}
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-neutral-400">•</span>
+                {t('top40Import', 'helpColumnPosition')}
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-neutral-400">•</span>
+                {t('top40Import', 'helpColumnRegNumber')}
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-neutral-400">•</span>
+                {t('top40Import', 'helpColumnNotes')}
+              </li>
+              <li className="flex gap-2">
+                <span className="font-bold text-neutral-400">•</span>
+                {t('top40Import', 'helpColumnTags')}
+              </li>
             </ul>
-            <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-2">
+            <p className="mb-2 text-sm text-ink-soft dark:text-neutral-400">
               {t('top40Import', 'helpAutoDetect')}
             </p>
-            <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 mb-4">
+            <p className="mb-4 text-sm font-medium text-ink dark:text-neutral-200">
               {t('top40Import', 'helpRequiredNote')}
             </p>
             <button
+              type="button"
               onClick={() => {
                 handleDownloadTemplate()
                 setShowImportHelp(false)
               }}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+              className="btn btn-line px-4 py-2 text-sm"
             >
               <Download className="h-4 w-4" />
               {t('top40Import', 'downloadTemplate')}

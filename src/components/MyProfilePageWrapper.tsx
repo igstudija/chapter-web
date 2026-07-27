@@ -85,11 +85,16 @@ export function MyProfilePageWrapper({
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <Breadcrumb items={breadcrumbItems} />
 
+        {/*
+          This shell only ever renders the signed-in member's own profile, so
+          the masthead owns the picture and logo — see `ProfileMediaEditor`.
+        */}
         <MemberProfileHeader
           member={member}
           profileImage={profileImage}
           logo={logo}
           previewLink={previewLink}
+          editable
         />
 
         <ProfileTabs

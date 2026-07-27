@@ -116,7 +116,7 @@ export function EmailChangeModal({
       onClick={handleBackdropClick}
       className="m-auto bg-transparent p-0 backdrop:bg-black/50 open:flex"
     >
-      <div className="panel mx-4 w-full max-w-md rounded-2xl shadow-xl">
+      <div className="modal-panel mx-4 w-full max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
           <h2 className="text-lg font-semibold text-ink dark:text-surface-text flex items-center gap-2">
@@ -134,18 +134,14 @@ export function EmailChangeModal({
         {/* Content */}
         <div className="p-4">
           {/* Info box */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-            <div className="flex gap-2">
-              <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-blue-700 dark:text-blue-300">
-                {t('profile', 'emailChangeInfo')}
-              </p>
-            </div>
+          <div className="alert alert-info mb-4" role="alert">
+            <Info className="h-5 w-5 shrink-0 mt-0.5" />
+            <p>{t('profile', 'emailChangeInfo')}</p>
           </div>
 
           {/* Current email */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
+            <label className="field-label">
               {t('profile', 'currentEmail')}
             </label>
             <div className="px-4 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-lg text-neutral-600 dark:text-neutral-400">
@@ -185,13 +181,9 @@ export function EmailChangeModal({
 
           {/* Success message */}
           {success && !pendingEmail && (
-            <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  {t('profile', 'emailVerificationSent')}
-                </p>
-              </div>
+            <div className="alert alert-success mb-4" role="alert">
+              <CheckCircle2 className="h-5 w-5 shrink-0" />
+              <p>{t('profile', 'emailVerificationSent')}</p>
             </div>
           )}
 
@@ -199,18 +191,16 @@ export function EmailChangeModal({
           {!pendingEmail && (
             <form onSubmit={handleSubmit}>
               {error && (
-                <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                    <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-                  </div>
+                <div className="alert alert-error mb-4" role="alert">
+                  <AlertCircle className="h-5 w-5 shrink-0" />
+                  <p>{error}</p>
                 </div>
               )}
 
               <div className="mb-4">
                 <label
                   htmlFor="newEmail"
-                  className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
+                  className="field-label"
                 >
                   {t('profile', 'newEmail')}
                 </label>
@@ -220,7 +210,7 @@ export function EmailChangeModal({
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value.toLowerCase())}
                   required
-                  className="w-full border border-neutral-300 dark:border-neutral-600 dark:bg-surface text-neutral-900 dark:text-surface-text rounded-lg px-4 py-2 focus:ring-2 focus:ring-brand focus:border-transparent outline-none"
+                  className="field"
                   placeholder="example@email.com"
                 />
               </div>
