@@ -10,16 +10,13 @@ import {
   Video,
   Presentation,
   UsersRound,
-  LayoutPanelTop,
 } from 'lucide-react'
-import type { NextSpeakerPosition, SlideChrome } from '@/lib/buildSlides'
+import type { NextSpeakerPosition } from '@/lib/buildSlides'
 
 export const SLIDE_WIDTH = 1920
 export const SLIDE_HEIGHT = 1080
-export const BOTTOM_BAR_HEIGHT = 60
-export const PROGRESS_BAR_HEIGHT = 4
-/** The minimal chrome's time strip. Overlaid, so it costs the slide nothing. */
-export const MINIMAL_STRIP_HEIGHT = 8
+/** The time strip. Overlaid, so it costs the slide nothing. */
+export const TIME_STRIP_HEIGHT = 8
 /** Height of the member slide's request bar; mirrored from MemberSlide. */
 const REQUEST_BAR_HEIGHT = 60
 
@@ -31,25 +28,21 @@ export interface ChromeProps {
   readonly onNext: () => void
   readonly onToggleFullscreen: () => void
   readonly isFullscreen: boolean
-  readonly onToggleChrome: () => void
-  readonly chrome: SlideChrome
   readonly attendanceEnabled: boolean
   readonly attendance: AttendanceFilter
   readonly onAttendanceChange: (value: AttendanceFilter) => void
   /** Countdown is only meaningful on slides that auto-advance. */
   readonly showTimer: boolean
-  readonly timeRemaining: number
   readonly slideDuration: number
   readonly progressStarted: boolean
-  readonly groupName: string
   readonly nextName: string
-  /** Minimal chrome only: which corner the next-speaker badge sits in. */
+  /** Which corner the next-speaker badge sits in. */
   readonly nextPosition?: NextSpeakerPosition
   /** Whether the current slide is showing the red request bar along its foot. */
   readonly requestBarVisible?: boolean
   readonly slideNumber: number
   readonly totalSlides: number
-  /** Minimal chrome only: controls fade in on pointer activity. */
+  /** Controls fade in on pointer activity. */
   readonly controlsVisible?: boolean
   readonly onPointerActivity?: () => void
 }
@@ -63,7 +56,7 @@ const NEXT_GLYPH = (
   </svg>
 )
 
-/** Round icon button, shared by both chromes so they feel like one product. */
+/** Round icon button used across the control cluster. */
 function ControlButton({
   onClick,
   title,
@@ -97,8 +90,6 @@ function ControlCluster({ props }: { props: ChromeProps }) {
     onNext,
     onToggleFullscreen,
     isFullscreen,
-    onToggleChrome,
-    chrome,
     attendanceEnabled,
     attendance,
     onAttendanceChange,
@@ -121,14 +112,6 @@ function ControlCluster({ props }: { props: ChromeProps }) {
       >
         {isFullscreen ? <Minimize className="h-5 w-5" /> : <Maximize className="h-5 w-5" />}
       </ControlButton>
-      <ControlButton
-        onClick={onToggleChrome}
-        title={chrome === 'bar' ? 'Minimal controls (C)' : 'Control bar (C)'}
-        active={chrome === 'minimal'}
-      >
-        <LayoutPanelTop className="h-5 w-5" />
-      </ControlButton>
-
       {attendanceEnabled && (
         <>
           <ControlButton
@@ -158,99 +141,18 @@ function ControlCluster({ props }: { props: ChromeProps }) {
   )
 }
 
-/** The original: a solid strip along the bottom, always on screen. */
-export function BarChrome(props: ChromeProps) {
-  const {
-    showTimer,
-    timeRemaining,
-    slideDuration,
-    progressStarted,
-    groupName,
-    nextName,
-    slideNumber,
-    totalSlides,
-  } = props
-
-  const progressPercent = progressStarted ? 100 : 0
-
-  return (
-    <>
-      {showTimer && (
-        <>
-          <rect
-            x="0"
-            y={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT}
-            width={SLIDE_WIDTH}
-            height={PROGRESS_BAR_HEIGHT}
-            fill="#334155"
-          />
-          <rect
-            x="0"
-            y={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT}
-            width={(progressPercent / 100) * SLIDE_WIDTH}
-            height={PROGRESS_BAR_HEIGHT}
-            fill="url(#progressGradient)"
-            style={{ transition: progressStarted ? `width ${slideDuration}s linear` : 'none' }}
-          />
-        </>
-      )}
-
-      <foreignObject
-        x="0"
-        y={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT}
-        width={SLIDE_WIDTH}
-        height={BOTTOM_BAR_HEIGHT}
-      >
-        <div className="flex h-full w-full items-center justify-between bg-neutral-900/50 px-6 text-white backdrop-blur-sm">
-          <ControlCluster props={props} />
-
-          <div className="absolute left-1/2 -translate-x-1/2 text-center">
-            <span className="text-2xl font-semibold text-white">{groupName}</span>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            {showTimer && <span className="font-mono text-3xl font-bold">{timeRemaining}s</span>}
-            {nextName && (
-              <div className="rounded-lg px-4 py-2">
-                <span className="ml-2 flex items-center gap-2 text-3xl font-normal text-white">
-                  <span>{NEXT_GLYPH}</span>
-                  <span>{nextName}</span>
-                </span>
-              </div>
-            )}
-            <div className="text-lg text-neutral-200">
-              <span className="font-semibold">{slideNumber}</span>
-              <span className="mx-1">/</span>
-              <span>{totalSlides}</span>
-            </div>
-          </div>
-        </div>
-      </foreignObject>
-
-      {showTimer && (
-        <circle
-          cx={(progressPercent / 100) * SLIDE_WIDTH}
-          cy={SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT / 2}
-          r="10"
-          fill="#b91c1c"
-          style={{ transition: progressStarted ? `cx ${slideDuration}s linear` : 'none' }}
-        />
-      )}
-    </>
-  )
-}
-
 /**
- * Immersive chrome: the slide keeps the full 1080px and everything else floats.
+ * The slideshow's controls: the slide keeps all 1080px and everything else
+ * floats over it.
  *
- * Time runs as a strip along the very bottom edge, and who is up next sits top
- * right as a glass badge — the one thing the room benefits from seeing without
- * asking. Navigation and the slide number stay hidden until the presenter
- * reaches for them, by moving the pointer or resting it over the time strip,
- * which is how every video player has behaved for a decade and keeps a
- * projected slide free of furniture.
+ * Time runs as a strip along the top edge, and who is up next sits top right as
+ * a glass badge — the one thing the room benefits from seeing without asking.
+ * Navigation and the slide number stay hidden until the presenter reaches for
+ * them, by moving the pointer or resting it low, which is how every video
+ * player has behaved for a decade and keeps a projected slide free of
+ * furniture.
  */
-export function MinimalChrome(props: ChromeProps) {
+export function SlideshowChrome(props: ChromeProps) {
   const {
     showTimer,
     slideDuration,
@@ -312,7 +214,7 @@ export function MinimalChrome(props: ChromeProps) {
         */}
         <div
           className="absolute inset-x-0 top-0"
-          style={{ height: MINIMAL_STRIP_HEIGHT, backgroundColor: 'rgba(0,0,0,0.35)' }}
+          style={{ height: TIME_STRIP_HEIGHT, backgroundColor: 'rgba(0,0,0,0.35)' }}
         >
           {showTimer && (
             <div

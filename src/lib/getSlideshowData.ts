@@ -380,7 +380,6 @@ export async function getSlideshowData(
         businessGivenMin: settings.businessGivenMin || 0,
         businessReceivedMin: settings.businessReceivedMin || 0,
         slideImageSeconds: settings.slideImageSeconds || 30,
-        slideChrome: settings.slideChrome === 'minimal' ? 'minimal' : 'bar',
         nextSpeakerPosition: settings.nextSpeakerPosition === 'bottom' ? 'bottom' : 'top',
         specialRequestDisplay: (['bar', 'slide', 'flash', 'off'] as const).includes(
           settings.specialRequestDisplay,

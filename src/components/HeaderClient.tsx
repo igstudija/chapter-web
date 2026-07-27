@@ -287,115 +287,120 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
           </div>
-
-          {/* Mobile Menu - Full screen overlay */}
-          {mobileMenuOpen && (
-            <div
-              className={`fixed inset-x-0 bottom-0 z-50 overflow-y-auto bg-paper dark:bg-surface md:hidden ${
-                scrolled ? 'top-16' : 'top-18'
-              }`}
-            >
-              <div className="flex min-h-full flex-col px-4 pb-8 pt-4">
-                <div className="flex flex-col">
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
-                      aria-current={isCurrent(item.href) ? 'page' : undefined}
-                      className={`border-b border-line py-3.5 font-display text-lg font-medium tracking-tight transition-colors dark:border-line-dark ${
-                        isCurrent(item.href)
-                          ? 'text-brand'
-                          : 'text-ink dark:text-surface-text'
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                </div>
-
-                {/* User Actions */}
-                <div className="mt-6">
-                  {user ? (
-                    <div className="flex flex-col gap-1">
-                      <Link
-                        href="/my-profile"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink hover:bg-neutral-200/60 dark:text-surface-text dark:hover:bg-neutral-800"
-                      >
-                        <User className="h-4 w-4" />
-                        {t('nav', 'myProfile')}
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMobileMenuOpen(false)
-                          setShowPasswordModal(true)
-                        }}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-ink hover:bg-neutral-200/60 dark:text-surface-text dark:hover:bg-neutral-800"
-                      >
-                        <Key className="h-4 w-4" />
-                        {t('profile', 'changePassword')}
-                      </button>
-                      {user.isAdmin && (
-                        <Link
-                          href="/admin"
-                          target="_blank"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink hover:bg-neutral-200/60 dark:text-surface-text dark:hover:bg-neutral-800"
-                        >
-                          <Shield className="h-4 w-4" />
-                          {t('nav', 'adminPanel')}
-                        </Link>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-brand hover:bg-neutral-200/60 dark:hover:bg-neutral-800"
-                      >
-                        <LogOut className="h-4 w-4" />
-                        {t('nav', 'logout')}
-                      </button>
-                    </div>
-                  ) : (
-                    <Link
-                      href="/login"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="btn btn-primary w-full"
-                    >
-                      <User className="h-4 w-4" />
-                      {t('nav', 'login')}
-                    </Link>
-                  )}
-                </div>
-
-                {/* Theme Selection - at bottom */}
-                <div className="mt-auto flex items-center gap-3 border-t border-line pt-5 dark:border-line-dark">
-                  <span className="eyebrow">{t('common', 'theme')}</span>
-                  <div className="flex gap-1">
-                    {themeOptions.map(({ value, icon: Icon, label }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => setTheme(value)}
-                        aria-pressed={theme === value}
-                        className={`rounded-lg p-2 transition-colors ${
-                          theme === value
-                            ? 'bg-brand/10 text-brand'
-                            : 'text-ink-soft hover:bg-neutral-200/60 dark:text-neutral-400 dark:hover:bg-neutral-800'
-                        }`}
-                        title={label}
-                      >
-                        <Icon className="h-4 w-4" />
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </nav>
       </header>
+
+      {/* Mobile menu.
+          Deliberately a sibling of the header, not a child of it. The header
+          turns on `backdrop-blur` while this is open, and `backdrop-filter`
+          makes an element a containing block for its `position: fixed`
+          descendants — so nested inside, this panel's `top`/`bottom` resolved
+          against the 72px header instead of the viewport and it rendered
+          exactly 0px tall, links and all. */}
+      {/* Mobile Menu - Full screen overlay */}
+      {mobileMenuOpen && (
+        <div
+          className={`fixed inset-x-0 bottom-0 z-50 overflow-y-auto bg-paper dark:bg-surface md:hidden ${
+            scrolled ? 'top-16' : 'top-18'
+          }`}
+        >
+          <div className="flex min-h-full flex-col px-4 pb-8 pt-4">
+            <div className="flex flex-col">
+              {navigation.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  aria-current={isCurrent(item.href) ? 'page' : undefined}
+                  className={`border-b border-line py-3.5 font-display text-lg font-medium tracking-tight transition-colors dark:border-line-dark ${
+                    isCurrent(item.href) ? 'text-brand' : 'text-ink dark:text-surface-text'
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+
+            {/* User Actions */}
+            <div className="mt-6">
+              {user ? (
+                <div className="flex flex-col gap-1">
+                  <Link
+                    href="/my-profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink hover:bg-neutral-200/60 dark:text-surface-text dark:hover:bg-neutral-800"
+                  >
+                    <User className="h-4 w-4" />
+                    {t('nav', 'myProfile')}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      setShowPasswordModal(true)
+                    }}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-ink hover:bg-neutral-200/60 dark:text-surface-text dark:hover:bg-neutral-800"
+                  >
+                    <Key className="h-4 w-4" />
+                    {t('profile', 'changePassword')}
+                  </button>
+                  {user.isAdmin && (
+                    <Link
+                      href="/admin"
+                      target="_blank"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-ink hover:bg-neutral-200/60 dark:text-surface-text dark:hover:bg-neutral-800"
+                    >
+                      <Shield className="h-4 w-4" />
+                      {t('nav', 'adminPanel')}
+                    </Link>
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-brand hover:bg-neutral-200/60 dark:hover:bg-neutral-800"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t('nav', 'logout')}
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  href="/login"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="btn btn-primary w-full"
+                >
+                  <User className="h-4 w-4" />
+                  {t('nav', 'login')}
+                </Link>
+              )}
+            </div>
+
+            {/* Theme Selection - at bottom */}
+            <div className="mt-auto flex items-center gap-3 border-t border-line pt-5 dark:border-line-dark">
+              <span className="eyebrow">{t('common', 'theme')}</span>
+              <div className="flex gap-1">
+                {themeOptions.map(({ value, icon: Icon, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setTheme(value)}
+                    aria-pressed={theme === value}
+                    className={`rounded-lg p-2 transition-colors ${
+                      theme === value
+                        ? 'bg-brand/10 text-brand'
+                        : 'text-ink-soft hover:bg-neutral-200/60 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                    }`}
+                    title={label}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Password Modal */}
       <ChangePasswordModal isOpen={showPasswordModal} onClose={() => setShowPasswordModal(false)} />

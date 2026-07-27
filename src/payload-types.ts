@@ -1416,11 +1416,7 @@ export interface SlideshowSettingsCollection {
    */
   slideImageSeconds?: number | null;
   /**
-   * Minimal hands the full 1080px height to the slide and floats the counter, countdown and next speaker as badges. Presenters can switch live with C.
-   */
-  slideChrome?: ('bar' | 'minimal') | null;
-  /**
-   * Minimal controls only. Bottom right sits closer to where a presenter looks between slides; top right stays clear of the request bar.
+   * Bottom right sits closer to where a presenter looks between slides; top right stays clear of the request bar.
    */
   nextSpeakerPosition?: ('top' | 'bottom') | null;
   /**
@@ -2638,7 +2634,6 @@ export interface SlideshowSettingsCollectionSelect<T extends boolean = true> {
   slideSeconds?: T;
   speechMasterMultiplier?: T;
   slideImageSeconds?: T;
-  slideChrome?: T;
   nextSpeakerPosition?: T;
   specialRequestDisplay?: T;
   businessGivenMin?: T;

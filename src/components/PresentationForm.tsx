@@ -533,7 +533,11 @@ export function PresentationForm({
             </div>
           </div>
 
-          <div className="ml-auto flex flex-wrap gap-4 items-end justify-end">
+          {/* On a phone this cluster takes the full width and starts at the left
+              edge. Pushed right with `ml-auto` it wrapped into a right-aligned
+              island with a hole beside it, and its labels stopped lining up
+              with everything above them. */}
+          <div className="flex w-full flex-wrap items-end gap-4 sm:ml-auto sm:w-auto sm:justify-end">
             {/* Two background colours, on every layout. Classic puts them side
                 by side; the full-bleed layouts stack them — the first carries
                 the type, the second sits behind the media. Both under one
@@ -849,9 +853,9 @@ export function PresentationForm({
             </div>
           )}
 
-          <div className="ml-auto flex gap-4 items-end">
+          <div className="flex w-full flex-wrap items-end gap-4 sm:ml-auto sm:w-auto">
             {/* TYFCB Given */}
-            <div>
+            <div className="min-w-[13rem] flex-1 sm:flex-none">
               <label
                 htmlFor="tyfcbGiven"
                 className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
@@ -873,7 +877,7 @@ export function PresentationForm({
                   min={0}
                   max={99000000}
                   className={`h-12 rounded-lg border border-neutral-300 bg-white pl-4 text-neutral-900 dark:border-neutral-600 dark:bg-surface dark:text-surface-text ${
-                    businessGivenMin > 0 ? 'w-56 pr-28' : 'w-36 pr-4'
+                    businessGivenMin > 0 ? 'w-full pr-28 sm:w-56' : 'w-full pr-4 sm:w-36'
                   }`}
                 />
                 {/* The minimum lives inside the field: as a line underneath it
@@ -887,7 +891,7 @@ export function PresentationForm({
             </div>
 
             {/* TYFCB Received */}
-            <div>
+            <div className="min-w-[13rem] flex-1 sm:flex-none">
               <label
                 htmlFor="tyfcbReceived"
                 className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1"
@@ -909,7 +913,7 @@ export function PresentationForm({
                   min={0}
                   max={99000000}
                   className={`h-12 rounded-lg border border-neutral-300 bg-white pl-4 text-neutral-900 dark:border-neutral-600 dark:bg-surface dark:text-surface-text ${
-                    businessReceivedMin > 0 ? 'w-56 pr-28' : 'w-36 pr-4'
+                    businessReceivedMin > 0 ? 'w-full pr-28 sm:w-56' : 'w-full pr-4 sm:w-36'
                   }`}
                 />
                 {/* The minimum lives inside the field: as a line underneath it

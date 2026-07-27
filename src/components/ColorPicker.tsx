@@ -99,7 +99,10 @@ export function ColorPicker({
       {open && (
         <div
           role="dialog"
-          className="absolute left-0 top-14 z-50 w-[340px] rounded-xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-800"
+          className="absolute left-0 top-14 z-50 rounded-xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-800"
+          // Never wider than the screen it opens on; the swatch grid shrinks
+          // with it rather than running off the edge of a phone.
+          style={{ width: 'min(340px, calc(100vw - 2rem))' }}
         >
           <div
             className="grid gap-[6px]"

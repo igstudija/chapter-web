@@ -18,23 +18,12 @@ import {
   type MemberSlideTemplate,
   type SlideBlockData,
   type BuildSlidesContext,
-  type SlideChrome,
   type SlideData,
   type SlideMember,
   type SlidePowerGroup,
 } from '@/lib/buildSlides'
-import {
-  BarChrome,
-  MinimalChrome,
-  SLIDE_WIDTH,
-  SLIDE_HEIGHT,
-  BOTTOM_BAR_HEIGHT,
-  PROGRESS_BAR_HEIGHT,
-  type ChromeProps,
-} from './SlideshowChrome'
+import { SlideshowChrome, SLIDE_WIDTH, SLIDE_HEIGHT, type ChromeProps } from './SlideshowChrome'
 
-/** Presenter's live chrome choice, remembered per device. */
-const CHROME_STORAGE_KEY = 'slideshow-chrome'
 /** How long the minimal chrome's controls linger after the pointer stops. */
 const CONTROLS_IDLE_MS = 2600
 /** Tail of a member's slide during which their request is flashed. */
@@ -176,7 +165,6 @@ export function SlideshowViewer({
 }: Readonly<SlideshowViewerProps>) {
   const [initialSlideSet, setInitialSlideSet] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [chrome, setChrome] = useState<SlideChrome>(buildContext.settings.slideChrome ?? 'bar')
   const [controlsVisible, setControlsVisible] = useState(false)
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [timeRemaining, setTimeRemaining] = useState(buildContext.settings.slideSeconds)
@@ -250,21 +238,6 @@ export function SlideshowViewer({
     if (totalSlides === 0) return
     goToSlide(currentSlideIndex === 0 ? totalSlides - 1 : currentSlideIndex - 1)
   }, [currentSlideIndex, totalSlides, goToSlide])
-
-  // A presenter's chrome choice belongs to the room they present in, not to the
-  // chapter's settings — so it lives on the device and beats the site default.
-  useEffect(() => {
-    const stored = globalThis.localStorage?.getItem(CHROME_STORAGE_KEY)
-    if (stored === 'bar' || stored === 'minimal') setChrome(stored)
-  }, [])
-
-  const toggleChrome = useCallback(() => {
-    setChrome((prev) => {
-      const next: SlideChrome = prev === 'bar' ? 'minimal' : 'bar'
-      globalThis.localStorage?.setItem(CHROME_STORAGE_KEY, next)
-      return next
-    })
-  }, [])
 
   /** Reveal the minimal chrome's controls, then fade them out once idle. */
   const notePointerActivity = useCallback(() => {
@@ -443,10 +416,6 @@ export function SlideshowViewer({
         case 'F':
           toggleFullscreen()
           break
-        case 'c':
-        case 'C':
-          toggleChrome()
-          break
         case 'Escape':
           if (isFullscreen) {
             exitFullscreen()
@@ -465,7 +434,6 @@ export function SlideshowViewer({
     isFullscreen,
     toggleFullscreen,
     exitFullscreen,
-    toggleChrome,
   ])
 
   useEffect(() => {
@@ -484,20 +452,6 @@ export function SlideshowViewer({
 
   const enableAttendance = buildContext.enableAttendance
 
-  const getCurrentGroupName = () => {
-    if (!currentSlide) return ''
-    if (currentSlide.type === 'group') {
-      return (currentSlide.data as { group: SlidePowerGroup }).group.title
-    }
-    if (currentSlide.type === 'member') {
-      const data = currentSlide.data as { member: SlideMember; group?: SlidePowerGroup }
-      return data.group?.title || ''
-    }
-    if (currentSlide.type === 'guests' || currentSlide.type === 'guest-detail') {
-      return (currentSlide.data as { title?: string }).title || ''
-    }
-    return ''
-  }
 
   const slideHeadline = (slide: SlideData): string => {
     if (slide.type === 'member') {
@@ -581,7 +535,6 @@ export function SlideshowViewer({
       : null
 
   const logoUrl = buildContext.settings.logoUrl
-  const chapterName = buildContext.settings.chapterName
 
   const chromeProps: ChromeProps = {
     onFirst: goToFirst,
@@ -589,16 +542,12 @@ export function SlideshowViewer({
     onNext: nextSlide,
     onToggleFullscreen: toggleFullscreen,
     isFullscreen,
-    onToggleChrome: toggleChrome,
-    chrome,
     attendanceEnabled: enableAttendance,
     attendance: attendanceFilter,
     onAttendanceChange: setAttendanceFilter,
     showTimer,
-    timeRemaining,
     slideDuration,
     progressStarted,
-    groupName: getCurrentGroupName() || chapterName,
     nextName: getNextMemberName(),
     nextPosition:
       memberSlideData?.nextSpeakerPosition ?? buildContext.settings.nextSpeakerPosition ?? 'top',
@@ -613,9 +562,8 @@ export function SlideshowViewer({
     onPointerActivity: notePointerActivity,
   }
 
-  // Minimal chrome is overlaid end to end, so the slide keeps all 1080px.
-  const contentHeight =
-    chrome === 'bar' ? SLIDE_HEIGHT - BOTTOM_BAR_HEIGHT - PROGRESS_BAR_HEIGHT : SLIDE_HEIGHT
+  // The chrome is overlaid end to end, so the slide keeps all 1080px.
+  const contentHeight = SLIDE_HEIGHT
 
   return (
     <div
@@ -782,14 +730,8 @@ export function SlideshowViewer({
           </div>
         </foreignObject>
 
-        {chrome === 'bar' ? <BarChrome {...chromeProps} /> : <MinimalChrome {...chromeProps} />}
+        <SlideshowChrome {...chromeProps} />
 
-        <defs>
-          <linearGradient id="progressGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#dc2626" />
-            <stop offset="100%" stopColor="#b91c1c" />
-          </linearGradient>
-        </defs>
       </svg>
 
       {/*

@@ -116,9 +116,6 @@ export interface SlideData {
   disableTimer?: boolean
 }
 
-/** Where the slideshow puts its controls. */
-export type SlideChrome = 'bar' | 'minimal'
-
 /** How a member's ask reaches the room. */
 export type SpecialRequestDisplay = 'bar' | 'slide' | 'flash' | 'off'
 
@@ -139,7 +136,6 @@ export interface BuildSlidesContext {
     businessReceivedMin: number
     /** Full photo-sequence length; each photo gets `this / count`. */
     slideImageSeconds: number
-    slideChrome: SlideChrome
     nextSpeakerPosition: NextSpeakerPosition
     specialRequestDisplay: SpecialRequestDisplay
   }

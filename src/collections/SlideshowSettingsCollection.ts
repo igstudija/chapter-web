@@ -70,20 +70,6 @@ export const SlideshowSettingsCollection: CollectionConfig = {
       },
     },
     {
-      name: 'slideChrome',
-      type: 'select',
-      label: 'Slideshow Controls',
-      defaultValue: 'bar',
-      options: [
-        { label: 'Bar — solid control bar along the bottom', value: 'bar' },
-        { label: 'Minimal — time strip at the very bottom, controls on hover', value: 'minimal' },
-      ],
-      admin: {
-        description:
-          'Minimal hands the full 1080px height to the slide and floats the counter, countdown and next speaker as badges. Presenters can switch live with C.',
-      },
-    },
-    {
       name: 'nextSpeakerPosition',
       type: 'select',
       label: 'Next Speaker Badge',
@@ -94,7 +80,7 @@ export const SlideshowSettingsCollection: CollectionConfig = {
       ],
       admin: {
         description:
-          'Minimal controls only. Bottom right sits closer to where a presenter looks between slides; top right stays clear of the request bar.',
+          'Bottom right sits closer to where a presenter looks between slides; top right stays clear of the request bar.',
       },
     },
     {

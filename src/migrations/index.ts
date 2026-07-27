@@ -8,6 +8,7 @@ import * as migration_20260727_035434_drop_spotlight_template from './20260727_0
 import * as migration_20260727_040906_slide_media_background_colour from './20260727_040906_slide_media_background_colour';
 import * as migration_20260727_053943_next_speaker_position from './20260727_053943_next_speaker_position';
 import * as migration_20260727_060000_member_slide_overrides from './20260727_060000_member_slide_overrides';
+import * as migration_20260728_000000_drop_slide_chrome from './20260728_000000_drop_slide_chrome';
 import * as migration_20260727_120000_drop_referrals_and_meetings from './20260727_120000_drop_referrals_and_meetings';
 
 export const migrations = [
@@ -65,5 +66,10 @@ export const migrations = [
     up: migration_20260727_120000_drop_referrals_and_meetings.up,
     down: migration_20260727_120000_drop_referrals_and_meetings.down,
     name: '20260727_120000_drop_referrals_and_meetings',
+  },
+  {
+    up: migration_20260728_000000_drop_slide_chrome.up,
+    down: migration_20260728_000000_drop_slide_chrome.down,
+    name: '20260728_000000_drop_slide_chrome',
   },
 ];
