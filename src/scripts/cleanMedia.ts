@@ -42,12 +42,19 @@ interface Options {
   force: boolean
 }
 
-const parseArgs = (argv: string[]): Options => ({
-  apply: argv.includes('--apply'),
-  pruneStorage: argv.includes('--prune-storage'),
-  force: argv.includes('--force'),
-  minAgeHours: Number(argv[argv.indexOf('--min-age-hours') + 1]) || 24,
-})
+const parseArgs = (argv: string[]): Options => {
+  // `|| default` would swallow `--min-age-hours 0`, which is the one value
+  // someone types deliberately — sweep everything, grace period included.
+  const flag = argv.indexOf('--min-age-hours')
+  const given = flag === -1 ? Number.NaN : Number(argv[flag + 1])
+
+  return {
+    apply: argv.includes('--apply'),
+    pruneStorage: argv.includes('--prune-storage'),
+    force: argv.includes('--force'),
+    minAgeHours: Number.isFinite(given) && given >= 0 ? given : 24,
+  }
+}
 
 /**
  * Tables whose rows mention media without depending on it.

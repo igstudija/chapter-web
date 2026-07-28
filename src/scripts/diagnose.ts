@@ -39,17 +39,33 @@ const checkDatabase = async (): Promise<Outcome> => {
     return { ok: false, skipped: true, detail: 'POSTGRESS_DATABASE_URL is not set' }
   }
 
-  // Supabase and most managed Postgres require TLS, and reject unauthorized is
-  // off for the same reason the app does it: their chain is not in the local
-  // trust store. This is a reachability check, not an authenticity one.
-  const client = new Client({
-    connectionString,
-    ssl: connectionString.includes('localhost') ? undefined : { rejectUnauthorized: false },
-    connectionTimeoutMillis: 10_000,
-  })
-
-  try {
+  // Managed Postgres requires TLS; a container or a box on your own network
+  // usually has none. Guessing from the hostname gets tier 2 wrong — anything
+  // not literally called localhost was told to use TLS and failed against a
+  // server that never offered it. So try TLS, and fall back once if the server
+  // says it has none, which is what a client with sslmode=prefer does.
+  //
+  // rejectUnauthorized is off for the same reason the app does it: managed
+  // providers' chains are not in the local trust store. This is a reachability
+  // check, not an authenticity one.
+  const connect = async (ssl: boolean): Promise<Client> => {
+    const client = new Client({
+      connectionString,
+      ssl: ssl ? { rejectUnauthorized: false } : undefined,
+      connectionTimeoutMillis: 10_000,
+    })
     await client.connect()
+    return client
+  }
+
+  let client: Client
+  try {
+    try {
+      client = await connect(true)
+    } catch (error) {
+      if (!/does not support SSL/i.test((error as Error).message)) throw error
+      client = await connect(false)
+    }
   } catch (error) {
     const err = error as NodeJS.ErrnoException & { code?: string }
 
