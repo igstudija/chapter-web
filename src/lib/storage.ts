@@ -111,31 +111,6 @@ export const deleteObject = async (
   }
 }
 
-/**
- * Delete many objects in one request.
- *
- * Keys that do not exist are simply absent from the response — the same
- * forgiving contract as `deleteObject`, which matters because sized variants
- * are derived by name and may never have been written (audio, SVG, an upload
- * whose thumbnail generation failed).
- */
-export const deleteObjects = async (
-  keys: string[],
-  config: StorageConfig = getStorageConfig(),
-): Promise<void> => {
-  if (keys.length === 0) return
-
-  const res = await fetch(`${config.baseUrl}/storage/v1/object/${config.bucket}`, {
-    method: 'DELETE',
-    headers: { ...authHeaders(config), 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prefixes: keys }),
-  })
-
-  if (!res.ok && res.status !== 404) {
-    throw new Error(`Storage delete failed for ${keys.length} keys: ${res.status} ${await res.text()}`)
-  }
-}
-
 /** Whether an object exists. Network failures report false rather than throwing. */
 export const objectExists = async (
   key: string,
