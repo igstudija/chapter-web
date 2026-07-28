@@ -129,12 +129,20 @@ export const mediaIdsAtPaths = (doc: unknown, paths: string[]): Set<number> => {
   return found
 }
 
-/** The collections that can reference Media, with the paths that do it. */
+/**
+ * The collections that can reference Media, with the paths that do it.
+ *
+ * Payload's own bookkeeping collections are skipped. `payload-locked-documents`
+ * records that someone has a document open in the admin panel and relates
+ * polymorphically to every collection at once — it is not a use of a file, and
+ * it is not queryable by that relationship either ("Not supported"), so
+ * including it would abort the check rather than inform it.
+ */
 export const mediaReferenceMap = (payload: Payload): Map<CollectionSlug, string[]> => {
   const map = new Map<CollectionSlug, string[]>()
 
   for (const collection of payload.config.collections as SanitizedCollectionConfig[]) {
-    if (collection.slug === 'media') continue
+    if (collection.slug === 'media' || collection.slug.startsWith('payload-')) continue
     const paths = mediaFieldPaths(collection.fields as Field[])
     if (paths.length) map.set(collection.slug as CollectionSlug, paths)
   }
