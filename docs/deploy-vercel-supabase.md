@@ -84,8 +84,8 @@ build step is not the place for it: preview deployments would run migrations
 against production too.
 
 ```bash
-git clone https://github.com/YOUR-ORG/chapteros.git
-cd chapteros
+git clone https://github.com/igstudija/chapter-web.git
+cd chapter-web
 pnpm install
 cp .env.example .env
 ```
@@ -108,8 +108,7 @@ PG_POOL_MAX=5
 Then:
 
 ```bash
-pnpm migrate:create   # generates the schema from the collections
-pnpm migrate          # applies it
+pnpm migrate          # creates the schema — applies the migrations in src/migrations
 pnpm setup            # creates your settings + administrator account
 pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
 ```

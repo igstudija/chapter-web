@@ -58,8 +58,8 @@ Supabase Storage out of the box. See [Using different infrastructure](#using-dif
 ## Install
 
 ```bash
-git clone https://github.com/YOUR-ORG/chapteros.git
-cd chapteros
+git clone https://github.com/igstudija/chapter-web.git
+cd chapter-web
 pnpm install
 cp .env.example .env
 ```
@@ -80,8 +80,7 @@ render broken rather than protected.
 Then:
 
 ```bash
-pnpm migrate:create   # generate the schema from the collections
-pnpm migrate          # apply it
+pnpm migrate          # create the schema — applies the migrations in src/migrations
 pnpm setup            # create your settings + administrator account
 pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
 pnpm dev
@@ -120,9 +119,13 @@ docker compose up -d --build
 production database:
 
 ```bash
-docker compose exec app pnpm migrate
-docker compose exec app pnpm setup
+docker compose run --rm migrate
+docker compose run --rm setup
 ```
+
+These are one-off containers, not `exec` into the running app: the runtime image
+is a standalone Next.js bundle carrying neither the Payload CLI nor the
+TypeScript sources, so both tasks run from the `builder` stage instead.
 
 Set `SETUP_ORG_NAME`, `SETUP_ADMIN_EMAIL` and `SETUP_ADMIN_PASSWORD` to run
 setup without a terminal.

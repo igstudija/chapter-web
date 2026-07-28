@@ -81,11 +81,10 @@ reading `// set the limit to 2` does not earn its space.
 
 ## Reporting bugs
 
-Include your Node version, whether you are on Docker or bare Node, what your
-`NEXT_PUBLIC_SUPERADMIN_HOSTS` is set to, and how many organisations the install
-has. That last one matters more than it sounds: the single-organisation
-fallback in host resolution changes behaviour once a second organisation goes
-active.
+Include your Node version, whether you are on Docker, Vercel or bare Node, and
+your `NEXT_PUBLIC_SERVER_URL`. If the problem involves uploads or images, say
+which object storage you point at — Supabase Storage is what the code ships
+against, and a reimplemented `src/lib/storage.ts` is a different bug.
 
 ## Security
 
