@@ -1,11 +1,11 @@
 import type { Adapter } from '@payloadcms/plugin-cloud-storage/types'
 import {
+  deleteObject,
   getStorageConfig,
   objectKey,
   publicUrl,
   uploadObject,
 } from './storage'
-import { deleteMediaFiles } from './mediaVariants'
 
 /**
  * Payload cloud-storage adapter for Supabase Storage.
@@ -86,11 +86,8 @@ export const supabaseStorageAdapter = (): Adapter => {
     generateURL: ({ filename }: { filename: string }) =>
       publicUrl(objectKey(prefix, filename), config),
 
-    // Deletes the original and the sized variants written beside it. Payload
-    // only knows about the original — the variants are named, not recorded —
-    // so removing them is this adapter's job or nobody's.
     handleDelete: async ({ filename }: { filename: string }) =>
-      deleteMediaFiles(filename, prefix, config),
+      deleteObject(objectKey(prefix, filename), config),
 
     handleUpload: async ({
       data,

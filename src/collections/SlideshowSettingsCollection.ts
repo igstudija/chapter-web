@@ -1,6 +1,5 @@
 import type { CollectionConfig } from 'payload'
 import { authenticated, adminOnly } from '../access'
-import { cleanUpMediaOnChange, cleanUpMediaOnDelete } from '../hooks/cleanUpMedia'
 import { SlideBlocks } from './blocks/SlideBlocks'
 
 /**
@@ -8,13 +7,6 @@ import { SlideBlocks } from './blocks/SlideBlocks'
  * with multi-tenancy.
  */
 const activeMembersOnly = () => ({ status: { equals: 'active' } })
-
-/**
- * The uploads a slideshow owns: the image on every Custom Image slide, and the
- * transition sound. Deleting a Custom Image slide, or pointing it at a
- * different picture, takes the previous file with it.
- */
-const SLIDESHOW_MEDIA_PATHS = ['slides.image', 'transitionSound']
 
 export const SlideshowSettingsCollection: CollectionConfig = {
   slug: 'slideshow-settings-collection',
@@ -38,10 +30,6 @@ export const SlideshowSettingsCollection: CollectionConfig = {
     create: adminOnly,
     update: adminOnly,
     delete: adminOnly,
-  },
-  hooks: {
-    afterChange: [cleanUpMediaOnChange(SLIDESHOW_MEDIA_PATHS)],
-    afterDelete: [cleanUpMediaOnDelete(SLIDESHOW_MEDIA_PATHS)],
   },
   fields: [
     {

@@ -30,8 +30,7 @@
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
     "typecheck": "tsc --noEmit",
-    "diagnose": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/diagnose.ts",
-    "clean:media": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/cleanMedia.ts"
+    "diagnose": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/diagnose.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.69.0",
