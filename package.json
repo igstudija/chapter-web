@@ -19,7 +19,8 @@
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "preflight": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/preflight.ts",
     "start": "pnpm run preflight && cross-env NODE_OPTIONS=--no-deprecation next start",
-    "test": "pnpm run test:int && pnpm run test:e2e",
+    "test": "pnpm run test:int",
+    "test:db": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.db.config.mts",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" pnpm exec playwright test",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "generate:top40-tags": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/generateTop40Tags.ts",
@@ -29,7 +30,8 @@
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
     "typecheck": "tsc --noEmit",
-    "diagnose": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/diagnose.ts"
+    "diagnose": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/diagnose.ts",
+    "clean:media": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/cleanMedia.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.69.0",

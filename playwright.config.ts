@@ -1,14 +1,16 @@
 import { defineConfig, devices } from '@playwright/test'
-
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
 import 'dotenv/config'
 
 /**
- * See https://playwright.dev/docs/test-configuration.
+ * Browser tests run against an installed site — a migrated database with an
+ * administrator on it. They are not part of `pnpm test`, which has to pass on a
+ * fresh clone with neither. Run them with `pnpm test:e2e`.
  */
+
+/** The port `pnpm dev` listens on. The two drifting apart is what broke this before. */
+const PORT = process.env.PORT || '3050'
+const BASE_URL = `http://localhost:${PORT}`
+
 export default defineConfig({
   testDir: './tests/e2e',
   /* Fail the build on CI if you accidentally left test.only in the source code. */
@@ -17,14 +19,9 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  reporter: process.env.CI ? 'list' : 'html',
   use: {
-    /* Base URL to use in actions like `await page.goto('/')`. */
-    // baseURL: 'http://localhost:3000',
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
+    baseURL: BASE_URL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -35,7 +32,14 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm dev',
-    reuseExistingServer: true,
-    url: 'http://localhost:3000',
+    url: BASE_URL,
+    /**
+     * Never reuse a server in CI. Attaching to whatever already happens to hold
+     * the port would let the suite pass against a build that is not the one
+     * under test — a green run that proves nothing. Locally, reuse is a
+     * convenience worth keeping.
+     */
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
   },
 })
