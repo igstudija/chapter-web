@@ -1,0 +1,123 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A superseded run proves nothing once its branch has moved on.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  # The cheap half: everything that needs no infrastructure. Kept fast enough
+  # that nobody learns to ignore it.
+  static:
+    name: Typecheck, lint, tests, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        # Placeholder values, because the build only needs these settings to be
+        # present: the storage adapter refuses to construct without them, and
+        # next.config derives an allowed image host from the Supabase URL. It
+        # never calls out to any of them.
+        run: pnpm build
+        env:
+          PAYLOAD_SECRET: placeholder-secret-for-build-only
+          POSTGRESS_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/placeholder
+          SUPABASE_URL: https://placeholder.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+          SUPABASE_STORAGE_BUCKET: media
+          NEXT_PUBLIC_SERVER_URL: http://localhost:3050
+
+  # The expensive half, and the only place the Install path is exercised at all:
+  # this project's own schema is maintained by dev push, so migrating an empty
+  # database is a path nobody here ever runs by hand. See ADR 0003.
+  install-path:
+    name: Install from empty against a real Postgres
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: chapteros
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PAYLOAD_SECRET: ci-only-secret-not-used-anywhere-real
+      POSTGRESS_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/chapteros
+      # Storage settings only have to be present — nothing here calls Supabase.
+      # A tier 1 install talks to the real thing; this job proves the schema and
+      # the first screen, not the object store.
+      SUPABASE_URL: https://placeholder.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: placeholder-service-role-key
+      SUPABASE_STORAGE_BUCKET: media
+      NEXT_PUBLIC_SERVER_URL: http://localhost:3050
+      PG_POOL_MAX: '5'
+      SETUP_ORG_NAME: Continuous Integration Chapter
+      SETUP_ADMIN_EMAIL: ci@example.org
+      SETUP_ADMIN_PASSWORD: ci-password-not-a-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create the schema
+        run: pnpm migrate
+
+      - name: Create the organisation and administrator
+        run: pnpm bootstrap < /dev/null
+
+      - name: Check the records the pages read from exist
+        run: pnpm run test:db
+
+      - name: Install the browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Check the installed site renders
+        run: pnpm run test:e2e
