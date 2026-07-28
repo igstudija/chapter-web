@@ -41,7 +41,8 @@ _Avoid_: validation, env check
 **Doctor**:
 The explicit, network-touching diagnosis — database reachable, schema applied,
 storage bucket present and public, mail accepted. Run by hand, never
-automatically, because it is slow and fails without a network.
+automatically, because it is slow and fails without a network. Invoked as
+`pnpm diagnose`, because pnpm owns the word `doctor`.
 _Avoid_: healthcheck (that is the container's HTTP probe, a different thing)
 
 **Supported tier**:

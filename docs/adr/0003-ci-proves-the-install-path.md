@@ -4,7 +4,7 @@ This project's own database has its schema maintained by Payload's dev push, not
 by the migration files — so `pnpm migrate` against an empty database, the very
 first thing the README asks a Self-hoster to do, is a code path no one here ever
 executes. A broken migration chain would be invisible to us and fatal to them.
-CI therefore starts a real Postgres, runs `pnpm migrate`, runs `pnpm setup`
+CI therefore starts a real Postgres, runs `pnpm migrate`, runs `pnpm bootstrap`
 non-interactively, and drives a browser at the result.
 
 ## Consequences

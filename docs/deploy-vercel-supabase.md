@@ -109,11 +109,11 @@ Then:
 
 ```bash
 pnpm migrate          # creates the schema — applies the migrations in src/migrations
-pnpm setup            # creates your settings + administrator account
+pnpm bootstrap        # creates your settings + administrator account
 pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
 ```
 
-`pnpm setup` asks for the organisation name and the administrator's email and
+`pnpm bootstrap` asks for the organisation name and the administrator's email and
 password. Everything else is configured from the admin panel afterwards.
 
 Keep `PAYLOAD_SECRET` somewhere safe. It signs session tokens: changing it later
@@ -188,7 +188,7 @@ restart.
 
 - `https://your-domain.org/api/health` → `{"status":"ok","db":"ok"}`. If `db`
   says `error`, the connection string is wrong — see the table in step 8.
-- `https://your-domain.org/admin` → log in with the account from `pnpm setup`.
+- `https://your-domain.org/admin` → log in with the account from `pnpm bootstrap`.
 - Upload an image in **Media**. It should appear in the Supabase Storage bucket
   under `media/`, along with `-thumbnail`, `-card` and `-medium` versions
   generated a few seconds later.

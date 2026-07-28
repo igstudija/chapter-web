@@ -14,7 +14,7 @@ you both).
 pnpm install
 cp .env.example .env     # fill it in
 pnpm migrate
-pnpm setup
+pnpm bootstrap
 pnpm dev
 ```
 

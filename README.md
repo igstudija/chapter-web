@@ -81,7 +81,7 @@ Then:
 
 ```bash
 pnpm migrate          # create the schema — applies the migrations in src/migrations
-pnpm setup            # create your settings + administrator account
+pnpm bootstrap        # create your settings + administrator account
 pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
 pnpm dev
 ```

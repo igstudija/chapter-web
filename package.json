@@ -23,7 +23,7 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
     "generate:top40-tags": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/generateTop40Tags.ts",
     "postinstall": "node -e \"const fs=require('fs');const src='node_modules/tinymce';const dst='public/tinymce';if(fs.existsSync(dst)){fs.rmSync(dst,{recursive:true,force:true})}if(fs.existsSync(src)){fs.cpSync(src,dst,{recursive:true,dereference:true});console.log('TinyMCE copied to public/')}\"",
-    "setup": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/setup.ts",
+    "bootstrap": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/setup.ts",
     "seed:policies": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/seedPolicyTemplates.ts",
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
