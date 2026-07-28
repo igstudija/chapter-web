@@ -81,17 +81,29 @@ reading `// set the limit to 2` does not earn its space.
 
 ## Reporting bugs
 
-Include your Node version, whether you are on Docker, Vercel or bare Node, and
+Say which [tier](README.md#what-is-supported) you are on. It is the first thing
+triage needs, because it decides whether you have found a defect or an
+unsupported combination, and the two get very different answers.
+
+Then: your Node version, whether you are on Docker, Vercel or bare Node, and
 your `NEXT_PUBLIC_SERVER_URL`. If the problem involves uploads or images, say
-which object storage you point at — Supabase Storage is what the code ships
-against, and a reimplemented `src/lib/storage.ts` is a different bug.
+which object storage you point at — a reimplemented `src/lib/storage.ts` is
+tier 3, and that is a different bug from the same symptom on tier 1.
+
+`pnpm diagnose` output is worth pasting in. It separates most infrastructure
+mistakes from actual defects before either of us spends time on them.
 
 ## Security
 
-Please don't open a public issue for a security problem — email the maintainer
-listed on the repository instead. This software holds personal data about real
-people, so vulnerabilities in access control or tenant isolation are treated as
-the highest priority.
+Please don't open a public issue for a security problem — that is a working
+exploit against every install that has not upgraded yet. Use GitHub's private
+reporting under the *Security* tab, which reaches the maintainers and nobody
+else.
+
+[SECURITY.md](SECURITY.md) has the details: what is in scope, what to expect,
+and what to do if you cannot use GitHub. Access control and session handling are
+treated as the highest priority, because this software holds personal data about
+real people on installs run by strangers.
 
 ## Licence
 

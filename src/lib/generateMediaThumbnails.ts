@@ -8,6 +8,7 @@ import {
   splitFilename,
   uploadObject,
 } from './storage'
+import { IMAGE_SIZES, MEDIA_PREFIX } from './mediaVariants'
 import { IS_SERVERLESS } from './runtime'
 
 /**
@@ -18,20 +19,6 @@ import { IS_SERVERLESS } from './runtime'
  * next to the original under `<stem>-<size><ext>`. Read them back with
  * `getThumbnailUrl`.
  */
-
-interface ImageSize {
-  name: string
-  width: number
-  height: number
-}
-
-const IMAGE_SIZES: ImageSize[] = [
-  { name: 'thumbnail', width: 200, height: 200 },
-  { name: 'card', width: 400, height: 400 },
-  { name: 'medium', width: 800, height: 800 },
-]
-
-const MEDIA_PREFIX = 'media'
 
 // Runs after the afterChange hook returns. Resizes and uploads in parallel so
 // total wall time ≈ slowest single upload, not the sum of all three.

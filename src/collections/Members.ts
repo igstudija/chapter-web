@@ -1,6 +1,7 @@
 import type { CollectionConfig, Access, Where, CollectionSlug } from 'payload'
 import { adminOnly, adminFieldAccess, isAdmin } from '../access'
 import { htmlEditorField } from '../fields/HtmlEditor'
+import { cleanUpMediaOnChange, cleanUpMediaOnDelete } from '../hooks/cleanUpMedia'
 import { sanitizeHtmlContent } from '../lib/sanitizeHtml'
 
 /**
@@ -29,6 +30,25 @@ const adminOrOwnProfile: Access = ({ req: { user } }) => {
   if (isAdmin(user)) return true
   return { user: { equals: user.id } } as Where
 }
+
+/**
+ * The uploads a member owns.
+ *
+ * Members are where uploads churn: the presentation slide is re-made for most
+ * meetings, the photo sequence is edited in place, and the profile photo and
+ * logo get replaced whenever either changes. Every one of those edits used to
+ * abandon a file. Listed explicitly rather than derived, because this says
+ * "these belong to the member and go when the member stops using them" — the
+ * check for whether someone *else* still points at the same file is the
+ * hook's, and applies to all of them.
+ */
+const MEMBER_MEDIA_PATHS = [
+  'slideImage',
+  'slideImages',
+  'profileImage',
+  'logo',
+  'gallery.image',
+]
 
 // === COLLECTION CONFIG ===
 
@@ -213,7 +233,14 @@ export const Members: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [
+      // A slide image swapped for a new one, or a photo dropped from the
+      // sequence, takes the old file with it.
+      cleanUpMediaOnChange(MEMBER_MEDIA_PATHS),
+    ],
     afterDelete: [
+      // The member is gone; so is anything they were the only user of.
+      cleanUpMediaOnDelete(MEMBER_MEDIA_PATHS),
       // Cascade-delete this member's content.
       // Uses bulk `where:` deletes so each collection is one query (previously
       // a find+loop, which was O(n) round-trips). All six deletions run in

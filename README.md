@@ -51,7 +51,9 @@ with placeholder substitution.
 - **A Supabase project** — provides both Postgres and object storage
 
 Any Postgres works if you prefer to run it yourself, but file uploads target
-Supabase Storage out of the box. See [Using different infrastructure](#using-different-infrastructure).
+Supabase Storage out of the box, and that is the combination the project
+guarantees. See [What is supported](#what-is-supported) before choosing
+otherwise.
 
 ---
 
@@ -148,16 +150,43 @@ watchdog restarting a process that has no supervisor to restart it.
 
 ---
 
-## Using different infrastructure
+## What is supported
 
-**Different Postgres.** Point `POSTGRESS_DATABASE_URL` anywhere. Nothing outside
-that variable assumes Supabase for the database.
+Not every combination gets the same promise, and pretending otherwise helps
+nobody. Three tiers, so you know before you start which part of this is
+guaranteed and which part is yours.
 
-**Different object storage.** All provider-specific code is in
-[`src/lib/storage.ts`](src/lib/storage.ts) — six functions over `fetch`.
-Reimplement them for S3, R2, Bunny or a local disk and nothing else changes;
-the Payload adapter, the thumbnail generator and the bulk uploader all go
-through it.
+### Tier 1 — Supabase and Vercel
+
+**Guaranteed, and proven on every commit.** CI stands up an empty Postgres,
+applies the migrations, runs `pnpm bootstrap` and loads the resulting site in a
+browser. This is the path the code is written against and the one the install
+docs describe. Bug reports are bugs.
+
+### Tier 2 — any Postgres, on Docker or bare Node
+
+**Documented, best-effort.** Point `POSTGRESS_DATABASE_URL` anywhere; nothing
+outside that variable assumes Supabase for the database, and CI exercises the
+schema against stock Postgres rather than Supabase specifically. What is not
+covered is the whole combination — a report here is welcome and may take a
+while, because reproducing it means building your setup rather than opening a
+terminal.
+
+### Tier 3 — any other object storage
+
+**A seam, and no promise.** Provider-specific code lives in
+[`src/lib/storage.ts`](src/lib/storage.ts): nine exports, of which all but two
+speak to the provider. Reimplement them for S3, R2, Bunny or a local disk and
+nothing else changes — the Payload adapter, the thumbnail generator and the bulk
+uploader all go through that module.
+
+Nothing tests this, here or anywhere. If you take it on you are the one who
+knows whether it works, and a patch is more useful to both of us than a bug
+report.
+
+---
+
+## Adapting it
 
 **Rebranding.** [`src/lib/branding.ts`](src/lib/branding.ts) holds every product
 name and default. Colours are theme tokens in

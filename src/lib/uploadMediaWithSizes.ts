@@ -7,6 +7,7 @@ import {
   splitFilename,
   uploadObject,
 } from './storage'
+import { IMAGE_SIZES, MEDIA_PREFIX } from './mediaVariants'
 
 /**
  * Upload an image plus its sized variants straight to storage and register the
@@ -16,20 +17,6 @@ import {
  * would gain nothing from routing them back through Payload's upload endpoint.
  * Interactive uploads go through the Payload adapter instead.
  */
-
-interface ImageSize {
-  name: string
-  width: number
-  height: number
-}
-
-const IMAGE_SIZES: ImageSize[] = [
-  { name: 'thumbnail', width: 200, height: 200 },
-  { name: 'card', width: 400, height: 400 },
-  { name: 'medium', width: 800, height: 800 },
-]
-
-const MEDIA_PREFIX = 'media'
 
 /**
  * Reduce an arbitrary upload name to something safe as an object key.
