@@ -80,11 +80,17 @@ render broken rather than protected.
 Then:
 
 ```bash
+pnpm diagnose         # check those values before relying on them
 pnpm migrate          # create the schema — applies the migrations in src/migrations
 pnpm bootstrap        # create your settings + administrator account
 pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
 pnpm dev
 ```
+
+`pnpm diagnose` is first on purpose. It connects to the database, checks the
+bucket exists and is public, and opens a connection to your mail server, so a
+mistyped password or a private bucket is a sentence now rather than a puzzle
+three steps later. Everything it reports names what to change.
 
 - Member portal — <http://localhost:3050>
 - Admin panel — <http://localhost:3050/admin>

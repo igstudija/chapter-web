@@ -108,10 +108,16 @@ PG_POOL_MAX=5
 Then:
 
 ```bash
+pnpm diagnose         # checks the values above actually work
 pnpm migrate          # creates the schema — applies the migrations in src/migrations
 pnpm bootstrap        # creates your settings + administrator account
 pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
 ```
+
+Run `pnpm diagnose` before the rest. Three of this page's most common failures —
+the wrong connection string, the anon key pasted where the `service_role` key
+belongs, and a bucket left private — are each one line of its output, and each
+is otherwise discovered much later and much less clearly.
 
 `pnpm bootstrap` asks for the organisation name and the administrator's email and
 password. Everything else is configured from the admin panel afterwards.

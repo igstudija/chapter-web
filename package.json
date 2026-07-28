@@ -1,7 +1,7 @@
 {
   "name": "chapteros",
   "version": "0.1.0",
-  "description": "Self-hostable member portal for professional networking organisations \u2014 directory, referrals, one-to-ones, events and business tracking.",
+  "description": "Self-hostable member portal for professional networking organisations — directory, referrals, one-to-ones, events and business tracking.",
   "license": "AGPL-3.0-or-later",
   "repository": {
     "type": "git",
@@ -28,7 +28,8 @@
     "seed:policies": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/seedPolicyTemplates.ts",
     "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "diagnose": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/diagnose.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.69.0",
@@ -50,6 +51,7 @@
     "nodemailer": "^6.9.16",
     "openai": "^6.18.0",
     "payload": "3.69.0",
+    "pg": "^8.17.2",
     "postcss": "^8.5.6",
     "qrcode": "^1.5.4",
     "react": "19.2.1",
@@ -76,7 +78,6 @@
     "eslint": "^9.16.0",
     "eslint-config-next": "15.4.7",
     "jsdom": "26.1.0",
-    "pg": "^8.17.2",
     "playwright": "1.56.1",
     "playwright-core": "1.56.1",
     "prettier": "^3.4.2",
