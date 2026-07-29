@@ -3,10 +3,11 @@
 # managed Postgres is what the app is built and tested against, and bundling a
 # throwaway one would invite people to run it in production.
 #
-#   docker compose up -d --build      start
-#   docker compose run --rm migrate   apply schema migrations
-#   docker compose run --rm setup     create the first organisation + superadmin
-#   docker compose logs -f app        follow logs
+#   docker compose up -d --build       start
+#   docker compose run --rm migrate    apply schema migrations
+#   docker compose run --rm secure-db  close the tables to Supabase's public API
+#   docker compose run --rm setup      create the first organisation + superadmin
+#   docker compose logs -f app         follow logs
 
 services:
   app:
@@ -48,6 +49,19 @@ services:
     env_file:
       - .env
     command: pnpm migrate
+    profiles: ['tools']
+
+  # Only does anything when POSTGRESS_DATABASE_URL points at Supabase; against a
+  # Postgres you run yourself there is no public API to close, and it says so and
+  # exits. Safe to run every time, and worth running after every migration.
+  secure-db:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    env_file:
+      - .env
+    command: pnpm secure:db --apply
     profiles: ['tools']
 
   setup:

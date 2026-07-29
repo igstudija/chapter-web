@@ -110,6 +110,13 @@ jobs:
       - name: Create the schema
         run: pnpm migrate
 
+      # Stock Postgres has no `anon` role and nothing publishing these tables
+      # over HTTP, so this should detect that and do nothing. That is the branch
+      # worth proving: a tier 2 install must not be told to enable row-level
+      # security on 65 tables to guard a door it does not have.
+      - name: Close the database to the public API
+        run: pnpm secure:db --apply
+
       - name: Create the organisation and administrator
         run: pnpm bootstrap < /dev/null
 

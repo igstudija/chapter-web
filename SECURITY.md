@@ -41,6 +41,9 @@ Anything that lets someone reach data or actions they should not have:
 - Injection of any kind, and anything that escapes the intended query.
 - Exposure of the `service_role` key, the signing secret, or any other value
   documented as server-side only.
+- A database still reachable with the Supabase anon key after the documented
+  install path was followed — `pnpm secure:db` failing to close something, or a
+  table appearing later that it does not catch.
 - Uploads that let a file end up somewhere it should not, or be served as
   something it is not.
 
@@ -51,7 +54,11 @@ Anything that lets someone reach data or actions they should not have:
 - **Missing hardening on somebody's own deployment** — an unpatched host, a
   database open to the internet, a bucket made public that should not have been.
   Note that the media bucket *is* meant to be public; that is documented, not a
-  finding.
+  finding. An install that skipped `pnpm secure:db` is this rather than the
+  entry above it.
+- **Tables reported as “RLS Enabled No Policy”** by Supabase's Security Advisor.
+  That is the intended state — see
+  [ADR 0006](docs/adr/0006-the-database-is-closed-to-supabases-api-roles.md).
 - **The policy templates.** `pnpm seed:policies` produces skeletons with
   `[bracketed]` prompts, deliberately. An unfilled template is not a
   vulnerability.

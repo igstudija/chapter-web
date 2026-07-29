@@ -143,6 +143,7 @@ production database:
 
 ```bash
 docker compose run --rm migrate
+docker compose run --rm secure-db
 docker compose run --rm setup
 ```
 
