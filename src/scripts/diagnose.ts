@@ -113,6 +113,73 @@ const checkDatabase = async (): Promise<Outcome> => {
 }
 
 /**
+ * Is the database still closed to Supabase's public API roles?
+ *
+ * Supabase publishes every table in `public` over HTTP to the `anon` role,
+ * which is what the anon key — a value that ships in browsers — authenticates
+ * as. Row-level security is the only thing in the way, and tables are created
+ * without it. Since this project's schema is applied by Payload's dev push, a
+ * collection gaining a field is enough to add a table nobody thought about.
+ *
+ * An event trigger closes those as they appear where the database allowed one
+ * to be installed. This is the check that says whether it held.
+ */
+const checkDataApi = async (): Promise<Outcome> => {
+  const connectionString = process.env.POSTGRESS_DATABASE_URL
+  if (!connectionString) {
+    return { ok: false, skipped: true, detail: 'POSTGRESS_DATABASE_URL is not set' }
+  }
+
+  const client = new Client({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10_000,
+  })
+
+  try {
+    await client.connect()
+  } catch {
+    // The database check above already reported why, in detail. Saying it twice
+    // helps nobody.
+    return { ok: false, skipped: true, detail: 'the database did not answer' }
+  }
+
+  try {
+    const { rows: roles } = await client.query<{ present: number }>(
+      `select count(*)::int as present from pg_roles where rolname in ('anon', 'authenticated')`,
+    )
+    if (roles[0].present === 0) {
+      return {
+        ok: true,
+        skipped: true,
+        detail: 'not a Supabase database — no roles publish these tables over HTTP',
+      }
+    }
+
+    const { rows } = await client.query<{ open: number }>(
+      `select count(*)::int as open
+         from pg_class c
+         join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'public'
+          and c.relkind in ('r', 'p')
+          and not c.relrowsecurity`,
+    )
+
+    if (rows[0].open === 0) {
+      return { ok: true, detail: 'every table in public is closed to the anon key' }
+    }
+
+    return {
+      ok: false,
+      detail: `${rows[0].open} table${rows[0].open === 1 ? '' : 's'} in public can be read with the anon key`,
+      fix: 'Run: pnpm secure:db --apply',
+    }
+  } finally {
+    await client.end()
+  }
+}
+
+/**
  * A bucket that exists but is private is the mistake worth catching. Files are
  * served straight from Supabase, so a private bucket does not protect the
  * images — it makes every one of them render broken, and nothing in the symptom
@@ -223,20 +290,24 @@ const main = async (): Promise<void> => {
   }
   if (configFindings.length > 0) console.log('')
 
-  const [database, storage, mail] = await Promise.all([
+  const [database, dataApi, storage, mail] = await Promise.all([
     checkDatabase(),
+    checkDataApi(),
     checkStorage(),
     checkMail(),
   ])
 
   report('Database', database)
+  report('Data API', dataApi)
   report('Storage', storage)
   report('Email', mail)
 
   // Skipped checks are not failures on their own — a missing optional setting
   // is already reported by the configuration pass above, with its real
   // severity. What fails the run is a value that is present and wrong.
-  const failed = [database, storage, mail].filter((outcome) => !outcome.ok && !outcome.skipped)
+  const failed = [database, dataApi, storage, mail].filter(
+    (outcome) => !outcome.ok && !outcome.skipped,
+  )
 
   if (failed.length === 0 && !hasFatal(configFindings)) {
     console.log('\nEverything this can check from here answers correctly.\n')

@@ -82,10 +82,11 @@ render broken rather than protected.
 Then:
 
 ```bash
-pnpm diagnose         # check those values before relying on them
-pnpm migrate          # create the schema — applies the migrations in src/migrations
-pnpm bootstrap        # create your settings + administrator account
-pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
+pnpm diagnose          # check those values before relying on them
+pnpm migrate           # create the schema — applies the migrations in src/migrations
+pnpm secure:db --apply # close the tables to Supabase's public API roles
+pnpm bootstrap         # create your settings + administrator account
+pnpm seed:policies     # optional: Terms/Privacy/Cookie skeletons
 pnpm dev
 ```
 
@@ -93,6 +94,20 @@ pnpm dev
 bucket exists and is public, and opens a connection to your mail server, so a
 mistyped password or a private bucket is a sentence now rather than a puzzle
 three steps later. Everything it reports names what to change.
+
+`pnpm secure:db` is the one step you cannot skip on Supabase. Supabase publishes
+every table in `public` over HTTP to the role behind the anon key — a value that
+ships in browsers — and Postgres creates tables with row-level security off, so
+a fresh install's member data is world-readable until this runs. It turns RLS on
+everywhere, revokes the grants, and installs an event trigger so tables added
+later stay closed. On plain Postgres there is nothing to close and it says so.
+
+While you are in Supabase, turn the Data API off as well — *Integrations → Data
+API → Enable Data API*. Nothing here calls `/rest/v1/`; uploads go to
+`/storage/v1/`, which is a different service and keeps working. Expect the
+Security Advisor's *Info* tab to keep listing every table as “RLS Enabled No
+Policy” afterwards. That is the intended state, not a leftover.
+See [ADR 0006](docs/adr/0006-the-database-is-closed-to-supabases-api-roles.md).
 
 - Member portal — <http://localhost:3050>
 - Admin panel — <http://localhost:3050/admin>
