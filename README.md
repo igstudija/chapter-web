@@ -115,6 +115,18 @@ See [ADR 0006](docs/adr/0006-the-database-is-closed-to-supabases-api-roles.md).
 Administration is the standard Payload admin panel. A user with the
 `member-admin` role can reach it; a plain member cannot.
 
+### Sharing special requests with another chapter
+
+Two installs can show each other's special requests. An admin on each side
+creates a connection, hands the other a key, and members see both chapters'
+requests in one list with a filter in the header.
+
+It sends the requester's contact details to the other chapter's server, so it
+needs an agreement between the two organisations before it needs any
+configuration.
+
+**→ [docs/special-request-exchange.md](docs/special-request-exchange.md)**
+
 ---
 
 ## Deploy
