@@ -52,7 +52,34 @@ is a documented seam with no promise attached. A bug report is answered
 according to its tier.
 _Avoid_: supported/unsupported as a binary
 
+### Between chapters
+
+**Chapter**:
+The organisation one install serves. One install, one chapter — the multi-site
+resolution this codebase once had is gone. Where a word is needed for the
+chapter the reader is logged into, it is *this chapter*.
+_Avoid_: site, organisation, tenant
+
+**Special request**:
+A Member's open ask, published to the directory so that someone can answer it.
+Displayed grouped by the person who wrote it, because reaching them is the whole
+point of reading one.
+_Avoid_: lead, enquiry, listing
+
+**Partner chapter**:
+Another install this one is linked to. Partner is a description of the link, not
+of any agreement between the organisations — a link may run in one direction
+only, and being someone's partner chapter does not make them yours.
+_Avoid_: peer, federated chapter, remote site
+
+**Connection key**:
+The single opaque string one chapter generates and hands to another, carrying
+the origin, the shared secret and the chapter's name together. Whoever holds it
+can read that chapter's shared special requests, so it is a credential and is
+treated like one.
+_Avoid_: token, API key, invite code
+
 ---
 
-The member-facing vocabulary — Top 40, power group, special request, chapter —
-is not captured here yet. Add terms as they are resolved, not in a batch.
+The rest of the member-facing vocabulary — Top 40, power group — is not captured
+here yet. Add terms as they are resolved, not in a batch.
