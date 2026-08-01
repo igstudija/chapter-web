@@ -56,17 +56,16 @@ const theirs = request(
 // The grid's search and pagination children read their own copy from context.
 const renderGrid = (requests: ReturnType<typeof request>[]) =>
   render(
-    React.createElement(
-      TranslationsProvider,
-      { messages: en as never },
-      React.createElement(SpecialRequestsGrid, {
+    React.createElement(TranslationsProvider, {
+      messages: en as never,
+      children: React.createElement(SpecialRequestsGrid, {
         requests,
         membershipByUserId: {},
         labels: LABELS,
         locale: 'en',
         ourChapterName: 'Our Chapter',
       }),
-    ),
+    }),
   )
 
 describe('the chapter filter', () => {

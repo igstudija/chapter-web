@@ -2,6 +2,8 @@ import 'dotenv/config'
 import { Client } from 'pg'
 import nodemailer from 'nodemailer'
 import { checkConfiguration, hasFatal } from '../lib/configCheck'
+import { fetchPartner } from '../lib/chapterExchange/fetchPartner'
+import { decodeConnectionKey } from '../lib/chapterExchange/connectionKey'
 
 /**
  * Diagnose — the network-touching half of configuration checking.
@@ -281,6 +283,77 @@ const checkMail = async (): Promise<Outcome> => {
   }
 }
 
+/**
+ * The chapters this install is linked to.
+ *
+ * A partner that stops answering is dropped from the members list in silence
+ * (ADR 0007), which makes this the only place anyone finds out. Read straight
+ * from Postgres rather than through Payload: this script never boots the app.
+ */
+const checkChapterLinks = async (): Promise<Outcome> => {
+  const url = process.env.POSTGRESS_DATABASE_URL
+  if (!url) return { ok: true, detail: 'no database configured', skipped: true }
+
+  const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } })
+
+  try {
+    await client.connect()
+
+    const exists = await client.query("SELECT to_regclass('public.chapter_connections') AS t")
+    if (!exists.rows[0]?.t) {
+      return { ok: true, detail: 'not set up on this install', skipped: true }
+    }
+
+    const { rows } = await client.query(
+      'SELECT id, name, their_key, paused FROM chapter_connections ORDER BY name',
+    )
+    if (rows.length === 0) {
+      return { ok: true, detail: 'no chapters linked', skipped: true }
+    }
+
+    const lines: string[] = []
+    let failures = 0
+
+    for (const row of rows) {
+      if (row.paused) {
+        lines.push(`${row.name}: paused`)
+        continue
+      }
+      if (!row.their_key) {
+        // A one-way link is a supported shape, not a fault.
+        lines.push(`${row.name}: we share with them, we do not read them`)
+        continue
+      }
+      if (!decodeConnectionKey(row.their_key)) {
+        lines.push(`${row.name}: their key is not readable`)
+        failures += 1
+        continue
+      }
+
+      const answer = await fetchPartner({ name: row.name, theirKey: row.their_key })
+      if (answer) {
+        lines.push(`${row.name}: answered with ${answer.requests.length} request(s)`)
+      } else {
+        lines.push(`${row.name}: did not answer`)
+        failures += 1
+      }
+    }
+
+    return {
+      ok: failures === 0,
+      detail: `${rows.length} linked\n    ${lines.join('\n    ')}`,
+      fix: failures > 0 ? 'Ask the other chapter whether their install is up, or re-exchange keys.' : undefined,
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      detail: error instanceof Error ? error.message : 'could not be read',
+    }
+  } finally {
+    await client.end().catch(() => {})
+  }
+}
+
 const main = async (): Promise<void> => {
   console.log('\nChecking the infrastructure this install points at.\n')
 
@@ -290,22 +363,24 @@ const main = async (): Promise<void> => {
   }
   if (configFindings.length > 0) console.log('')
 
-  const [database, dataApi, storage, mail] = await Promise.all([
+  const [database, dataApi, storage, mail, chapterLinks] = await Promise.all([
     checkDatabase(),
     checkDataApi(),
     checkStorage(),
     checkMail(),
+    checkChapterLinks(),
   ])
 
   report('Database', database)
   report('Data API', dataApi)
   report('Storage', storage)
   report('Email', mail)
+  report('Chapter links', chapterLinks)
 
   // Skipped checks are not failures on their own — a missing optional setting
   // is already reported by the configuration pass above, with its real
   // severity. What fails the run is a value that is present and wrong.
-  const failed = [database, dataApi, storage, mail].filter(
+  const failed = [database, dataApi, storage, mail, chapterLinks].filter(
     (outcome) => !outcome.ok && !outcome.skipped,
   )
 
