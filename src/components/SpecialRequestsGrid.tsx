@@ -17,6 +17,9 @@ import { Pagination } from '@/components/Pagination'
 
 const PAGE_SIZE_OPTIONS = [21, 50, 100] as const
 
+/** The filter value meaning "do not narrow by chapter". */
+const ALL_CHAPTERS = '__all__'
+
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -66,8 +69,11 @@ interface SpecialRequestsGridProps {
     expand: string
     collapse: string
     allRequests: string
+    allChapters: string
   }
   locale: string
+  /** This chapter's own name, used to label our rows in the chapter filter. */
+  ourChapterName?: string
 }
 
 export function SpecialRequestsGrid({
@@ -75,18 +81,40 @@ export function SpecialRequestsGrid({
   membershipByUserId,
   labels,
   locale,
+  ourChapterName,
 }: SpecialRequestsGridProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [chapter, setChapter] = useState<string>(ALL_CHAPTERS)
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState<number>(PAGE_SIZE_OPTIONS[0])
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null)
   const dateLocale = locale === 'lv' ? 'lv-LV' : 'en-US'
 
+  // Rows that arrived over a link carry the chapter they came from; ours carry
+  // nothing, so they answer to this chapter's own name.
+  const chapterOf = (request: SpecialRequest) => request.chapterName || ourChapterName || ''
+
+  const chapters = useMemo(() => {
+    const names = new Set<string>()
+    for (const request of requests) {
+      const name = chapterOf(request)
+      if (name) names.add(name)
+    }
+    return [...names].sort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requests, ourChapterName])
+
+  const inChapter = useMemo(
+    () => (chapter === ALL_CHAPTERS ? requests : requests.filter((r) => chapterOf(r) === chapter)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [requests, chapter, ourChapterName],
+  )
+
   const filteredRequests = useMemo(() => {
-    if (!searchQuery.trim()) return requests
+    if (!searchQuery.trim()) return inChapter
 
     const query = searchQuery.toLowerCase().trim()
-    return requests.filter((request) => {
+    return inChapter.filter((request) => {
       const requester =
         request.requestedBy && typeof request.requestedBy === 'object' ? request.requestedBy : null
       const requesterName = requester ? `${requester.name} ${requester.surname}`.toLowerCase() : ''
@@ -102,18 +130,18 @@ export function SpecialRequestsGrid({
         request.registrationNumber?.toLowerCase().includes(query)
       )
     })
-  }, [requests, searchQuery, membershipByUserId])
+  }, [inChapter, searchQuery, membershipByUserId])
 
   // One entry per member: the starred (slide) request if any, otherwise the newest one.
   // Counts and expanded contents come from ALL requests, so a member matched by name
   // still shows their full total and expands to every request they have.
   const memberEntries = useMemo(
-    () => buildMemberEntries(filteredRequests, requests),
-    [filteredRequests, requests],
+    () => buildMemberEntries(filteredRequests, inChapter),
+    [filteredRequests, inChapter],
   )
   const totalMemberCount = useMemo(
-    () => buildMemberEntries(requests, requests).length,
-    [requests],
+    () => buildMemberEntries(inChapter, inChapter).length,
+    [inChapter],
   )
 
   const totalPages = Math.ceil(memberEntries.length / itemsPerPage)
@@ -155,6 +183,46 @@ export function SpecialRequestsGrid({
         sticky
         className="mb-5"
       />
+
+      {/* Only worth showing once this install is actually linked to somewhere.
+          One chapter means one option, which is not a choice. */}
+      {chapters.length > 1 && (
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setChapter(ALL_CHAPTERS)
+              setCurrentPage(1)
+            }}
+            aria-pressed={chapter === ALL_CHAPTERS}
+            className={
+              chapter === ALL_CHAPTERS
+                ? 'btn btn-primary px-3 py-1.5 text-sm'
+                : 'btn px-3 py-1.5 text-sm'
+            }
+          >
+            {labels.allChapters}
+          </button>
+          {chapters.map((name) => (
+            <button
+              key={name}
+              type="button"
+              onClick={() => {
+                setChapter(name)
+                setCurrentPage(1)
+              }}
+              aria-pressed={chapter === name}
+              className={
+                chapter === name
+                  ? 'btn btn-primary px-3 py-1.5 text-sm'
+                  : 'btn px-3 py-1.5 text-sm'
+              }
+            >
+              {name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {paginatedEntries.length > 0 ? (
         <>
@@ -225,6 +293,14 @@ export function SpecialRequestsGrid({
                           <p className="mt-0.5 truncate text-xs text-ink-soft dark:text-neutral-400">
                             {requesterMembership.company}
                           </p>
+                        )}
+
+                        {/* Only on rows from elsewhere. Marking our own would
+                            put a label on every card and tell nobody anything. */}
+                        {entry.displayRequest.chapterName && (
+                          <span className="mt-1 inline-block rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] text-ink-soft dark:bg-neutral-800 dark:text-neutral-400">
+                            {entry.displayRequest.chapterName}
+                          </span>
                         )}
 
                         <div className="mt-2 -ml-1.5 flex gap-0.5">

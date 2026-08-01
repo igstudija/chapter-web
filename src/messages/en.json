@@ -502,7 +502,8 @@
     "updated": "Updated",
     "expand": "Expand all requests",
     "collapse": "Collapse",
-    "allRequests": "All requests from this member"
+    "allRequests": "All requests from this member",
+    "allChapters": "All chapters"
   },
   "top40Page": {
     "title": "Member Top40 Contact Database",

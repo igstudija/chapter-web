@@ -18,6 +18,8 @@ export interface GroupableRequest {
   updatedAt: string
   showOnSlide?: boolean | null
   requestedBy?: GroupableRequester | string | number | null
+  /** Absent on our own rows; set on anything that arrived from a linked chapter. */
+  chapterName?: string
 }
 
 export interface MemberEntry<T extends GroupableRequest = GroupableRequest> {
