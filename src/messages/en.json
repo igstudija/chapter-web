@@ -406,7 +406,10 @@
     "regNumberPlaceholder": "Company registration number (if applicable)",
     "regNumberHint": "(Enter if the request contains a company name)",
     "confirmDelete": "Are you sure you want to delete this request?",
-    "confirmDeleteMessage": "Are you sure you want to delete this special request? This action cannot be undone."
+    "confirmDeleteMessage": "Are you sure you want to delete this special request? This action cannot be undone.",
+    "chapterOnly": "Available only to members of our chapter",
+    "chapterOnlyNamed": "Available only to {chapter} members",
+    "chapterOnlyHint": "Leave this unticked and the request is offered to the chapters we are linked to, along with your name, company, phone and email."
   },
   "top20": {
     "addTitle": "Add Top20 Entry",

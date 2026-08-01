@@ -509,9 +509,9 @@ export interface SpecialRequest {
    */
   registrationNumber?: string | null;
   /**
-   * Show this request publicly to other members
+   * Keep this request inside our own chapter. Unticked, it is offered to the chapters we are linked to, along with your name, company, phone and email.
    */
-  isPublic?: boolean | null;
+  chapterOnly?: boolean | null;
   requestedBy: number | User;
   status?: ('open' | 'in-progress' | 'fulfilled' | 'closed') | null;
   /**
@@ -2204,7 +2204,7 @@ export interface BlogSelect<T extends boolean = true> {
 export interface SpecialRequestsSelect<T extends boolean = true> {
   request?: T;
   registrationNumber?: T;
-  isPublic?: T;
+  chapterOnly?: T;
   requestedBy?: T;
   status?: T;
   sortOrder?: T;

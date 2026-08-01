@@ -406,7 +406,10 @@
     "regNumberPlaceholder": "Uzņēmuma reģistrācijas numurs (ja piemērojams)",
     "regNumberHint": "(Ievadiet, ja prasījumā ir uzņēmuma nosaukums)",
     "confirmDelete": "Vai tiešām vēlaties dzēst šo prasījumu?",
-    "confirmDeleteMessage": "Vai tiešām vēlaties dzēst šo specifisko prasījumu? Šo darbību nevar atsaukt."
+    "confirmDeleteMessage": "Vai tiešām vēlaties dzēst šo specifisko prasījumu? Šo darbību nevar atsaukt.",
+    "chapterOnly": "Pieejams tikai mūsu chapter biedriem",
+    "chapterOnlyNamed": "Pieejams tikai {chapter} biedriem",
+    "chapterOnlyHint": "Ja ķeksis nav ielikts, pieprasījums tiek piedāvāts arī tiem chapteriem, ar kuriem esam saistīti — kopā ar tavu vārdu, uzņēmumu, telefonu un e-pastu."
   },
   "top20": {
     "addTitle": "Pievienot Top20 ierakstu",

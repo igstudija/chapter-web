@@ -5,7 +5,7 @@ export const SpecialRequests: CollectionConfig = {
   slug: 'special-requests',
   admin: {
     useAsTitle: 'request',
-    defaultColumns: ['request', 'isPublic', 'createdAt'],
+    defaultColumns: ['request', 'chapterOnly', 'createdAt'],
     group: 'Internal',
     components: {
       beforeListTable: ['@/components/admin/ExportToExcelButton'],
@@ -34,11 +34,13 @@ export const SpecialRequests: CollectionConfig = {
       },
     },
     {
-      name: 'isPublic',
+      name: 'chapterOnly',
       type: 'checkbox',
-      defaultValue: true,
+      defaultValue: false,
+      index: true,
       admin: {
-        description: 'Show this request publicly to other members',
+        description:
+          'Keep this request inside our own chapter. Unticked, it is offered to the chapters we are linked to, along with your name, company, phone and email.',
       },
     },
     {

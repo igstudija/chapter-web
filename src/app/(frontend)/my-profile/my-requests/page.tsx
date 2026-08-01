@@ -47,6 +47,7 @@ export default async function MyRequestsPage() {
       enableSuccessStories={settings.enableSuccessStories !== false}
       isPowerGroupLead={membership?.powerGroupLead || false}
       siteId={settings.id}
+      chapterName={settings.siteName || undefined}
       specialRequests={specialRequests}
     />
   )

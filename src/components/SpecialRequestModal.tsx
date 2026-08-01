@@ -12,17 +12,27 @@ interface SpecialRequestModalProps {
     id: string | number
     request: string
     registrationNumber?: string | null
+    chapterOnly?: boolean | null
   } | null
   siteId?: string | number
+  /** This chapter's name, so the checkbox can say who the request stays with. */
+  chapterName?: string
 }
 
-export function SpecialRequestModal({ isOpen, onClose, editData, siteId }: SpecialRequestModalProps) {
+export function SpecialRequestModal({
+  isOpen,
+  onClose,
+  editData,
+  siteId,
+  chapterName,
+}: SpecialRequestModalProps) {
   const router = useRouter()
   const { t } = useTranslations()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [request, setRequest] = useState('')
   const [registrationNumber, setRegistrationNumber] = useState('')
+  const [chapterOnly, setChapterOnly] = useState(false)
 
   const isEditMode = !!editData
 
@@ -30,9 +40,11 @@ export function SpecialRequestModal({ isOpen, onClose, editData, siteId }: Speci
     if (editData) {
       setRequest(editData.request)
       setRegistrationNumber(editData.registrationNumber || '')
+      setChapterOnly(Boolean(editData.chapterOnly))
     } else {
       setRequest('')
       setRegistrationNumber('')
+      setChapterOnly(false)
     }
   }, [editData])
 
@@ -50,7 +62,7 @@ export function SpecialRequestModal({ isOpen, onClose, editData, siteId }: Speci
       const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request, registrationNumber, siteId }),
+        body: JSON.stringify({ request, registrationNumber, chapterOnly, siteId }),
       })
 
       if (!res.ok) {
@@ -132,6 +144,30 @@ export function SpecialRequestModal({ isOpen, onClose, editData, siteId }: Speci
             />
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
               {t('specialRequest', 'regNumberHint')}
+            </p>
+          </div>
+
+          {/* Unticked, this request is offered to the chapters this install is
+              linked to, along with the contact details that make it actionable.
+              The member decides here, while writing it. */}
+          <div>
+            <label htmlFor="chapterOnly" className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                id="chapterOnly"
+                name="chapterOnly"
+                checked={chapterOnly}
+                onChange={(e) => setChapterOnly(e.target.checked)}
+                className="mt-0.5"
+              />
+              <span className="text-sm text-brand dark:text-brand">
+                {chapterName
+                  ? t('specialRequest', 'chapterOnlyNamed').replace('{chapter}', chapterName)
+                  : t('specialRequest', 'chapterOnly')}
+              </span>
+            </label>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 ml-6">
+              {t('specialRequest', 'chapterOnlyHint')}
             </p>
           </div>
 
