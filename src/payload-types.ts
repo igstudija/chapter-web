@@ -74,6 +74,7 @@ export interface Config {
     events: Event;
     blog: Blog;
     'special-requests': SpecialRequest;
+    'chapter-connections': ChapterConnection;
     top40: Top40;
     top20: Top20;
     'success-stories': SuccessStory;
@@ -104,6 +105,7 @@ export interface Config {
     events: EventsSelect<false> | EventsSelect<true>;
     blog: BlogSelect<false> | BlogSelect<true>;
     'special-requests': SpecialRequestsSelect<false> | SpecialRequestsSelect<true>;
+    'chapter-connections': ChapterConnectionsSelect<false> | ChapterConnectionsSelect<true>;
     top40: Top40Select<false> | Top40Select<true>;
     top20: Top20Select<false> | Top20Select<true>;
     'success-stories': SuccessStoriesSelect<false> | SuccessStoriesSelect<true>;
@@ -520,6 +522,37 @@ export interface SpecialRequest {
    * Feature this request on the slideshow slide (one per member).
    */
   showOnSlide?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Chapters this install exchanges special requests with. Give a partner the key generated here, and paste theirs into the field below.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chapter-connections".
+ */
+export interface ChapterConnection {
+  id: number;
+  /**
+   * What this chapter is called in our list and in the filter. Ours to choose — a partner cannot rename itself here.
+   */
+  name: string;
+  /**
+   * Generated once, when the record is created.
+   */
+  ourSecret?: string | null;
+  /**
+   * The key the other chapter generated and sent you. Leave empty to share with them without reading them.
+   */
+  theirKey?: string | null;
+  /**
+   * Stops serving this partner and stops reading them, without discarding the keys.
+   */
+  paused?: boolean | null;
+  /**
+   * The last time we read this partner successfully. An unreachable partner is dropped silently from the members list, so this is the only place a failure is visible.
+   */
+  lastReachedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1879,6 +1912,10 @@ export interface PayloadLockedDocument {
         value: number | SpecialRequest;
       } | null)
     | ({
+        relationTo: 'chapter-connections';
+        value: number | ChapterConnection;
+      } | null)
+    | ({
         relationTo: 'top40';
         value: number | Top40;
       } | null)
@@ -2172,6 +2209,19 @@ export interface SpecialRequestsSelect<T extends boolean = true> {
   status?: T;
   sortOrder?: T;
   showOnSlide?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chapter-connections_select".
+ */
+export interface ChapterConnectionsSelect<T extends boolean = true> {
+  name?: T;
+  ourSecret?: T;
+  theirKey?: T;
+  paused?: T;
+  lastReachedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -19,6 +19,17 @@ export const SLIDE_HEIGHT = 1080
 export const TIME_STRIP_HEIGHT = 8
 /** Height of the member slide's request bar; mirrored from MemberSlide. */
 const REQUEST_BAR_HEIGHT = 60
+/**
+ * The box the control pill occupies, centred along the foot of the slide.
+ *
+ * Kept tight to the pill rather than spanning the foot of the frame: whatever
+ * this box covers is unreachable while the controls are up, and the logo wall
+ * runs its tiles all the way to the bottom edge — a full-width band took the
+ * last row with it, which is the power group that happens to be ordered last.
+ * Wider than the pill's ~520px so a longer control cluster still fits.
+ */
+const CONTROLS_BOX_WIDTH = 800
+const CONTROLS_BOX_HEIGHT = 104
 
 export type AttendanceFilter = 'all' | 'onsite' | 'online'
 
@@ -151,6 +162,16 @@ function ControlCluster({ props }: { props: ChromeProps }) {
  * them, by moving the pointer or resting it low, which is how every video
  * player has behaved for a decade and keeps a projected slide free of
  * furniture.
+ *
+ * Two `foreignObject`s rather than one, because SVG hit-testing is not CSS box
+ * hit-testing: `pointer-events` on a `foreignObject` decides whether the browser
+ * descends into its subtree at all, so `pointer-events: auto` on a child cannot
+ * win back what the parent turned off, and a full-bleed `foreignObject` left at
+ * the default swallows every click aimed at the slide underneath it. The logo
+ * wall's tiles are buttons that jump to a member, and one overlay covering the
+ * frame made every one of them dead. So the informational layer is inert end to
+ * end, and the controls get their own box, no bigger than the pill itself and
+ * only live once that pill is on screen.
  */
 export function SlideshowChrome(props: ChromeProps) {
   const {
@@ -173,12 +194,16 @@ export function SlideshowChrome(props: ChromeProps) {
     'pointer-events-auto flex items-center gap-3 rounded-full bg-black/55 px-6 py-3 text-white backdrop-blur-md ring-1 ring-white/15'
 
   return (
-    <foreignObject x="0" y="0" width={SLIDE_WIDTH} height={SLIDE_HEIGHT}>
-      <div
-        className="pointer-events-none relative h-full w-full"
-        onMouseMove={onPointerActivity}
+    <>
+      <foreignObject
+        x="0"
+        y="0"
+        width={SLIDE_WIDTH}
+        height={SLIDE_HEIGHT}
+        style={{ pointerEvents: 'none' }}
       >
-        {/*
+        <div className="pointer-events-none relative h-full w-full">
+          {/*
           Who is up next is the one thing the room benefits from seeing without
           asking, so it is the only permanent badge. The countdown is already
           the strip along the bottom edge, and the slide number is a presenter's
@@ -188,52 +213,64 @@ export function SlideshowChrome(props: ChromeProps) {
           request bar along the bottom and the logo owns the top left; there it
           is media or empty, and a dark glass pill stays legible over a photo.
         */}
-        {nextName && (
-          <div
-            className="absolute right-8"
-            style={
-              // Same inset from the corner as the top position; it only steps up
-              // when the request bar is actually occupying the foot of the slide.
-              nextPosition === 'bottom'
-                ? { bottom: requestBarVisible ? 32 + REQUEST_BAR_HEIGHT : 32 }
-                : { top: 32 }
-            }
-          >
-            <div className={badge} style={{ fontSize: 28 }}>
-              <span className="opacity-60">{NEXT_GLYPH}</span>
-              <span className="font-medium">{nextName}</span>
+          {nextName && (
+            <div
+              className="absolute right-8"
+              style={
+                // Same inset from the corner as the top position; it only steps up
+                // when the request bar is actually occupying the foot of the slide.
+                nextPosition === 'bottom'
+                  ? { bottom: requestBarVisible ? 32 + REQUEST_BAR_HEIGHT : 32 }
+                  : { top: 32 }
+              }
+            >
+              <div className={badge} style={{ fontSize: 28 }}>
+                <span className="opacity-60">{NEXT_GLYPH}</span>
+                <span className="font-medium">{nextName}</span>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-
-        {/*
+          {/*
           Time runs along the top edge, not the bottom. Overlaid it costs the
           slide no height at all, and the foot of a member slide is already
           spoken for by the request bar — a red strip on a red bar is no strip.
         */}
-        <div
-          className="absolute inset-x-0 top-0"
-          style={{ height: TIME_STRIP_HEIGHT, backgroundColor: 'rgba(0,0,0,0.35)' }}
-        >
-          {showTimer && (
-            <div
-              className="h-full"
-              style={{
-                width: progressStarted ? '100%' : '0%',
-                background: 'linear-gradient(90deg, #ef4444, #b91c1c)',
-                transition: progressStarted ? `width ${slideDuration}s linear` : 'none',
-              }}
-            />
-          )}
+          <div
+            className="absolute inset-x-0 top-0"
+            style={{ height: TIME_STRIP_HEIGHT, backgroundColor: 'rgba(0,0,0,0.35)' }}
+          >
+            {showTimer && (
+              <div
+                className="h-full"
+                style={{
+                  width: progressStarted ? '100%' : '0%',
+                  background: 'linear-gradient(90deg, #ef4444, #b91c1c)',
+                  transition: progressStarted ? `width ${slideDuration}s linear` : 'none',
+                }}
+              />
+            )}
+          </div>
         </div>
+      </foreignObject>
 
-        {/* Controls, revealed on pointer activity or when the pointer rests low. */}
+      {/*
+      Controls, revealed on pointer activity or when the pointer rests on them.
+      Inert while hidden, so an invisible pill parked over the foot of the slide
+      does not eat clicks aimed at whatever the slide draws underneath it.
+    */}
+      <foreignObject
+        x={(SLIDE_WIDTH - CONTROLS_BOX_WIDTH) / 2}
+        y={SLIDE_HEIGHT - CONTROLS_BOX_HEIGHT}
+        width={CONTROLS_BOX_WIDTH}
+        height={CONTROLS_BOX_HEIGHT}
+        style={{ pointerEvents: revealed ? 'auto' : 'none' }}
+      >
         <div
-          className="pointer-events-auto absolute inset-x-0 bottom-0 flex flex-col items-center justify-end"
-          style={{ height: 190 }}
+          className="flex h-full w-full flex-col items-center justify-end"
           onMouseEnter={() => setStripHovered(true)}
           onMouseLeave={() => setStripHovered(false)}
+          onMouseMove={onPointerActivity}
         >
           <div
             className="mb-8 flex items-center gap-5 rounded-full bg-black/55 px-5 py-3 backdrop-blur-md ring-1 ring-white/15"
@@ -246,17 +283,16 @@ export function SlideshowChrome(props: ChromeProps) {
           >
             <ControlCluster props={props} />
             {/* Position rides along with the controls — it is what a presenter
-                reaching for the buttons wants to know. The countdown is the
-                strip below, and the section name is announced by its own slide. */}
+              reaching for the buttons wants to know. The countdown is the
+              strip below, and the section name is announced by its own slide. */}
             <span className="pr-3 text-white/70" style={{ fontSize: 24 }}>
               <span className="font-semibold text-white">{slideNumber}</span>
               <span className="mx-1 opacity-50">/</span>
               <span>{totalSlides}</span>
             </span>
           </div>
-
         </div>
-      </div>
-    </foreignObject>
+      </foreignObject>
+    </>
   )
 }

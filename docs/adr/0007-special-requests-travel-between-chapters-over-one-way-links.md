@@ -46,11 +46,26 @@ identical checkbox would have been a trap built on purpose — and `isPublic` in
 this codebase already means something else everywhere it is honoured
 (`Events`, `SuccessStories`, the homepage: *visible to a logged-out visitor*).
 
-**Requests that already exist when this ships become shareable.** The default is
-uniform: no tick, therefore shared. This is the only upgrade in the project that
-moves personal data to another server by itself, so it is called out in the
-release notes and the docs give an operator a step to run beforehand if their
-members would not expect it.
+**Requests that already exist when this ships keep whatever they said.** The
+rule was going to be uniform — no tick, therefore shared — on the belief that
+`isPublic` held nothing worth carrying across. It does. In this install 109 of
+219 requests have it set to `false`, spread over 35 members.
+
+Most of those look like an older system's default rather than a decision: in
+the earlier of the two eras in the data, `false` outnumbers `true` 96 to 8,
+while in the later era, under the current default of `true`, it is 13 to 102.
+The thirteen are members who went and unticked a box labelled *"Show this
+request publicly to other members"*. Nothing in the row distinguishes the two.
+
+So existing rows migrate as `chapterOnly = NOT isPublic`. Reading the old field
+as a decision costs reach — ninety-odd requests stay home that their authors may
+not have minded sharing. Reading it as noise costs consent, for thirteen people
+who said no in the only way the interface offered. Those are not comparable, and
+the cheap side is the one to be wrong on.
+
+An upgrade still moves personal data to another server the first time a link is
+made, so it is called out in the release notes, and the docs give an operator a
+step to run beforehand.
 
 ## Links are one-way, and each one is separate
 
