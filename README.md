@@ -78,7 +78,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Fill in `.env`. The four that matter to start:
+Fill in `.env`. The five that matter to start:
 
 | Variable | Where to get it |
 |---|---|
@@ -86,6 +86,7 @@ Fill in `.env`. The four that matter to start:
 | `POSTGRESS_DATABASE_URL` | Supabase → Project Settings → Database → Connection string (URI) |
 | `SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role` |
+| `SUPABASE_STORAGE_BUCKET` | the bucket you make below — `media` unless you rename it |
 
 In Supabase, create a **public** storage bucket named `media`. It must be public:
 files are served directly from Supabase, so a private bucket makes every image
@@ -97,15 +98,31 @@ Then:
 pnpm diagnose          # check those values before relying on them
 pnpm migrate           # create the schema — applies the migrations in src/migrations
 pnpm secure:db --apply # close the tables to Supabase's public API roles
-pnpm bootstrap         # create your settings + administrator account
-pnpm seed:policies     # optional: Terms/Privacy/Cookie skeletons
+pnpm bootstrap         # your settings + administrator account (it asks three questions)
+pnpm seed:policies     # fill the three policy pages the footer links to
 pnpm dev
 ```
+
+> **Run these in this order, and do not start `pnpm dev` before `pnpm migrate`.**
+> In development Payload writes the schema itself rather than applying the
+> migrations, and records it as a migration named `dev`. From then on
+> `pnpm migrate` believes the schema has drifted and stops to ask whether to
+> reset the database — with nothing at the keyboard, it waits forever and prints
+> nothing at all. `pnpm diagnose` reports a database in that state, but the
+> cheaper move is not to get there.
 
 `pnpm diagnose` is first on purpose. It connects to the database, checks the
 bucket exists and is public, and opens a connection to your mail server, so a
 mistyped password or a private bucket is a sentence now rather than a puzzle
-three steps later. Everything it reports names what to change.
+three steps later. Everything it reports names what to change. Before
+`pnpm migrate` it reports the missing schema as expected rather than as a
+failure, so the first command in the list does not exit with an error.
+
+`pnpm seed:policies` is listed last but is not decoration. The footer links to
+Terms, Privacy and Cookie policy on every page, and without templates those
+pages render a heading over nothing — a blank privacy policy reads as a claim
+that nothing is collected, which is worse than no page at all. The skeletons it
+writes still have to be edited before launch; they say so in brackets.
 
 `pnpm secure:db` is the one step you cannot skip on Supabase. Supabase publishes
 every table in `public` over HTTP to the role behind the anon key — a value that
@@ -158,17 +175,21 @@ normal server allows. The guide covers that and the rest of the sharp edges.
 
 ### Docker
 
-```bash
-docker compose up -d --build
-```
-
-`docker-compose.yml` reads `.env`. Run the migration and setup once against your
-production database:
+`docker-compose.yml` reads `.env`. Prepare the database first, in the same order
+as every other path — the app has nothing to serve until the schema exists, and
+the window between creating tables and closing them is not one to spend with the
+site already up:
 
 ```bash
 docker compose run --rm migrate
 docker compose run --rm secure-db
 docker compose run --rm setup
+```
+
+Then start it:
+
+```bash
+docker compose up -d --build
 ```
 
 These are one-off containers, not `exec` into the running app: the runtime image

@@ -112,8 +112,21 @@ pnpm diagnose          # checks the values above actually work
 pnpm migrate           # creates the schema — applies the migrations in src/migrations
 pnpm secure:db --apply # closes the tables to Supabase's public API
 pnpm bootstrap         # creates your settings + administrator account
-pnpm seed:policies     # optional: Terms/Privacy/Cookie skeletons
+pnpm seed:policies     # fills the three policy pages the footer links to
 ```
+
+**Do not run `pnpm dev` before `pnpm migrate`.** In development Payload writes
+the schema itself instead of applying the migrations, and records it as a
+migration named `dev`. After that, `pnpm migrate` decides the schema has drifted
+and stops to ask whether to reset the database — with nothing at the keyboard it
+waits forever, printing nothing. Recovering means applying migration SQL by
+hand. Running the commands in the order above avoids it entirely.
+
+`pnpm seed:policies` is not optional in the way its name suggests. The footer
+links to Terms, Privacy and Cookie policy from every page, and with no templates
+those pages render a heading over an empty body. A blank privacy policy on a
+site collecting members' contact details is worse than no page at all. The
+skeletons need editing before launch, and say so in brackets.
 
 Run `pnpm diagnose` before the rest. Three of this page's most common failures —
 the wrong connection string, the anon key pasted where the `service_role` key
@@ -195,8 +208,11 @@ EMAIL_FROM=noreply@your-domain.org
 EMAIL_FROM_NAME=Your Organisation
 ```
 
-Note the **6543** — the transaction pooler, not the 5432 you used for
-migrations. That is the one difference between this list and your local `.env`.
+Two values differ from your local `.env`, and both matter. The port is **6543**,
+the transaction pooler, not the 5432 you used for migrations. And
+`NEXT_PUBLIC_SERVER_URL` is your domain here, where it was `localhost:3050`
+locally — it is compiled into the build, so getting it wrong means invitation
+links pointing at a laptop and a rebuild to fix it.
 
 Email is not optional in practice: invitations, password resets and
 notifications all go through SMTP, and an install without it cannot onboard a

@@ -99,15 +99,31 @@ const checkDatabase = async (): Promise<Outcome> => {
   }
 
   try {
-    const { rows } = await client.query<{ count: string }>(
-      'select count(*)::text as count from payload_migrations',
-    )
-    return { ok: true, detail: `reachable, schema applied (${rows[0].count} migrations recorded)` }
+    const { rows } = await client.query<{ name: string }>('select name from payload_migrations')
+
+    // Payload records a push as a migration named `dev`. Once one is there,
+    // `pnpm migrate` decides the schema has drifted and opens an interactive
+    // "reset?" prompt — which, with no terminal, waits forever and prints
+    // nothing. Saying so here is the difference between a known state and an
+    // afternoon spent on a command that looks hung.
+    if (rows.some((row) => row.name === 'dev')) {
+      return {
+        ok: true,
+        detail: `reachable, schema applied (${rows.length} recorded, one of them a dev push)`,
+        fix: 'A dev push has touched this database. `pnpm migrate` will stop to ask whether to reset it, and hang if nothing can answer. Land schema changes by restarting the dev server, or apply a migration SQL by hand.',
+      }
+    }
+
+    return { ok: true, detail: `reachable, schema applied (${rows.length} migrations recorded)` }
   } catch {
+    // Not a failure. This is what a correct install looks like at the moment
+    // diagnose is meant to be run — before the schema exists, so that a wrong
+    // password or a private bucket is found now rather than three steps later.
     return {
-      ok: false,
-      detail: 'reachable, but the schema has not been created',
-      fix: 'Run: pnpm migrate',
+      ok: true,
+      skipped: true,
+      detail: 'reachable, schema not created yet',
+      fix: 'Expected before `pnpm migrate` — run that next. Unexpected afterwards.',
     }
   } finally {
     await client.end()
