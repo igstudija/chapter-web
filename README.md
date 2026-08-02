@@ -75,6 +75,30 @@ nothing in front of the app at all.
 git clone https://github.com/igstudija/chapter-web.git
 cd chapter-web
 pnpm install
+pnpm wizard
+```
+
+`pnpm wizard` asks for one setting at a time, checks each answer against the
+thing it describes before moving on, writes `.env`, and then runs the remaining
+steps in the order they have to happen in. A wrong password is one sentence at
+the prompt rather than a puzzle three commands later.
+
+It still needs the accounts below — it can check a Supabase project and a
+storage bucket, not create them.
+
+> **Run it yourself rather than having a coding agent run it.** The answers are
+> credentials, and an agent's transcript is the last place they belong. The
+> wizard never prints a secret back: a value already in `.env` is offered as
+> `[kept]`, and what you type is not echoed.
+
+It needs a terminal, and says so instead of hanging if it does not have one. For
+an unattended install — or to see exactly what it does — here is the same thing
+by hand.
+
+<details>
+<summary><strong>The same install, step by step</strong></summary>
+
+```bash
 cp .env.example .env
 ```
 
@@ -123,6 +147,8 @@ Terms, Privacy and Cookie policy on every page, and without templates those
 pages render a heading over nothing — a blank privacy policy reads as a claim
 that nothing is collected, which is worse than no page at all. The skeletons it
 writes still have to be edited before launch; they say so in brackets.
+
+</details>
 
 `pnpm secure:db` is the one step you cannot skip on Supabase. Supabase publishes
 every table in `public` over HTTP to the role behind the anon key — a value that

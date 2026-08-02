@@ -31,6 +31,7 @@
     "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create",
     "typecheck": "tsc --noEmit",
     "diagnose": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/diagnose.ts",
+    "wizard": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/wizard.ts",
     "secure:db": "cross-env NODE_OPTIONS=--no-deprecation tsx src/scripts/secureDatabase.ts"
   },
   "dependencies": {

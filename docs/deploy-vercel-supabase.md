@@ -105,7 +105,8 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3050
 PG_POOL_MAX=5
 ```
 
-Then:
+Then either run `pnpm wizard`, which asks for each of those values, checks it
+before moving on and runs everything below in order — or do it by hand:
 
 ```bash
 pnpm diagnose          # checks the values above actually work
