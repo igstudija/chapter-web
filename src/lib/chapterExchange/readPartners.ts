@@ -1,5 +1,6 @@
 import { fetchPartner } from './fetchPartner'
 import type { ExchangeRequest, ExchangeResponse } from './exchangeResponse'
+import type { ChapterConnection } from './connection'
 
 /**
  * Reading every linked chapter for one page render.
@@ -13,25 +14,18 @@ import type { ExchangeRequest, ExchangeResponse } from './exchangeResponse'
 /** How long a successful answer is reused. Failures are never held. */
 export const PARTNER_CACHE_MS = 15 * 60 * 1000
 
-export interface PartnerConnectionRecord {
-  id: string | number
-  name: string
-  theirKey?: string | null
-  paused?: boolean | null
-}
-
 export interface PartnerRows {
   chapterName: string
   requests: ExchangeRequest[]
 }
 
 export interface ReadAllPartnersArgs {
-  connections: PartnerConnectionRecord[]
+  connections: ChapterConnection[]
   /** Injectable so the reading side can be exercised against a fake partner. */
-  fetchOne?: (connection: PartnerConnectionRecord) => Promise<ExchangeResponse | null>
+  fetchOne?: (connection: ChapterConnection) => Promise<ExchangeResponse | null>
   now?: () => number
-  /** Called for each partner actually reached, not for cache hits. */
-  onReached?: (id: string | number) => void
+  /** Awaited for each partner actually reached, not for cache hits. */
+  onReached?: (id: string | number) => void | Promise<void>
 }
 
 interface CacheEntry {
@@ -49,7 +43,13 @@ interface CacheEntry {
  */
 const cache = new Map<string, CacheEntry>()
 
-/** Empty the cache. For tests, and for anything that changes a connection. */
+/**
+ * Empty the cache.
+ *
+ * A test seam. It cannot serve as invalidation on connection edits: the cache
+ * lives in one process and the admin write usually happens in another, so a
+ * change reaches the readers when the entry expires, not when it is saved.
+ */
 export const clearPartnerCache = (): void => cache.clear()
 
 export const readAllPartners = async ({
@@ -75,7 +75,9 @@ export const readAllPartners = async ({
       if (!answer) return null
 
       cache.set(key, { at: now(), value: answer })
-      onReached?.(connection.id)
+      // Awaited, not fired off: a render can end before a floating promise
+      // lands, and this is the only signal a failing link ever produces.
+      await onReached?.(connection.id)
       return { chapterName: connection.name, requests: answer.requests }
     }),
   )

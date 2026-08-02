@@ -3,6 +3,7 @@ import { sql } from '@payloadcms/db-postgres'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import config from '@/payload.config'
 import { serveExchange } from '@/lib/chapterExchange/serveExchange'
+import { decodeConnectionKey } from '@/lib/chapterExchange/connectionKey'
 
 /**
  * What a linked chapter can and cannot read from this install.
@@ -84,6 +85,25 @@ describeOnDisposable('serving a linked chapter', () => {
 
   const serve = (authorization: string | null) =>
     serveExchange({ payload, authorization, origin: 'https://ours.example.org' })
+
+  // The codec and the reader were both tested, and neither noticed that nothing
+  // ever called the codec: the admin generated a bare secret, which the other
+  // chapter's field then refused as "not a connection key". The handshake was
+  // impossible while every unit passed. This is the wiring, tested.
+  it('hands out a key the other chapter can actually paste', async () => {
+    const connection = await payload.findByID({
+      collection: 'chapter-connections',
+      id: connectionId,
+      overrideAccess: true,
+    })
+
+    const decoded = decodeConnectionKey(connection.ourKey ?? '')
+
+    expect(decoded).not.toBeNull()
+    expect(decoded!.secret).toBe(secret)
+    expect(decoded!.origin).toBe(process.env.NEXT_PUBLIC_SERVER_URL?.replace(/\/+$/, ''))
+    expect(decoded!.name).toBeTruthy()
+  })
 
   it('serves a partner holding a valid key', async () => {
     const { status, body } = await serve(`Bearer ${secret}`)

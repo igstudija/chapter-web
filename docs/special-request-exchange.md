@@ -16,9 +16,10 @@ account on theirs.
 ## Before you link anything
 
 A special request is only worth reading if you can reach the person who wrote
-it. So the exchange sends the requester's **name, company, phone number, email
-address and photo** to the other chapter's server, where they are shown to that
-chapter's members.
+it. So the exchange sends the requester's **name and surname, company, phone
+number, email address, profile photo and company logo** to the other chapter's
+server, where they are shown to that chapter's members. The request's
+registration number travels with it.
 
 That is a transfer of personal data from one organisation to another. Both sides
 are responsible for their own members' data, and neither can undo what the other
@@ -56,7 +57,9 @@ Open your connection record again and paste their key into **Their connection
 key**. If it does not look like a key, the field says so when you save — copy
 the whole string, including the `chx_` prefix.
 
-Save. The link is live. Their requests appear in your members' list within
+Save. **Their key points at** now shows the chapter and address the key
+carries — check that it is who you think it is before going further. The link is
+live. Their requests appear in your members' list within
 fifteen minutes; yours appear in theirs on their own schedule.
 
 ## The two directions are separate
@@ -103,10 +106,11 @@ Open the connection record.
   where re-linking costs another round of emails.
 - **Delete** ends the relationship. Their key stops working the moment the
   record is gone.
-- **Regenerating** replaces your key. Do this if the key was sent to the wrong
-  person, forwarded, or pasted somewhere public. The old key stops working
-  immediately, so tell the other chapter first — their side goes quiet until
-  they paste the new one.
+- **Regenerate key** — tick it and save. This replaces your connection key: do
+  it if the key was sent to the wrong person, forwarded, or pasted somewhere
+  public. The old one stops working immediately, so tell the other chapter first
+  — their side goes quiet until they paste the new one. The checkbox clears
+  itself, so it cannot be left on by accident.
 
 ## When a partner does not answer
 

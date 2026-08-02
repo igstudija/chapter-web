@@ -20,6 +20,14 @@ const PAGE_SIZE_OPTIONS = [21, 50, 100] as const
 /** The filter value meaning "do not narrow by chapter". */
 const ALL_CHAPTERS = '__all__'
 
+/**
+ * Which chapter a row belongs to. Rows that arrived over a link carry the
+ * chapter they came from; ours carry nothing, so they answer to this chapter's
+ * own name.
+ */
+const chapterOf = (request: GroupableRequest, ourChapterName?: string) =>
+  request.chapterName || ourChapterName || ''
+
 function WhatsAppIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
@@ -90,23 +98,20 @@ export function SpecialRequestsGrid({
   const [expandedMemberId, setExpandedMemberId] = useState<string | null>(null)
   const dateLocale = locale === 'lv' ? 'lv-LV' : 'en-US'
 
-  // Rows that arrived over a link carry the chapter they came from; ours carry
-  // nothing, so they answer to this chapter's own name.
-  const chapterOf = (request: SpecialRequest) => request.chapterName || ourChapterName || ''
-
   const chapters = useMemo(() => {
     const names = new Set<string>()
     for (const request of requests) {
-      const name = chapterOf(request)
+      const name = chapterOf(request, ourChapterName)
       if (name) names.add(name)
     }
     return [...names].sort()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [requests, ourChapterName])
 
   const inChapter = useMemo(
-    () => (chapter === ALL_CHAPTERS ? requests : requests.filter((r) => chapterOf(r) === chapter)),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    () =>
+      chapter === ALL_CHAPTERS
+        ? requests
+        : requests.filter((r) => chapterOf(r, ourChapterName) === chapter),
     [requests, chapter, ourChapterName],
   )
 

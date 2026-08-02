@@ -119,8 +119,8 @@ describe('readAllPartners', () => {
     const reached: (string | number)[] = []
     const fetchOne = async (connection: { name: string }) => answer(connection.name, 'x')
 
-    await readAllPartners({ connections: [riga], fetchOne, now: () => 0, onReached: (id) => reached.push(id) })
-    await readAllPartners({ connections: [riga], fetchOne, now: () => 1000, onReached: (id) => reached.push(id) })
+    await readAllPartners({ connections: [riga], fetchOne, now: () => 0, onReached: (id) => void reached.push(id) })
+    await readAllPartners({ connections: [riga], fetchOne, now: () => 1000, onReached: (id) => void reached.push(id) })
 
     expect(reached).toEqual([1])
   })

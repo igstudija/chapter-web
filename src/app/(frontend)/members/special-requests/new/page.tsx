@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from '@/components/TranslationsProvider'
 import Link from 'next/link'
 
 export default function NewSpecialRequestPage() {
   const router = useRouter()
+  const { t } = useTranslations()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -99,11 +101,10 @@ export default function NewSpecialRequestPage() {
             <div>
               <label htmlFor="chapterOnly" className="flex items-start gap-2 cursor-pointer">
                 <input type="checkbox" id="chapterOnly" name="chapterOnly" className="mt-0.5" />
-                <span className="text-sm text-brand">Available only to members of our chapter</span>
+                <span className="text-sm text-brand">{t('specialRequest', 'chapterOnly')}</span>
               </label>
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 ml-6">
-                Leave this unticked and the request is offered to the chapters we are linked to,
-                along with your name, company, phone and email.
+                {t('specialRequest', 'chapterOnlyHint')}
               </p>
             </div>
 

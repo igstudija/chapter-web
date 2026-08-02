@@ -27,24 +27,19 @@ const SUPABASE_TIMEOUT_MS = 10_000
 const CONNECT_TIMEOUT_MS = 10_000
 
 /**
- * Reaching the database and finding the schema on it are two different
- * questions, and answering them separately is the point — "connection refused"
- * and "relation does not exist" send you to completely different places.
+ * Open a connection, whether or not the server speaks TLS.
+ *
+ * Managed Postgres requires TLS; a container or a box on your own network
+ * usually has none. Guessing from the hostname gets tier 2 wrong — anything not
+ * literally called localhost was told to use TLS and failed against a server
+ * that never offered it. So try TLS, and fall back once if the server says it
+ * has none, which is what a client with sslmode=prefer does.
+ *
+ * `rejectUnauthorized` is off for the same reason the app does it: managed
+ * providers' chains are not in the local trust store. These are reachability
+ * checks, not authenticity ones.
  */
-export const checkDatabase = async (connectionString?: string): Promise<Outcome> => {
-  if (!connectionString) {
-    return { ok: false, skipped: true, detail: 'POSTGRESS_DATABASE_URL is not set' }
-  }
-
-  // Managed Postgres requires TLS; a container or a box on your own network
-  // usually has none. Guessing from the hostname gets tier 2 wrong — anything
-  // not literally called localhost was told to use TLS and failed against a
-  // server that never offered it. So try TLS, and fall back once if the server
-  // says it has none, which is what a client with sslmode=prefer does.
-  //
-  // rejectUnauthorized is off for the same reason the app does it: managed
-  // providers' chains are not in the local trust store. This is a reachability
-  // check, not an authenticity one.
+export const openDatabase = async (connectionString: string): Promise<Client> => {
   const connect = async (ssl: boolean): Promise<Client> => {
     const client = new Client({
       connectionString,
@@ -55,14 +50,27 @@ export const checkDatabase = async (connectionString?: string): Promise<Outcome>
     return client
   }
 
+  try {
+    return await connect(true)
+  } catch (error) {
+    if (!/does not support SSL/i.test((error as Error).message)) throw error
+    return connect(false)
+  }
+}
+
+/**
+ * Reaching the database and finding the schema on it are two different
+ * questions, and answering them separately is the point — "connection refused"
+ * and "relation does not exist" send you to completely different places.
+ */
+export const checkDatabase = async (connectionString?: string): Promise<Outcome> => {
+  if (!connectionString) {
+    return { ok: false, skipped: true, detail: 'POSTGRESS_DATABASE_URL is not set' }
+  }
+
   let client: Client
   try {
-    try {
-      client = await connect(true)
-    } catch (error) {
-      if (!/does not support SSL/i.test((error as Error).message)) throw error
-      client = await connect(false)
-    }
+    client = await openDatabase(connectionString)
   } catch (error) {
     const err = error as NodeJS.ErrnoException & { code?: string }
 
@@ -142,14 +150,9 @@ export const checkDataApi = async (connectionString?: string): Promise<Outcome> 
     return { ok: false, skipped: true, detail: 'POSTGRESS_DATABASE_URL is not set' }
   }
 
-  const client = new Client({
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-    connectionTimeoutMillis: CONNECT_TIMEOUT_MS,
-  })
-
+  let client: Client
   try {
-    await client.connect()
+    client = await openDatabase(connectionString)
   } catch {
     // The database check already reported why, in detail. Saying it twice
     // helps nobody.

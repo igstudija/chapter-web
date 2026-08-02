@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Payload } from 'payload'
 import { adminOnly } from '../access'
-import { decodeConnectionKey } from '../lib/chapterExchange/connectionKey'
+import { decodeConnectionKey, encodeConnectionKey } from '../lib/chapterExchange/connectionKey'
 
 /**
  * One link to another chapter.
@@ -14,6 +14,19 @@ import { decodeConnectionKey } from '../lib/chapterExchange/connectionKey'
  * Only an admin ever sees this. A connection is a credential and a decision
  * about where members' contact details travel.
  */
+
+const newSecret = () => randomBytes(32).toString('base64url')
+
+/** What this chapter calls itself, for the key we hand out. */
+const chapterName = async (payload: Payload): Promise<string> => {
+  try {
+    const settings = await payload.find({ collection: 'settings', limit: 1, depth: 0 })
+    return settings.docs[0]?.siteName || 'Unnamed chapter'
+  } catch {
+    return 'Unnamed chapter'
+  }
+}
+
 export const ChapterConnections: CollectionConfig = {
   slug: 'chapter-connections',
   admin: {
@@ -21,13 +34,28 @@ export const ChapterConnections: CollectionConfig = {
     defaultColumns: ['name', 'paused', 'lastReachedAt'],
     group: 'Special request exchange',
     description:
-      'Chapters this install exchanges special requests with. Give a partner the key generated here, and paste theirs into the field below.',
+      'Chapters this install exchanges special requests with. Send a partner the key generated here, and paste theirs into the field below.',
   },
   access: {
     read: adminOnly,
     create: adminOnly,
     update: adminOnly,
     delete: adminOnly,
+  },
+  hooks: {
+    beforeChange: [
+      ({ data }) => {
+        // Regeneration is a checkbox rather than a button so that it works from
+        // anywhere a document can be written. Ticking it replaces the secret and
+        // clears itself, so the box is never left standing in the on position
+        // waiting to surprise the next person who saves the record.
+        if (data?.regenerateKey) {
+          data.ourSecret = newSecret()
+          data.regenerateKey = false
+        }
+        return data
+      },
+    ],
   },
   fields: [
     {
@@ -40,19 +68,60 @@ export const ChapterConnections: CollectionConfig = {
       },
     },
     {
+      name: 'ourKey',
+      type: 'text',
+      virtual: true,
+      label: 'Our connection key',
+      admin: {
+        readOnly: true,
+        description:
+          'Send this to the other chapter. It carries our address, our name and the secret they will present, so it is the only thing they need. Treat it like a password: anyone holding it can read every shared special request here, with the contact details attached.',
+      },
+      hooks: {
+        afterRead: [
+          async ({ data, req }) => {
+            if (!data?.ourSecret) return ''
+
+            const origin = process.env.NEXT_PUBLIC_SERVER_URL
+            if (!origin) return 'Set NEXT_PUBLIC_SERVER_URL before handing out a key.'
+
+            try {
+              return encodeConnectionKey({
+                origin,
+                secret: data.ourSecret,
+                name: await chapterName(req.payload),
+              })
+            } catch (error) {
+              // The only reason minting refuses is a plaintext origin, which is
+              // a configuration problem the admin has to see rather than a key
+              // to hand out quietly.
+              return error instanceof Error ? error.message : 'Could not build a key.'
+            }
+          },
+        ],
+      },
+    },
+    {
       name: 'ourSecret',
       type: 'text',
       admin: {
-        readOnly: true,
-        position: 'sidebar',
-        description: 'Generated once, when the record is created.',
+        hidden: true,
+        description: 'The raw secret behind our connection key.',
       },
       hooks: {
         // Minted here rather than in the admin UI so that a connection created
         // by any route — seed script, import, API — still has one.
-        beforeValidate: [
-          ({ value }) => value || randomBytes(32).toString('base64url'),
-        ],
+        beforeValidate: [({ value }) => value || newSecret()],
+      },
+    },
+    {
+      name: 'regenerateKey',
+      type: 'checkbox',
+      defaultValue: false,
+      admin: {
+        position: 'sidebar',
+        description:
+          'Tick and save to replace our connection key. The old one stops working immediately, so tell the other chapter first — their side goes quiet until they paste the new one.',
       },
     },
     {
@@ -68,6 +137,26 @@ export const ChapterConnections: CollectionConfig = {
         return decodeConnectionKey(value)
           ? true
           : 'That is not a connection key. Copy the whole string, including the chx_ prefix.'
+      },
+    },
+    {
+      name: 'theirChapter',
+      type: 'text',
+      virtual: true,
+      label: 'Their key points at',
+      admin: {
+        readOnly: true,
+        description:
+          'Read back out of the key above. A key nobody can read is a key nobody can check, so this is what we will actually call and what they call themselves.',
+      },
+      hooks: {
+        afterRead: [
+          ({ data }) => {
+            if (!data?.theirKey) return ''
+            const decoded = decodeConnectionKey(data.theirKey)
+            return decoded ? `${decoded.name} — ${decoded.origin}` : 'Not a readable connection key.'
+          },
+        ],
       },
     },
     {

@@ -209,11 +209,13 @@ EMAIL_FROM=noreply@your-domain.org
 EMAIL_FROM_NAME=Your Organisation
 ```
 
-Two values differ from your local `.env`, and both matter. The port is **6543**,
-the transaction pooler, not the 5432 you used for migrations. And
+Three things differ from your local `.env`. The port is **6543**, the
+transaction pooler, not the 5432 you used for migrations.
 `NEXT_PUBLIC_SERVER_URL` is your domain here, where it was `localhost:3050`
 locally — it is compiled into the build, so getting it wrong means invitation
-links pointing at a laptop and a rebuild to fix it.
+links pointing at a laptop and a rebuild to fix it. And `PG_POOL_MAX` is absent
+here on purpose: the app already drops its pool to a serverless size on its own,
+while locally you set it low to stay under the session pooler's 15 clients.
 
 Email is not optional in practice: invitations, password resets and
 notifications all go through SMTP, and an install without it cannot onboard a

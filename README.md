@@ -122,7 +122,7 @@ Then:
 pnpm diagnose          # check those values before relying on them
 pnpm migrate           # create the schema — applies the migrations in src/migrations
 pnpm secure:db --apply # close the tables to Supabase's public API roles
-pnpm bootstrap         # your settings + administrator account (it asks three questions)
+pnpm bootstrap         # your settings + administrator account (it asks five questions)
 pnpm seed:policies     # fill the three policy pages the footer links to
 pnpm dev
 ```

@@ -157,7 +157,7 @@ async function main() {
 
   const answers: Record<string, string | undefined> = { ...existing }
 
-  // --- The three the app will not start without ------------------------------
+  // --- Identity, and the two preflight refuses to start without ---------------
   heading('1. This install')
 
   answers.NEXT_PUBLIC_SERVER_URL = await ask(

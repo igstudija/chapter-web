@@ -19,8 +19,10 @@ with the request as the headline on it (`SpecialRequestsGrid`,
 `specialRequestsGrouping.ts`). A request without the person attached is inert:
 you can read it, and then there is nothing to do.
 
-The payload therefore carries the requester's name, company, phone, email and
-photo URL. That is personal data leaving one operator's server for another's,
+The payload therefore carries the requester's name and surname, their company,
+phone and email, and the URLs of their profile photo and company logo. A request
+also carries its registration number, which is the field members use when the
+ask names a company. That is personal data leaving one operator's server for another's,
 and it makes every Self-hoster who enables this a controller transferring data
 to a second controller. It is a legal act, not only an HTTP request. Anyone
 running an exchange needs an agreement with the chapter on the other end, and
@@ -105,7 +107,7 @@ recent activity across all of their requests. Fetching everything and merging
 server-side leaves `SpecialRequestsGrid` untouched: same search, same paging,
 same grouping, for local and partner rows alike.
 
-Responses are cached for 10–15 minutes. Errors are not cached, so a partner's
+Responses are cached for fifteen minutes. Errors are not cached, so a partner's
 bad minute does not become our quarter hour. No partner data is written to our
 database: revoking a link or deleting a request removes it from the other
 chapter within one cache window, with nothing to clean up afterwards. The cache

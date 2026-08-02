@@ -23,11 +23,15 @@ export async function up({ db }: MigrateUpArgs): Promise<void> {
 
   ALTER TABLE "special_requests" DROP COLUMN IF EXISTS "is_public";
 
+  CREATE INDEX IF NOT EXISTS "special_requests_chapter_only_idx"
+    ON "special_requests" USING btree ("chapter_only");
+
   CREATE TABLE IF NOT EXISTS "chapter_connections" (
   	"id" serial PRIMARY KEY NOT NULL,
   	"name" varchar NOT NULL,
   	"our_secret" varchar NOT NULL,
   	"their_key" varchar,
+  	"regenerate_key" boolean DEFAULT false,
   	"paused" boolean DEFAULT false,
   	"last_reached_at" timestamp(3) with time zone,
   	"updated_at" timestamp(3) with time zone DEFAULT now() NOT NULL,
@@ -56,6 +60,7 @@ export async function down({ db }: MigrateDownArgs): Promise<void> {
 
   UPDATE "special_requests" SET "is_public" = NOT COALESCE("chapter_only", false);
 
+  DROP INDEX IF EXISTS "special_requests_chapter_only_idx";
   ALTER TABLE "special_requests" DROP COLUMN IF EXISTS "chapter_only";
 
   DROP INDEX IF EXISTS "payload_locked_documents_rels_chapter_connections_id_idx";

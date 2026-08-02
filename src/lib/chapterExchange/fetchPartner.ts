@@ -1,4 +1,5 @@
 import { decodeConnectionKey } from './connectionKey'
+import type { ChapterConnection } from './connection'
 import type { ExchangeRequest, ExchangeRequester, ExchangeResponse } from './exchangeResponse'
 
 /**
@@ -14,12 +15,6 @@ export const EXCHANGE_PATH = '/api/special-request-exchange/v1'
 
 /** How long a partner has to answer before we go on without them. */
 const DEFAULT_TIMEOUT_MS = 5000
-
-export interface ReadableConnection {
-  name: string
-  /** Their key, or null for a partner we share with but do not read. */
-  theirKey?: string | null
-}
 
 export interface FetchPartnerOptions {
   fetch?: typeof fetch
@@ -76,7 +71,7 @@ const readRequest = (value: unknown): ExchangeRequest | null => {
  * who have nothing to do with the other chapter's uptime.
  */
 export const fetchPartner = async (
-  connection: ReadableConnection,
+  connection: Pick<ChapterConnection, 'name' | 'theirKey'>,
   { fetch: doFetch = fetch, timeoutMs = DEFAULT_TIMEOUT_MS }: FetchPartnerOptions = {},
 ): Promise<ExchangeResponse | null> => {
   if (!connection.theirKey) return null

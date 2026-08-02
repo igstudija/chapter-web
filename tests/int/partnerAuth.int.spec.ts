@@ -9,9 +9,9 @@ import { authenticatePartner } from '@/lib/chapterExchange/partnerAuth'
  * property lives in the implementation and is a review concern (ADR 0007).
  */
 const connections = [
-  { id: 1, name: 'Riga Chapter', secret: 'riga-secret', paused: false },
-  { id: 2, name: 'Liepaja Chapter', secret: 'liepaja-secret', paused: false },
-  { id: 3, name: 'Ventspils Chapter', secret: 'ventspils-secret', paused: true },
+  { id: 1, name: 'Riga Chapter', ourSecret: 'riga-secret', paused: false },
+  { id: 2, name: 'Liepaja Chapter', ourSecret: 'liepaja-secret', paused: false },
+  { id: 3, name: 'Ventspils Chapter', ourSecret: 'ventspils-secret', paused: true },
 ]
 
 describe('authenticatePartner', () => {

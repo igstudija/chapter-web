@@ -526,7 +526,7 @@ export interface SpecialRequest {
   createdAt: string;
 }
 /**
- * Chapters this install exchanges special requests with. Give a partner the key generated here, and paste theirs into the field below.
+ * Chapters this install exchanges special requests with. Send a partner the key generated here, and paste theirs into the field below.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "chapter-connections".
@@ -538,13 +538,25 @@ export interface ChapterConnection {
    */
   name: string;
   /**
-   * Generated once, when the record is created.
+   * Send this to the other chapter. It carries our address, our name and the secret they will present, so it is the only thing they need. Treat it like a password: anyone holding it can read every shared special request here, with the contact details attached.
+   */
+  ourKey?: string | null;
+  /**
+   * The raw secret behind our connection key.
    */
   ourSecret?: string | null;
+  /**
+   * Tick and save to replace our connection key. The old one stops working immediately, so tell the other chapter first — their side goes quiet until they paste the new one.
+   */
+  regenerateKey?: boolean | null;
   /**
    * The key the other chapter generated and sent you. Leave empty to share with them without reading them.
    */
   theirKey?: string | null;
+  /**
+   * Read back out of the key above. A key nobody can read is a key nobody can check, so this is what we will actually call and what they call themselves.
+   */
+  theirChapter?: string | null;
   /**
    * Stops serving this partner and stops reading them, without discarding the keys.
    */
@@ -2218,8 +2230,11 @@ export interface SpecialRequestsSelect<T extends boolean = true> {
  */
 export interface ChapterConnectionsSelect<T extends boolean = true> {
   name?: T;
+  ourKey?: T;
   ourSecret?: T;
+  regenerateKey?: T;
   theirKey?: T;
+  theirChapter?: T;
   paused?: T;
   lastReachedAt?: T;
   updatedAt?: T;

@@ -42,15 +42,7 @@ export const serveExchange = async ({
     overrideAccess: true,
   })
 
-  const partner = authenticatePartner(
-    authorization,
-    connections.docs.map((doc) => ({
-      id: doc.id,
-      name: doc.name,
-      secret: doc.ourSecret ?? '',
-      paused: doc.paused,
-    })),
-  )
+  const partner = authenticatePartner(authorization, connections.docs)
 
   if (!partner) return { status: 401, body: null, partnerId: null }
 
@@ -75,7 +67,7 @@ export const serveExchange = async ({
     payload.find({
       collection: 'members',
       where: { status: { equals: 'active' } },
-      limit: 500,
+      limit: 1000,
       depth: 1,
       overrideAccess: true,
     }),

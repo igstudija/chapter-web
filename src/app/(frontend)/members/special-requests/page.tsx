@@ -56,8 +56,8 @@ export default async function SpecialRequestsPage() {
   // nothing and is not mentioned — the list is simply shorter (ADR 0007).
   const partners = await readAllPartners({
     connections: connectionsData.docs,
-    onReached: (id) => {
-      void payload.update({
+    onReached: async (id) => {
+      await payload.update({
         collection: 'chapter-connections',
         id,
         data: { lastReachedAt: new Date().toISOString() },

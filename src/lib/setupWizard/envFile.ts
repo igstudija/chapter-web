@@ -13,8 +13,12 @@
 /** The order settings appear in, grouped the way `.env.example` groups them. */
 const LAYOUT: Array<{ heading: string; settings: string[] }> = [
   {
-    heading: 'The four the app refuses to start without',
-    settings: ['PAYLOAD_SECRET', 'POSTGRESS_DATABASE_URL', 'NEXT_PUBLIC_SERVER_URL'],
+    heading: 'Required — preflight stops the app when either of these is missing',
+    settings: ['PAYLOAD_SECRET', 'POSTGRESS_DATABASE_URL'],
+  },
+  {
+    heading: 'Where this install is reached, used in emails and absolute links',
+    settings: ['NEXT_PUBLIC_SERVER_URL'],
   },
   {
     heading: 'File storage',

@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto'
+import type { ChapterConnection } from './connection'
 
 /**
  * Authenticating a partner reading this chapter's special requests.
@@ -7,15 +8,6 @@ import { timingSafeEqual } from 'node:crypto'
  * over, so an incoming call is matched against our own records rather than
  * verified cryptographically. See ADR 0007.
  */
-
-/** The part of a connection record this needs; the collection carries more. */
-export interface PartnerConnection {
-  id: string | number
-  name: string
-  /** The secret we minted for this partner and put in the key we gave them. */
-  secret: string
-  paused?: boolean | null
-}
 
 const BEARER = 'Bearer '
 
@@ -44,19 +36,19 @@ const secretsMatch = (presented: string, stored: string): boolean => {
  */
 export const authenticatePartner = (
   authorization: string | null | undefined,
-  connections: PartnerConnection[],
-): PartnerConnection | null => {
+  connections: ChapterConnection[],
+): ChapterConnection | null => {
   if (!authorization || !authorization.startsWith(BEARER)) return null
 
   const presented = authorization.slice(BEARER.length)
   if (!presented) return null
 
-  let matched: PartnerConnection | null = null
+  let matched: ChapterConnection | null = null
   for (const connection of connections) {
     // Paused connections are compared like any other and discarded afterwards.
     // Skipping them would make a paused partner measurably faster to reject
     // than an unknown one.
-    if (secretsMatch(presented, connection.secret) && !connection.paused) matched = connection
+    if (secretsMatch(presented, connection.ourSecret ?? '') && !connection.paused) matched = connection
   }
 
   return matched

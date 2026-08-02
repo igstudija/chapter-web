@@ -1,11 +1,11 @@
 import 'dotenv/config'
-import { Client } from 'pg'
 import { checkConfiguration, hasFatal } from '../lib/configCheck'
 import {
   checkDataApi,
   checkDatabase,
   checkMail,
   checkStorage,
+  openDatabase,
   type Outcome,
 } from '../lib/infraChecks'
 import { fetchPartner } from '../lib/chapterExchange/fetchPartner'
@@ -47,11 +47,17 @@ const checkChapterLinks = async (): Promise<Outcome> => {
   const url = process.env.POSTGRESS_DATABASE_URL
   if (!url) return { ok: true, detail: 'no database configured', skipped: true }
 
-  const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } })
+  // Opened the same way every other check opens it, so that a tier 2 Postgres
+  // without TLS is not reported as a broken install (ADR 0001).
+  let client
+  try {
+    client = await openDatabase(url)
+  } catch {
+    // checkDatabase has already said why, in detail.
+    return { ok: false, skipped: true, detail: 'the database did not answer' }
+  }
 
   try {
-    await client.connect()
-
     const exists = await client.query("SELECT to_regclass('public.chapter_connections') AS t")
     if (!exists.rows[0]?.t) {
       return { ok: true, detail: 'not set up on this install', skipped: true }
@@ -158,4 +164,7 @@ const main = async (): Promise<void> => {
   process.exit(1)
 }
 
-void main()
+main().catch((error) => {
+  console.error('\nDiagnosis could not complete:', error instanceof Error ? error.message : error)
+  process.exit(1)
+})
