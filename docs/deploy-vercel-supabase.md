@@ -200,7 +200,19 @@ migrations. That is the one difference between this list and your local `.env`.
 
 Email is not optional in practice: invitations, password resets and
 notifications all go through SMTP, and an install without it cannot onboard a
-single member.
+single member. Any SMTP provider works; this project is developed against
+[Mailjet](https://www.mailjet.com), whose free tier covers a chapter:
+
+| Setting | Where it comes from |
+| --- | --- |
+| `SMTP_HOST` | `in-v3.mailjet.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | Account settings → REST API → **API Key** |
+| `SMTP_PASS` | the matching **Secret Key** |
+
+Verify `EMAIL_FROM` under **Account settings → Sender addresses** first.
+Providers drop mail sent as an address they have not authorised, and they drop
+it silently.
 
 `NEXT_PUBLIC_*` variables are compiled into the build. Changing one later
 requires a redeploy, not just a restart.
@@ -226,6 +238,12 @@ Then check `NEXT_PUBLIC_SERVER_URL` matches it. It is used in emails and
 absolute links, so a wrong value means invitation links that go nowhere. It is
 compiled into the build, so changing it requires a redeploy — not just a
 restart.
+
+Vercel's own DNS is enough. Putting Cloudflare or another CDN in front is
+supported but buys little here: Vercel already serves the static assets from its
+edge, and uploads come straight from Supabase rather than through the app. If
+you do proxy, the rate limiter reads `cf-connecting-ip`, so it keeps seeing real
+visitor addresses rather than the proxy's.
 
 ## 7. Check it end to end
 

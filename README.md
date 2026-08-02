@@ -49,11 +49,23 @@ with placeholder substitution.
 - **Node.js** 20.9+ (or 18.20.2+)
 - **pnpm** 9 or 10
 - **A Supabase project** — provides both Postgres and object storage
+- **An SMTP provider** — sends invitations and password resets
 
 Any Postgres works if you prefer to run it yourself, but file uploads target
 Supabase Storage out of the box, and that is the combination the project
 guarantees. See [What is supported](#what-is-supported) before choosing
 otherwise.
+
+Any provider speaking SMTP works. This project is developed against
+[Mailjet](https://www.mailjet.com), which has a free tier large enough for a
+chapter, and `.env.example` carries its settings as the worked example. The site
+starts and runs without one — it warns on every start and then cannot invite a
+member or reset a password, which is most of what a member portal does.
+
+**Not required:** a Cloudflare account, or any other CDN. The rate limiter reads
+`cf-connecting-ip` if it happens to be behind Cloudflare, the same way it reads
+Vercel's and nginx's headers, and falls back to the socket address when there is
+nothing in front of the app at all.
 
 ---
 
