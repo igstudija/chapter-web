@@ -13,6 +13,8 @@ from the standard Payload admin panel.
 > install. The feature set is mature; the
 > packaging for outside installs is new, and rough edges are likely. Issues
 > welcome.
+>
+> >
 
 ---
 
@@ -66,12 +68,12 @@ cp .env.example .env
 
 Fill in `.env`. The four that matter to start:
 
-| Variable | Where to get it |
-|---|---|
-| `PAYLOAD_SECRET` | `openssl rand -base64 32` |
-| `POSTGRESS_DATABASE_URL` | Supabase → Project Settings → Database → Connection string (URI) |
-| `SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role` |
+| Variable                    | Where to get it                                                  |
+| --------------------------- | ---------------------------------------------------------------- |
+| `PAYLOAD_SECRET`            | `openssl rand -base64 32`                                        |
+| `POSTGRESS_DATABASE_URL`    | Supabase → Project Settings → Database → Connection string (URI) |
+| `SUPABASE_URL`              | Supabase → Project Settings → API → Project URL                  |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role`               |
 
 In Supabase, create a **public** storage bucket named `media`. It must be public:
 files are served directly from Supabase, so a private bucket makes every image
@@ -152,7 +154,7 @@ through it.
 
 **Rebranding.** [`src/lib/branding.ts`](src/lib/branding.ts) holds every product
 name and default. Colours are theme tokens in
-[`src/app/(frontend)/styles.css`](src/app/(frontend)/styles.css) — `brand`,
+[`src/app/(frontend)/styles.css`](<src/app/(frontend)/styles.css>) — `brand`,
 `ink`, `surface`, `accent` — each reading a CSS custom property so they can be
 overridden at runtime.
 
