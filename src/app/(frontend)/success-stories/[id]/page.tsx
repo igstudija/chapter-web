@@ -305,7 +305,7 @@ export default async function SuccessStoryPage({ params }: { params: Promise<{ i
                     alt={authorMembership?.company || ''}
                     width={120}
                     height={60}
-                    className="object-contain max-h-12"
+                    className="object-contain max-h-12 w-auto max-w-full"
                   />
                 </div>
               )}

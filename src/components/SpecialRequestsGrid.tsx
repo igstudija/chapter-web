@@ -269,12 +269,17 @@ export function SpecialRequestsGrid({
                             wordmark on the dark surface is an empty cell. The
                             plate keeps them legible in both themes. */}
                         <div className="rounded-md bg-white p-1.5">
+                          {/* `w-auto` lets the logo keep its own proportions
+                              instead of being pinned to the 72px attribute
+                              while `max-h-10` shrinks the height — that
+                              one-sided change is what Next warns about.
+                              `max-w-full` keeps a wide mark inside the cell. */}
                           <Image
                             src={requesterLogo.url}
                             alt={requesterMembership?.company || ''}
                             width={72}
                             height={44}
-                            className="max-h-10 object-contain"
+                            className="max-h-10 w-auto max-w-full object-contain"
                           />
                         </div>
                       </div>

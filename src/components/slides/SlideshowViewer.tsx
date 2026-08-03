@@ -587,8 +587,12 @@ export function SlideshowViewer({
                 <Image
                   src={logoUrl}
                   alt="Logo"
-                  width={120}
-                  height={44}
+                  /* `h-11` is what sizes this; the attributes are only the
+                     srcset hint. They have to stay off the rendered 44px,
+                     or the height matches its attribute while `w-auto`
+                     moves the width, and Next warns about the odd pair. */
+                  width={240}
+                  height={88}
                   className="h-11 w-auto"
                 />
               </div>

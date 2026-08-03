@@ -63,7 +63,7 @@ export function SuccessStoryBlogCard({
               alt={author.company}
               width={60}
               height={30}
-              className="object-contain max-h-8"
+              className="object-contain max-h-8 w-auto max-w-full"
             />
           </div>
         )}

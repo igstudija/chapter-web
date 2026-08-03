@@ -129,8 +129,14 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
                 <Image
                   src={siteLogoUrl}
                   alt={siteName}
-                  width={120}
-                  height={40}
+                  /* The logo is a CMS upload, so its real aspect ratio is
+                     unknown here — `h-10 w-auto` is what actually sizes it.
+                     These two are only a resolution hint for srcset. Keeping
+                     the height away from the rendered 40px matters: Next warns
+                     when exactly one of width/height differs from its
+                     attribute, and `height={40}` made that true every render. */
+                  width={240}
+                  height={80}
                   className="h-10 w-auto dark:invert dark:brightness-0 dark:contrast-200"
                   priority
                 />

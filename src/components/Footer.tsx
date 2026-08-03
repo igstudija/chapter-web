@@ -49,12 +49,17 @@ export async function Footer() {
         <div className="grid gap-12 md:grid-cols-[1.6fr_1fr_1fr]">
           <div className="max-w-sm">
             {logoUrl ? (
+              /* Tailwind's preflight sets `height: auto` on every img, so the
+                 height here always comes from CSS while the width came from the
+                 attribute — the one-sided change Next warns about. Sizing the
+                 width in CSS too settles it, and the attributes stay as the
+                 srcset hint they are for a CMS logo of unknown proportions. */
               <Image
                 src={logoUrl}
                 alt={siteName}
-                width={120}
-                height={120}
-                className="mb-5 object-contain dark:invert dark:brightness-0 dark:contrast-200"
+                width={240}
+                height={240}
+                className="mb-5 w-[120px] object-contain dark:invert dark:brightness-0 dark:contrast-200"
               />
             ) : (
               <h3 className="mb-5 font-display text-xl font-semibold tracking-tight">{siteName}</h3>

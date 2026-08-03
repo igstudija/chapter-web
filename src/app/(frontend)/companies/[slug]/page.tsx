@@ -133,7 +133,7 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
                   alt={membership.company || ''}
                   width={200}
                   height={100}
-                  className="max-h-24 object-contain"
+                  className="max-h-24 w-auto max-w-full object-contain"
                 />
               </div>
             ) : (
