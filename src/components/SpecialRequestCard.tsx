@@ -1,6 +1,7 @@
 'use client'
 
 import { Pencil, Trash2, GripVertical, MonitorPlay } from 'lucide-react'
+import { formatDateShort } from '@/lib/formatDate'
 import { useTranslations } from './TranslationsProvider'
 
 interface SpecialRequestCardProps {
@@ -62,7 +63,7 @@ export function SpecialRequestCard({
               </>
             )}
             <span className="tabular font-mono">
-              {t('common', 'added')}: {new Date(request.createdAt).toLocaleDateString()}
+              {t('common', 'added')}: {formatDateShort(request.createdAt)}
             </span>
           </div>
         </div>
