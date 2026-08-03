@@ -38,6 +38,7 @@ interface SpecialRequest {
   createdAt: string
   sortOrder?: number
   showOnSlide?: boolean
+  chapterOnly?: boolean | null
 }
 
 interface Top40Entry {
@@ -147,6 +148,8 @@ interface ProfileTabsProps {
   readonly powerGroups?: ReadonlyArray<PowerGroup>
   readonly userEmail?: string
   readonly pendingEmail?: string | null
+  /** This chapter's name, shown on the checkbox that keeps a request at home. */
+  readonly chapterName?: string
 }
 
 export function ProfileTabs({
@@ -168,6 +171,7 @@ export function ProfileTabs({
   powerGroups = [],
   userEmail,
   pendingEmail,
+  chapterName,
 }: Readonly<ProfileTabsProps>) {
   const router = useRouter()
   const { t } = useTranslations()
@@ -439,6 +443,7 @@ export function ProfileTabs({
         }}
         editData={editSpecialRequest}
         siteId={siteId}
+        chapterName={chapterName}
       />
       <SuccessStoryModal
         isOpen={showSuccessStoryModal}

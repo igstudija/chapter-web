@@ -84,8 +84,8 @@ build step is not the place for it: preview deployments would run migrations
 against production too.
 
 ```bash
-git clone https://github.com/YOUR-ORG/chapteros.git
-cd chapteros
+git clone https://github.com/igstudija/chapter-web.git
+cd chapter-web
 pnpm install
 cp .env.example .env
 ```
@@ -105,16 +105,72 @@ NEXT_PUBLIC_SERVER_URL=http://localhost:3050
 PG_POOL_MAX=5
 ```
 
-Then:
+Then either run `pnpm wizard`, which asks for each of those values, checks it
+before moving on and runs everything below in order — or do it by hand:
 
 ```bash
-pnpm migrate:create   # generates the schema from the collections
-pnpm migrate          # applies it
-pnpm setup            # creates your settings + administrator account
-pnpm seed:policies    # optional: Terms/Privacy/Cookie skeletons
+pnpm diagnose          # checks the values above actually work
+pnpm migrate           # creates the schema — applies the migrations in src/migrations
+pnpm secure:db --apply # closes the tables to Supabase's public API
+pnpm bootstrap         # creates your settings + administrator account
+pnpm seed:policies     # fills the three policy pages the footer links to
 ```
 
-`pnpm setup` asks for the organisation name and the administrator's email and
+**Do not run `pnpm dev` before `pnpm migrate`.** In development Payload writes
+the schema itself instead of applying the migrations, and records it as a
+migration named `dev`. After that, `pnpm migrate` decides the schema has drifted
+and stops to ask whether to reset the database — with nothing at the keyboard it
+waits forever, printing nothing. Recovering means applying migration SQL by
+hand. Running the commands in the order above avoids it entirely.
+
+`pnpm seed:policies` is not optional in the way its name suggests. The footer
+links to Terms, Privacy and Cookie policy from every page, and with no templates
+those pages render a heading over an empty body. A blank privacy policy on a
+site collecting members' contact details is worse than no page at all. The
+skeletons need editing before launch, and say so in brackets.
+
+Run `pnpm diagnose` before the rest. Three of this page's most common failures —
+the wrong connection string, the anon key pasted where the `service_role` key
+belongs, and a bucket left private — are each one line of its output, and each
+is otherwise discovered much later and much less clearly.
+
+### Close the database to the public API
+
+**Do not skip `pnpm secure:db --apply`, and do not leave it until later.**
+
+Supabase publishes every table in the `public` schema as a REST API, and grants
+the `anon` role read *and write* access to all of them. `anon` is the role behind
+the anon key, which is a public value by design — it ships in browsers and is
+printed in your own dashboard. The only thing standing between it and your data
+is row-level security, and Postgres creates tables with row-level security off.
+
+Payload does not know any of this. It creates its tables over a plain Postgres
+connection, and Supabase's grants attach to them as they appear. Between
+`pnpm migrate` and this command, every member's contact details and the `users`
+table with its password hashes are readable and writable by anybody who knows
+your project's URL.
+
+The command turns row-level security on for every table, writes no policies —
+nothing but the app should be reaching these tables, so the correct policy set is
+the empty one — revokes the grants, and installs a trigger so tables created
+later start closed too. Your app is unaffected: it connects as `postgres`, which
+bypasses row-level security. Running it twice is harmless.
+
+Then turn the API off entirely, since nothing here uses it:
+
+**Integrations** → **Data API** → **Enable Data API** → off → **Save**.
+
+Storage lives on a different endpoint (`/storage/v1/`) and keeps working; only
+table access over HTTP goes away. Skip this if you plan to query Supabase from
+browser code — but then the empty policy set above is no longer right for you,
+and you will need to write policies deliberately, per table.
+
+Afterwards, Supabase's **Advisors** → **Security Advisor** should report zero
+errors and zero warnings. Its *Info* tab will list every table as “RLS Enabled No
+Policy”, permanently. That is the intended state, not a leftover — see
+[ADR 0006](adr/0006-the-database-is-closed-to-supabases-api-roles.md).
+
+`pnpm bootstrap` asks for the organisation name and the administrator's email and
 password. Everything else is configured from the admin panel afterwards.
 
 Keep `PAYLOAD_SECRET` somewhere safe. It signs session tokens: changing it later
@@ -153,12 +209,29 @@ EMAIL_FROM=noreply@your-domain.org
 EMAIL_FROM_NAME=Your Organisation
 ```
 
-Note the **6543** — the transaction pooler, not the 5432 you used for
-migrations. That is the one difference between this list and your local `.env`.
+Three things differ from your local `.env`. The port is **6543**, the
+transaction pooler, not the 5432 you used for migrations.
+`NEXT_PUBLIC_SERVER_URL` is your domain here, where it was `localhost:3050`
+locally — it is compiled into the build, so getting it wrong means invitation
+links pointing at a laptop and a rebuild to fix it. And `PG_POOL_MAX` is absent
+here on purpose: the app already drops its pool to a serverless size on its own,
+while locally you set it low to stay under the session pooler's 15 clients.
 
 Email is not optional in practice: invitations, password resets and
 notifications all go through SMTP, and an install without it cannot onboard a
-single member.
+single member. Any SMTP provider works; this project is developed against
+[Mailjet](https://www.mailjet.com), whose free tier covers a chapter:
+
+| Setting | Where it comes from |
+| --- | --- |
+| `SMTP_HOST` | `in-v3.mailjet.com` |
+| `SMTP_PORT` | `587` |
+| `SMTP_USER` | Account settings → REST API → **API Key** |
+| `SMTP_PASS` | the matching **Secret Key** |
+
+Verify `EMAIL_FROM` under **Account settings → Sender addresses** first.
+Providers drop mail sent as an address they have not authorised, and they drop
+it silently.
 
 `NEXT_PUBLIC_*` variables are compiled into the build. Changing one later
 requires a redeploy, not just a restart.
@@ -185,11 +258,17 @@ absolute links, so a wrong value means invitation links that go nowhere. It is
 compiled into the build, so changing it requires a redeploy — not just a
 restart.
 
+Vercel's own DNS is enough. Putting Cloudflare or another CDN in front is
+supported but buys little here: Vercel already serves the static assets from its
+edge, and uploads come straight from Supabase rather than through the app. If
+you do proxy, the rate limiter reads `cf-connecting-ip`, so it keeps seeing real
+visitor addresses rather than the proxy's.
+
 ## 7. Check it end to end
 
 - `https://your-domain.org/api/health` → `{"status":"ok","db":"ok"}`. If `db`
   says `error`, the connection string is wrong — see the table in step 8.
-- `https://your-domain.org/admin` → log in with the account from `pnpm setup`.
+- `https://your-domain.org/admin` → log in with the account from `pnpm bootstrap`.
 - Upload an image in **Media**. It should appear in the Supabase Storage bucket
   under `media/`, along with `-thumbnail`, `-card` and `-medium` versions
   generated a few seconds later.
@@ -224,9 +303,21 @@ is nothing to configure; the in-app log reader is simply empty there.
 ## Keeping it running
 
 **Deploying changes.** Push to your default branch; Vercel builds and deploys.
-Other branches get preview deployments, which share the same environment
-variables — and therefore the same production database. Treat previews as
-production for anything that writes.
+Other branches get preview deployments.
+
+Preview does **not** inherit Production's environment variables — each variable
+is set per environment, and one added only to Production leaves preview builds
+failing at `Object storage is not configured`. You have to choose:
+
+- **Give Preview the same values.** Simplest, and it means every preview
+  deployment reads and writes your live database. Treat previews as production
+  for anything that writes, because that is what they are.
+- **Give Preview its own Supabase project.** More setup, and the only version
+  where a branch cannot damage live data. Run `pnpm secure:db --apply` against
+  that project too — it is a separate database and starts open like any other.
+
+Neither is wrong; leaving it unconsidered is, because the first one is what you
+get by copying values across without thinking about it.
 
 **Schema changes.** When a new version adds migrations, run them from your
 machine against the session pooler (port 5432) *before* the deploy that needs
@@ -234,7 +325,14 @@ them:
 
 ```bash
 pnpm migrate
+pnpm secure:db --check   # confirms the new tables came out closed
 ```
+
+A migration that adds a table adds one Supabase never saw, and whether it
+arrives with row-level security on depends on a trigger that some projects will
+not let us install. `--check` answers in one line and exits non-zero if
+anything is open, so it also works as a build gate. If it reports open tables,
+`pnpm secure:db --apply` closes them.
 
 **Rotating the `service_role` key.** Update `SUPABASE_SERVICE_ROLE_KEY` in
 Vercel and redeploy. Environment variable changes do not apply to a running
@@ -261,6 +359,9 @@ to a paid plan or schedule your own `pg_dump`.
 | Thumbnails never appear | Check the function logs for `[Media]` errors. Confirm `DISABLE_THUMBNAIL_GENERATION` is not set to `1`. |
 | A bulk import or export times out | It exceeded the function duration limit (60s on Hobby). Add `export const maxDuration = 300` to that route file, on a plan that allows it, or split the import into smaller files. |
 | Emails never arrive | `EMAIL_FROM` is an address the SMTP provider is not authorised to send as. Providers drop those silently. |
+| Security Advisor: **RLS Disabled in Public**, one row per table | `pnpm secure:db --apply` has not been run, or a migration added tables after it was. Run it again — it is safe to repeat. |
+| Security Advisor: **RLS Enabled No Policy**, one row per table, under *Info* | Nothing is wrong. That is what this install is supposed to look like; adding policies would undo it. |
+| Preview deployments fail: `Object storage is not configured` | Environment variables were added for Production only. Vercel does not share them across environments — add each one to Preview as well, or accept that only production builds. |
 
 Vercel's function logs are under **Deployments** → the deployment → **Logs**;
 they carry the application's own log lines. Supabase's are under **Logs** in the

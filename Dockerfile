@@ -9,14 +9,10 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
-COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+# pnpm is the only supported package manager — package.json pins it via
+# `packageManager`, and pnpm-lock.yaml is the only lockfile in the repo.
+COPY package.json pnpm-lock.yaml ./
+RUN corepack enable pnpm && pnpm i --frozen-lockfile
 
 
 # Rebuild the source code only when needed
@@ -31,14 +27,12 @@ COPY . .
 # SUPABASE_URL is needed too: next.config.mjs derives the allowed image host
 # from it at build time.
 ARG NEXT_PUBLIC_SERVER_URL
-ARG NEXT_PUBLIC_SUPERADMIN_HOSTS
 ARG NEXT_PUBLIC_PRODUCT_NAME
 ARG NEXT_PUBLIC_DEFAULT_ORG_NAME
 ARG NEXT_PUBLIC_ORG_UNIT_NOUN
 ARG NEXT_PUBLIC_IMAGE_HOSTS
 ARG SUPABASE_URL
 ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL \
-    NEXT_PUBLIC_SUPERADMIN_HOSTS=$NEXT_PUBLIC_SUPERADMIN_HOSTS \
     NEXT_PUBLIC_PRODUCT_NAME=$NEXT_PUBLIC_PRODUCT_NAME \
     NEXT_PUBLIC_DEFAULT_ORG_NAME=$NEXT_PUBLIC_DEFAULT_ORG_NAME \
     NEXT_PUBLIC_ORG_UNIT_NOUN=$NEXT_PUBLIC_ORG_UNIT_NOUN \
@@ -50,12 +44,7 @@ ENV NEXT_PUBLIC_SERVER_URL=$NEXT_PUBLIC_SERVER_URL \
 # Uncomment the following line in case you want to disable telemetry during the build.
 # ENV NEXT_TELEMETRY_DISABLED 1
 
-RUN \
-  if [ -f yarn.lock ]; then yarn run build; \
-  elif [ -f package-lock.json ]; then npm run build; \
-  elif [ -f pnpm-lock.yaml ]; then corepack enable pnpm && pnpm run build; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN corepack enable pnpm && pnpm run build
 
 # Production image, copy all the files and run next
 FROM base AS runner

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { request: requestText, registrationNumber } = await request.json()
+    const { request: requestText, registrationNumber, chapterOnly } = await request.json()
 
     if (!requestText) {
       return NextResponse.json({ error: 'Request content is required' }, { status: 400 })
@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       data: {
         request: requestText,
         registrationNumber: registrationNumber || undefined,
+        chapterOnly: Boolean(chapterOnly),
         requestedBy: user.id,
         status: 'open',
         sortOrder,

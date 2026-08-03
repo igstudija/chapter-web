@@ -51,6 +51,8 @@ interface MyProfilePageWrapperProps {
   readonly powerGroups?: ReadonlyArray<{ id: string | number; title: string }>
   readonly userEmail?: string
   readonly pendingEmail?: string | null
+  /** This chapter's name, shown on the checkbox that keeps a request at home. */
+  readonly chapterName?: string
 
   readonly children?: ReactNode
 }
@@ -75,6 +77,7 @@ export function MyProfilePageWrapper({
   powerGroups,
   userEmail,
   pendingEmail,
+  chapterName,
   children,
 }: MyProfilePageWrapperProps) {
   return (
@@ -112,6 +115,7 @@ export function MyProfilePageWrapper({
           powerGroups={powerGroups}
           userEmail={userEmail}
           pendingEmail={pendingEmail}
+          chapterName={chapterName}
         >
           {children}
         </ProfileTabs>

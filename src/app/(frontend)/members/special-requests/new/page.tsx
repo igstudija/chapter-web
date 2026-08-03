@@ -2,10 +2,12 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useTranslations } from '@/components/TranslationsProvider'
 import Link from 'next/link'
 
 export default function NewSpecialRequestPage() {
   const router = useRouter()
+  const { t } = useTranslations()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -15,14 +17,15 @@ export default function NewSpecialRequestPage() {
     setError('')
 
     const formData = new FormData(e.currentTarget)
-    const title = formData.get('title') as string
+    const request = formData.get('request') as string
     const registrationNumber = formData.get('registrationNumber') as string
+    const chapterOnly = formData.get('chapterOnly') === 'on'
 
     try {
       const res = await fetch('/api/special-requests', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, registrationNumber }),
+        body: JSON.stringify({ request, registrationNumber, chapterOnly }),
       })
 
       if (!res.ok) {
@@ -61,12 +64,12 @@ export default function NewSpecialRequestPage() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="title" className="block text-sm font-medium text-brand mb-1">
+              <label htmlFor="request" className="block text-sm font-medium text-brand mb-1">
                 Request Content *
               </label>
               <textarea
-                id="title"
-                name="title"
+                id="request"
+                name="request"
                 required
                 rows={4}
                 className="field"
@@ -90,6 +93,18 @@ export default function NewSpecialRequestPage() {
               />
               <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                 (Enter if the request contains a company name)
+              </p>
+            </div>
+
+            {/* Unticked, this request travels to linked chapters with the
+                contact details that make it actionable (ADR 0007). */}
+            <div>
+              <label htmlFor="chapterOnly" className="flex items-start gap-2 cursor-pointer">
+                <input type="checkbox" id="chapterOnly" name="chapterOnly" className="mt-0.5" />
+                <span className="text-sm text-brand">{t('specialRequest', 'chapterOnly')}</span>
+              </label>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 ml-6">
+                {t('specialRequest', 'chapterOnlyHint')}
               </p>
             </div>
 
