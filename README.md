@@ -13,8 +13,6 @@ from the standard Payload admin panel.
 > install. The feature set is mature; the
 > packaging for outside installs is new, and rough edges are likely. Issues
 > welcome.
->
-> >
 
 ---
 
