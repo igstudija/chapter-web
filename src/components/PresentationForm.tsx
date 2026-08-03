@@ -18,7 +18,6 @@ import {
   MessageSquare,
   ArrowUp,
   ArrowDown,
-  Users,
 } from 'lucide-react'
 import { useTranslations } from './TranslationsProvider'
 import { slideImageHelp } from './slideImageHelp'
@@ -73,26 +72,23 @@ interface PresentationFormProps {
 const TEMPLATES: MemberSlideTemplate[] = ['classic', 'cover', 'reels']
 
 /**
- * Per-member overrides, each starting with the chapter default.
+ * Per-member overrides. The stored column still carries `inherit`, and a member
+ * who has never chosen still sits on it — but there is no longer a segment for
+ * it, so the choice is one-way: the first click pins a value and nothing here
+ * hands it back.
  *
- * That first segment is not decoration: an override is one click away, and
- * without a way back the member could never return to the chapter's choice.
- * It matters most for the chapter's `slide` option, which has no member-level
- * equivalent at all — the column's enum is inherit/bar/flash/off — so staying
- * inherited is the only way to keep a dedicated special-request slide.
- *
- * A member who has never touched these sees the chapter segment highlighted;
- * what they are actually getting is spelled out in its tooltip.
+ * One case has no member-level equivalent at all. A chapter set to `slide` — a
+ * dedicated special-request slide — is not in this list, because the column's
+ * enum is inherit/bar/flash/off. Those members inherit it silently and see no
+ * segment lit, and a single click ends it for good.
  */
 const REQUEST_OPTIONS = [
-  { value: 'inherit', labelKey: 'chapterDefault', Icon: Users },
   { value: 'bar', labelKey: 'requestBar', Icon: PanelBottom },
   { value: 'flash', labelKey: 'requestBalloon', Icon: MessageSquare },
   { value: 'off', labelKey: 'requestHide', Icon: EyeOff },
 ] as const
 
 const NEXT_POSITION_OPTIONS = [
-  { value: 'inherit', labelKey: 'chapterDefault', Icon: Users },
   { value: 'top', labelKey: 'positionTop', Icon: ArrowUp },
   { value: 'bottom', labelKey: 'positionBottom', Icon: ArrowDown },
 ] as const
@@ -413,22 +409,6 @@ export function PresentationForm({
     onColorRightChange?.(effectiveColorRight)
   }, [effectiveColorRight, onColorRightChange])
 
-  /** Spelled-out names, so the inherit tooltip can say what is inherited. */
-  const requestLabel = (value: string) => {
-    if (value === 'bar') return t('presentation', 'requestBar')
-    if (value === 'flash') return t('presentation', 'requestBalloon')
-    if (value === 'slide') return t('presentation', 'requestOwnSlide')
-    if (value === 'off') return t('presentation', 'requestHide')
-    return t('presentation', 'chapterDefault')
-  }
-
-  const positionLabel = (value: string) =>
-    value === 'bottom' ? t('presentation', 'positionBottom') : t('presentation', 'positionTop')
-
-  /** Chapter segment reads "Chapter default — Bar along the bottom". */
-  const optionTitle = (value: string, label: string, effective: string, describe: (v: string) => string) =>
-    value === 'inherit' ? `${t('presentation', 'chapterDefault')} — ${describe(effective)}` : label
-
   const handleRequestDisplayChange = async (next: string) => {
     if (next === requestDisplay) return
     setRequestDisplay(next)
@@ -604,8 +584,11 @@ export function PresentationForm({
             </div>
 
             {/* Both of these overrule the chapter's choice for this member's
-                slide only, so each group starts with "chapter default" rather
-                than silently pretending the member picked what they inherited. */}
+                slide only. A member who has never chosen still stores
+                `inherit`, so the segments light up on the *effective* value —
+                what the slide does right now — rather than on the stored one,
+                which would leave the group with nothing selected. Picking any
+                segment writes the choice down and ends the inheritance. */}
             <div>
               <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">
                 {t('presentation', 'specialRequest')}
@@ -616,14 +599,9 @@ export function PresentationForm({
                     key={option.value}
                     type="button"
                     onClick={() => handleRequestDisplayChange(option.value)}
-                    aria-pressed={requestDisplay === option.value}
-                    title={optionTitle(
-                      option.value,
-                      t('presentation', option.labelKey),
-                      effectiveRequest,
-                      requestLabel,
-                    )}
-                    className={segmentClass(requestDisplay === option.value)}
+                    aria-pressed={effectiveRequest === option.value}
+                    title={t('presentation', option.labelKey)}
+                    className={segmentClass(effectiveRequest === option.value)}
                   >
                     <option.Icon className="w-4 h-4" />
                   </button>
@@ -641,14 +619,9 @@ export function PresentationForm({
                     key={option.value}
                     type="button"
                     onClick={() => handleNextPositionChange(option.value)}
-                    aria-pressed={nextPosition === option.value}
-                    title={optionTitle(
-                      option.value,
-                      t('presentation', option.labelKey),
-                      effectiveNextPosition,
-                      positionLabel,
-                    )}
-                    className={segmentClass(nextPosition === option.value)}
+                    aria-pressed={effectiveNextPosition === option.value}
+                    title={t('presentation', option.labelKey)}
+                    className={segmentClass(effectiveNextPosition === option.value)}
                   >
                     <option.Icon className="w-4 h-4" />
                   </button>
