@@ -175,38 +175,42 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
             </div>
 
             <div className="hidden items-center gap-2 md:flex">
-              {/* Theme */}
-              <div className="relative" ref={themeRef}>
-                <button
-                  type="button"
-                  onClick={() => setThemeMenuOpen((open) => !open)}
-                  aria-haspopup="menu"
-                  aria-expanded={themeMenuOpen}
-                  aria-label={t('common', 'theme')}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-neutral-200/60 hover:text-ink dark:text-neutral-400 dark:hover:bg-neutral-700/60 dark:hover:text-surface-text"
-                >
-                  <ActiveThemeIcon className="h-[18px] w-[18px]" />
-                </button>
-                {themeMenuOpen && (
-                  <div className={`${MENU_PANEL} w-44`} role="menu">
-                    {themeOptions.map(({ value, icon: Icon, label }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="menuitem"
-                        onClick={() => {
-                          setTheme(value)
-                          setThemeMenuOpen(false)
-                        }}
-                        className={`${MENU_ITEM} ${theme === value ? 'text-brand dark:text-brand' : ''}`}
-                      >
-                        <Icon className="h-4 w-4" />
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Theme — standalone only for visitors. A signed-in member picks
+                  the theme inside the profile dropdown instead, so the header
+                  carries one control, not two. */}
+              {!user && (
+                <div className="relative" ref={themeRef}>
+                  <button
+                    type="button"
+                    onClick={() => setThemeMenuOpen((open) => !open)}
+                    aria-haspopup="menu"
+                    aria-expanded={themeMenuOpen}
+                    aria-label={t('common', 'theme')}
+                    className="flex h-9 w-9 items-center justify-center rounded-lg text-ink-soft transition-colors hover:bg-neutral-200/60 hover:text-ink dark:text-neutral-400 dark:hover:bg-neutral-700/60 dark:hover:text-surface-text"
+                  >
+                    <ActiveThemeIcon className="h-[18px] w-[18px]" />
+                  </button>
+                  {themeMenuOpen && (
+                    <div className={`${MENU_PANEL} w-44`} role="menu">
+                      {themeOptions.map(({ value, icon: Icon, label }) => (
+                        <button
+                          key={value}
+                          type="button"
+                          role="menuitem"
+                          onClick={() => {
+                            setTheme(value)
+                            setThemeMenuOpen(false)
+                          }}
+                          className={`${MENU_ITEM} ${theme === value ? 'text-brand dark:text-brand' : ''}`}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* User actions */}
               {user ? (
@@ -216,10 +220,10 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
                     onClick={() => setUserMenuOpen((open) => !open)}
                     aria-haspopup="menu"
                     aria-expanded={userMenuOpen}
+                    aria-label={t('profile', 'title')}
                     className="flex items-center gap-2 rounded-lg border border-line-strong px-3.5 py-2 text-sm font-medium text-ink transition-colors hover:border-ink dark:border-line-dark dark:text-surface-text dark:hover:border-neutral-400"
                   >
                     <User className="h-4 w-4" />
-                    {t('profile', 'title')}
                     <ChevronDown
                       className={`h-3.5 w-3.5 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`}
                     />
@@ -272,6 +276,32 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
                         <LogOut className="h-4 w-4" />
                         {t('nav', 'logout')}
                       </button>
+                      <hr className="my-1.5 border-line dark:border-line-dark" />
+                      {/* All three themes side by side. Picking one applies it
+                          without closing the menu, so flipping between them to
+                          compare costs one click each, not three. */}
+                      <div
+                        className="flex items-center gap-1 px-2 py-1"
+                        role="group"
+                        aria-label={t('common', 'theme')}
+                      >
+                        {themeOptions.map(({ value, icon: Icon, label }) => (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => setTheme(value)}
+                            aria-pressed={theme === value}
+                            title={label}
+                            className={`flex flex-1 items-center justify-center rounded-lg p-2 transition-colors ${
+                              theme === value
+                                ? 'bg-brand/10 text-brand'
+                                : 'text-ink-soft hover:bg-neutral-200/60 dark:text-neutral-400 dark:hover:bg-neutral-800'
+                            }`}
+                          >
+                            <Icon className="h-4 w-4" />
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>

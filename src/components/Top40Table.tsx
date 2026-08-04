@@ -22,11 +22,17 @@ interface Top40TableProps {
   memberName?: string
   /** List label used for the Excel sheet/file name (e.g. "Top 40" / "Top 20"). */
   listLabel?: string
+  /**
+   * What an empty list says. The default names Top 40, and this table also
+   * serves the Top 20 page — without this, that page's empty state told
+   * members there were "no Top 40 entries".
+   */
+  emptyText?: string
 }
 
 const STORAGE_KEY = 'top40-view-mode'
 
-export function Top40Table({ entries, memberName, listLabel = 'Top 40' }: Top40TableProps) {
+export function Top40Table({ entries, memberName, listLabel = 'Top 40', emptyText }: Top40TableProps) {
   const { t } = useTranslations()
 
   const buildAiSearchQuery = (entry: Top40Entry) => {
@@ -43,17 +49,21 @@ export function Top40Table({ entries, memberName, listLabel = 'Top 40' }: Top40T
   }
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved === 'table' || saved === 'grid') return saved
-    }
-    return 'grid'
-  })
+  // The saved view mode has to wait for mount. Reading localStorage in the
+  // initializer hands the server one value and the browser another, and React
+  // reports the hydration mismatch on every data-active attribute. The first
+  // paint is always 'grid'; the saved choice applies one effect later.
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, viewMode)
-  }, [viewMode])
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === 'table' || saved === 'grid') setViewMode(saved)
+  }, [])
+
+  const changeViewMode = (mode: 'grid' | 'table') => {
+    setViewMode(mode)
+    localStorage.setItem(STORAGE_KEY, mode)
+  }
 
   const filteredEntries = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -117,7 +127,7 @@ export function Top40Table({ entries, memberName, listLabel = 'Top 40' }: Top40T
         <div className="segmented hidden lg:inline-flex">
           <button
             type="button"
-            onClick={() => setViewMode('grid')}
+            onClick={() => changeViewMode('grid')}
             className="segmented-item h-[38px] w-[38px]"
             data-active={viewMode === 'grid'}
             title={t('top40Table', 'gridView')}
@@ -126,7 +136,7 @@ export function Top40Table({ entries, memberName, listLabel = 'Top 40' }: Top40T
           </button>
           <button
             type="button"
-            onClick={() => setViewMode('table')}
+            onClick={() => changeViewMode('table')}
             className="segmented-item h-[38px] w-[38px]"
             data-active={viewMode === 'table'}
             title={t('top40Table', 'tableView')}
@@ -238,7 +248,7 @@ export function Top40Table({ entries, memberName, listLabel = 'Top 40' }: Top40T
         <div className="panel empty-state">
           <Inbox className="h-7 w-7 text-neutral-300 dark:text-neutral-600" aria-hidden="true" />
           <p className="text-sm">
-            {searchQuery ? t('top40Table', 'noResultsSearch') : t('top40Table', 'noEntries')}
+            {searchQuery ? t('top40Table', 'noResultsSearch') : (emptyText ?? t('top40Table', 'noEntries'))}
           </p>
         </div>
       )}

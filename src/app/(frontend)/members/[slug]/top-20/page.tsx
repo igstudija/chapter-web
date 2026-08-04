@@ -171,6 +171,7 @@ export default async function MemberTop20Page({ params }: { params: Promise<{ sl
           entries={top20Data.docs}
           memberName={`${memberUser.name}_${memberUser.surname}`}
           listLabel={t('members', 'top20')}
+          emptyText={t('profile', 'noTop20')}
         />
       </div>
     </div>
