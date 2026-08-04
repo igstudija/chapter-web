@@ -74,6 +74,7 @@ export interface Config {
     events: Event;
     blog: Blog;
     'special-requests': SpecialRequest;
+    'chapter-connections': ChapterConnection;
     top40: Top40;
     top20: Top20;
     'success-stories': SuccessStory;
@@ -104,6 +105,7 @@ export interface Config {
     events: EventsSelect<false> | EventsSelect<true>;
     blog: BlogSelect<false> | BlogSelect<true>;
     'special-requests': SpecialRequestsSelect<false> | SpecialRequestsSelect<true>;
+    'chapter-connections': ChapterConnectionsSelect<false> | ChapterConnectionsSelect<true>;
     top40: Top40Select<false> | Top40Select<true>;
     top20: Top20Select<false> | Top20Select<true>;
     'success-stories': SuccessStoriesSelect<false> | SuccessStoriesSelect<true>;
@@ -507,8 +509,9 @@ export interface SpecialRequest {
    */
   registrationNumber?: string | null;
   /**
-   * Show this request publicly to other members
+   * Keep this request inside our own chapter. Unticked, it is offered to the chapters we are linked to, along with your name, company, phone and email.
    */
+  chapterOnly?: boolean | null;
   isPublic?: boolean | null;
   requestedBy: number | User;
   status?: ('open' | 'in-progress' | 'fulfilled' | 'closed') | null;
@@ -520,6 +523,49 @@ export interface SpecialRequest {
    * Feature this request on the slideshow slide (one per member).
    */
   showOnSlide?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Chapters this install exchanges special requests with. Send a partner the key generated here, and paste theirs into the field below.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chapter-connections".
+ */
+export interface ChapterConnection {
+  id: number;
+  /**
+   * What this chapter is called in our list and in the filter. Ours to choose — a partner cannot rename itself here.
+   */
+  name: string;
+  /**
+   * Send this to the other chapter. It carries our address, our name and the secret they will present, so it is the only thing they need. Treat it like a password: anyone holding it can read every shared special request here, with the contact details attached.
+   */
+  ourKey?: string | null;
+  /**
+   * The raw secret behind our connection key.
+   */
+  ourSecret?: string | null;
+  /**
+   * Tick and save to replace our connection key. The old one stops working immediately, so tell the other chapter first — their side goes quiet until they paste the new one.
+   */
+  regenerateKey?: boolean | null;
+  /**
+   * The key the other chapter generated and sent you. Leave empty to share with them without reading them.
+   */
+  theirKey?: string | null;
+  /**
+   * Read back out of the key above. A key nobody can read is a key nobody can check, so this is what we will actually call and what they call themselves.
+   */
+  theirChapter?: string | null;
+  /**
+   * Stops serving this partner and stops reading them, without discarding the keys.
+   */
+  paused?: boolean | null;
+  /**
+   * The last time we read this partner successfully. An unreachable partner is dropped silently from the members list, so this is the only place a failure is visible.
+   */
+  lastReachedAt?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1879,6 +1925,10 @@ export interface PayloadLockedDocument {
         value: number | SpecialRequest;
       } | null)
     | ({
+        relationTo: 'chapter-connections';
+        value: number | ChapterConnection;
+      } | null)
+    | ({
         relationTo: 'top40';
         value: number | Top40;
       } | null)
@@ -2167,11 +2217,28 @@ export interface BlogSelect<T extends boolean = true> {
 export interface SpecialRequestsSelect<T extends boolean = true> {
   request?: T;
   registrationNumber?: T;
+  chapterOnly?: T;
   isPublic?: T;
   requestedBy?: T;
   status?: T;
   sortOrder?: T;
   showOnSlide?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "chapter-connections_select".
+ */
+export interface ChapterConnectionsSelect<T extends boolean = true> {
+  name?: T;
+  ourKey?: T;
+  ourSecret?: T;
+  regenerateKey?: T;
+  theirKey?: T;
+  theirChapter?: T;
+  paused?: T;
+  lastReachedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

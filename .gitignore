@@ -57,3 +57,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 .env*
+
+# Scratch area for moving the repo between machines — never part of a release.
+/_transfer/

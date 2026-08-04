@@ -3,10 +3,11 @@
 # managed Postgres is what the app is built and tested against, and bundling a
 # throwaway one would invite people to run it in production.
 #
-#   docker compose up -d --build      start
-#   docker compose run --rm migrate   apply schema migrations
-#   docker compose run --rm setup     create the first organisation + superadmin
-#   docker compose logs -f app        follow logs
+#   docker compose up -d --build       start
+#   docker compose run --rm migrate    apply schema migrations
+#   docker compose run --rm secure-db  close the tables to Supabase's public API
+#   docker compose run --rm setup      create the first organisation + superadmin
+#   docker compose logs -f app         follow logs
 
 services:
   app:
@@ -18,9 +19,9 @@ services:
       # leaves the browser with stale defaults.
       args:
         NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
-        NEXT_PUBLIC_SUPERADMIN_HOSTS: ${NEXT_PUBLIC_SUPERADMIN_HOSTS:-admin.localhost}
         NEXT_PUBLIC_PRODUCT_NAME: ${NEXT_PUBLIC_PRODUCT_NAME:-}
         NEXT_PUBLIC_DEFAULT_ORG_NAME: ${NEXT_PUBLIC_DEFAULT_ORG_NAME:-}
+        NEXT_PUBLIC_ORG_UNIT_NOUN: ${NEXT_PUBLIC_ORG_UNIT_NOUN:-}
         NEXT_PUBLIC_IMAGE_HOSTS: ${NEXT_PUBLIC_IMAGE_HOSTS:-}
         SUPABASE_URL: ${SUPABASE_URL}
     restart: unless-stopped
@@ -50,6 +51,19 @@ services:
     command: pnpm migrate
     profiles: ['tools']
 
+  # Only does anything when POSTGRESS_DATABASE_URL points at Supabase; against a
+  # Postgres you run yourself there is no public API to close, and it says so and
+  # exits. Safe to run every time, and worth running after every migration.
+  secure-db:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    env_file:
+      - .env
+    command: pnpm secure:db --apply
+    profiles: ['tools']
+
   setup:
     build:
       context: .
@@ -59,5 +73,5 @@ services:
       - .env
     # Interactive unless SETUP_ORG_NAME / SETUP_ORG_DOMAIN / SETUP_ADMIN_EMAIL /
     # SETUP_ADMIN_PASSWORD are set in .env.
-    command: pnpm setup
+    command: pnpm bootstrap
     profiles: ['tools']

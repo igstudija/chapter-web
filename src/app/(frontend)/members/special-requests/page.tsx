@@ -7,6 +7,8 @@ import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { PageHeader } from '@/components'
 import { SpecialRequestsGrid } from '@/components/SpecialRequestsGrid'
+import { readAllPartners } from '@/lib/chapterExchange/readPartners'
+import { partnerRowsForList } from '@/lib/chapterExchange/mergeIntoList'
 
 export const metadata = {
   title: 'Special Requests',
@@ -30,8 +32,8 @@ export default async function SpecialRequestsPage() {
   const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const t = getTranslations(locale)
 
-  // Fetch requests and memberships in parallel
-  const [requestsData, membershipsData] = await Promise.all([
+  // Fetch requests, memberships and the chapters we are linked to in parallel.
+  const [requestsData, membershipsData, connectionsData] = await Promise.all([
     payload.find({
       collection: 'special-requests',
       where: {},
@@ -47,7 +49,23 @@ export default async function SpecialRequestsPage() {
       limit: 500,
       depth: 2,
     }),
+    payload.find({ collection: 'chapter-connections', limit: 1000, depth: 0, overrideAccess: true }),
   ])
+
+  // Linked chapters are read live. One that does not answer contributes
+  // nothing and is not mentioned — the list is simply shorter (ADR 0007).
+  const partners = await readAllPartners({
+    connections: connectionsData.docs,
+    onReached: async (id) => {
+      await payload.update({
+        collection: 'chapter-connections',
+        id,
+        data: { lastReachedAt: new Date().toISOString() },
+        overrideAccess: true,
+      })
+    },
+  })
+  const fromPartners = partnerRowsForList(partners)
 
   // Create a record of user ID to membership for quick lookup
   // Note: Using Record instead of Map because Map cannot be serialized to client components
@@ -59,11 +77,14 @@ export default async function SpecialRequestsPage() {
     }
   }
 
+  const allRequests = [...requestsData.docs, ...fromPartners.requests]
+  const allMemberships = { ...membershipByUserId, ...fromPartners.membershipByUserId }
+
   return (
     <div className="min-h-screen bg-paper dark:bg-surface">
       <PageHeader
         title={t('members', 'specialRequests')}
-        eyebrow={`${requestsData.totalDocs}`}
+        eyebrow={`${allRequests.length}`}
         breadcrumbs={[
           { label: t('common', 'home'), href: '/' },
           { label: t('members', 'specialRequests') },
@@ -72,8 +93,8 @@ export default async function SpecialRequestsPage() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
 
         <SpecialRequestsGrid
-          requests={requestsData.docs}
-          membershipByUserId={membershipByUserId}
+          requests={allRequests}
+          membershipByUserId={allMemberships}
           locale={locale}
           labels={{
             searchPlaceholder: t('common', 'searchPlaceholder'),
@@ -90,7 +111,9 @@ export default async function SpecialRequestsPage() {
             expand: t('specialRequestsPage', 'expand'),
             collapse: t('specialRequestsPage', 'collapse'),
             allRequests: t('specialRequestsPage', 'allRequests'),
+            allChapters: t('specialRequestsPage', 'allChapters'),
           }}
+          ourChapterName={settings.siteName || undefined}
         />
       </div>
     </div>

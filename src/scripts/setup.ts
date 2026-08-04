@@ -2,6 +2,7 @@ import 'dotenv/config'
 import readline from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
 import { getPayload } from 'payload'
+import type { CollectionSlug, JsonObject } from 'payload'
 import config from '../payload.config'
 import { PRODUCT_NAME } from '../lib/branding'
 
@@ -19,7 +20,7 @@ import { PRODUCT_NAME } from '../lib/branding'
  * Non-interactive (CI, Docker entrypoint) — set all four and prompts are skipped:
  *   SETUP_ORG_NAME, SETUP_ORG_DOMAIN, SETUP_ADMIN_EMAIL, SETUP_ADMIN_PASSWORD
  *
- * Run with: pnpm setup
+ * Run with: pnpm bootstrap
  */
 
 const isEmail = (value: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
@@ -62,11 +63,16 @@ async function main() {
   // decided which one a request belonged to.
   const existingSettings = await payload.find({ collection: 'settings', limit: 1 })
 
+  // Held for the page-configuration records below, which display it.
+  let orgName: string
+
   if (existingSettings.docs.length > 0) {
-    console.log(`✓ Settings already exist: ${existingSettings.docs[0].siteName} — skipping.`)
+    orgName = existingSettings.docs[0].siteName
+    console.log(`✓ Settings already exist: ${orgName} — skipping.`)
   } else {
     const name = await value('SETUP_ORG_NAME', 'Organisation name:')
     if (!name) throw new Error('An organisation name is required.')
+    orgName = name
 
     await payload.create({
       collection: 'settings',
@@ -135,6 +141,46 @@ async function main() {
     }
 
     console.log(`✓ Created administrator: ${email}`)
+  }
+
+  // --- Page configuration ---------------------------------------------------
+  // Seven records the pages read their headings and copy from. Payload creates
+  // none of them on demand, so without this an install that reported success
+  // still renders its first screen half-built — and that screen is the only
+  // evidence a Self-hoster has that the install worked at all.
+  //
+  // Defaults only. No fictional members, events or articles: a site that
+  // renders correctly while empty is an install that worked, whereas one seeded
+  // with invented people is a demo that has to be cleaned out before launch.
+  // Where a page needs prose we cannot know, it carries the same [bracketed]
+  // prompt the policy templates use, so it reads as something awaiting an
+  // editor rather than as something the software believes.
+  const pageConfig: Array<{ collection: CollectionSlug; label: string; data: JsonObject }> = [
+    { collection: 'homepage-settings', label: 'Homepage', data: { internalTitle: orgName } },
+    {
+      collection: 'about-us-settings',
+      label: 'About page',
+      data: {
+        introduction: `[Introduce ${orgName} here. This paragraph opens the About page.]`,
+      },
+    },
+    { collection: 'faq-settings', label: 'FAQ page', data: {} },
+    { collection: 'companies-page-settings', label: 'Companies page', data: {} },
+    { collection: 'contacts-page-settings', label: 'Contacts page', data: {} },
+    { collection: 'listing-pages-seo', label: 'Listing page SEO', data: {} },
+    { collection: 'slideshow-settings-collection', label: 'Slideshow', data: {} },
+  ]
+
+  for (const { collection, label, data } of pageConfig) {
+    const existing = await payload.find({ collection, limit: 1, overrideAccess: true })
+
+    if (existing.docs.length > 0) {
+      console.log(`✓ ${label} configuration already exists — skipping.`)
+      continue
+    }
+
+    await payload.create({ collection, data, overrideAccess: true })
+    console.log(`✓ Created ${label} configuration`)
   }
 
   await rl?.close()

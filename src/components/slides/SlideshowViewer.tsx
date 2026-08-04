@@ -102,9 +102,7 @@ function slideMediaToPreload(slide: SlideData | undefined): {
 /** Slide kinds that run a countdown and auto-advance. */
 function isTimedSlide(slide: SlideData | undefined): boolean {
   return (
-    slide?.type === 'member' ||
-    slide?.type === 'guest-detail' ||
-    slide?.type === 'special-request'
+    slide?.type === 'member' || slide?.type === 'guest-detail' || slide?.type === 'special-request'
   )
 }
 
@@ -246,9 +244,12 @@ export function SlideshowViewer({
     idleTimerRef.current = setTimeout(() => setControlsVisible(false), CONTROLS_IDLE_MS)
   }, [])
 
-  useEffect(() => () => {
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
-  }, [])
+  useEffect(
+    () => () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current)
+    },
+    [],
+  )
 
   // Warm the next slide while this one is on screen.
   const preload = useMemo(
@@ -310,12 +311,7 @@ export function SlideshowViewer({
 
   useEffect(() => {
     const slide = slides[currentSlideIndex]
-    if (
-      timeRemaining === 1 &&
-      isTimedSlide(slide) &&
-      !slide?.disableTimer &&
-      transitionSoundUrl
-    ) {
+    if (timeRemaining === 1 && isTimedSlide(slide) && !slide?.disableTimer && transitionSoundUrl) {
       const audio = new Audio(transitionSoundUrl)
       audio.play().catch(() => {})
     }
@@ -426,15 +422,7 @@ export function SlideshowViewer({
 
     globalThis.addEventListener('keydown', handleKeyDown)
     return () => globalThis.removeEventListener('keydown', handleKeyDown)
-  }, [
-    nextSlide,
-    prevSlide,
-    goToFirst,
-    goToLast,
-    isFullscreen,
-    toggleFullscreen,
-    exitFullscreen,
-  ])
+  }, [nextSlide, prevSlide, goToFirst, goToLast, isFullscreen, toggleFullscreen, exitFullscreen])
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -451,7 +439,6 @@ export function SlideshowViewer({
   }, [])
 
   const enableAttendance = buildContext.enableAttendance
-
 
   const slideHeadline = (slide: SlideData): string => {
     if (slide.type === 'member') {
@@ -549,12 +536,20 @@ export function SlideshowViewer({
     slideDuration,
     progressStarted,
     nextName: getNextMemberName(),
+    // The logo wall is the one slide that fills the frame corner to corner, so
+    // the top right the badge normally owns is somebody's logo. Its last row is
+    // the short one, which puts the free space at the bottom — it parks there
+    // regardless of what the chapter or the member chose for member slides.
     nextPosition:
-      memberSlideData?.nextSpeakerPosition ?? buildContext.settings.nextSpeakerPosition ?? 'top',
+      currentSlide.type === 'intro'
+        ? 'bottom'
+        : (memberSlideData?.nextSpeakerPosition ??
+          buildContext.settings.nextSpeakerPosition ??
+          'top'),
     requestBarVisible: Boolean(
       memberSlideData &&
-        !memberSlideData.hideSpecialRequest &&
-        memberSlideData.member.specialRequest,
+      !memberSlideData.hideSpecialRequest &&
+      memberSlideData.member.specialRequest,
     ),
     slideNumber: currentSlideIndex + 1,
     totalSlides,
@@ -607,8 +602,13 @@ export function SlideshowViewer({
               )}
               {currentSlide.type === 'group' && (
                 <GroupSlide
-                  group={(currentSlide.data as { group: SlidePowerGroup; members: SlideMember[] }).group}
-                  members={(currentSlide.data as { group: SlidePowerGroup; members: SlideMember[] }).members}
+                  group={
+                    (currentSlide.data as { group: SlidePowerGroup; members: SlideMember[] }).group
+                  }
+                  members={
+                    (currentSlide.data as { group: SlidePowerGroup; members: SlideMember[] })
+                      .members
+                  }
                   translations={{
                     groupSubtitle: translations.groupSubtitle ?? defaultTranslations.groupSubtitle!,
                     lookingForPartners:
@@ -621,111 +621,120 @@ export function SlideshowViewer({
                   }}
                 />
               )}
-              {currentSlide.type === 'guests' && (() => {
-                const guestsData = currentSlide.data as {
-                  guests: Array<{
-                    name: string
-                    company?: string
-                    description?: string
-                    attendance?: 'onsite' | 'online'
-                  }>
-                  logoUrl: string | null
-                  chapterName: string
-                  pageNumber?: number
-                  totalPages?: number
-                  startIndex?: number
-                  title?: string
-                }
-                return (
-                  <GuestsSlide
-                    guests={guestsData.guests}
-                    logoUrl={guestsData.logoUrl}
-                    chapterName={guestsData.chapterName}
-                    pageNumber={guestsData.pageNumber}
-                    totalPages={guestsData.totalPages}
-                    startIndex={guestsData.startIndex}
-                    title={guestsData.title}
-                  />
-                )
-              })()}
-              {currentSlide.type === 'guest-detail' && (() => {
-                const detailData = currentSlide.data as {
-                  guest: { name: string; company?: string; description?: string; attendance?: 'onsite' | 'online' }
-                  guestNumber: number
-                  totalGuests: number
-                  title?: string
-                }
-                return (
-                  <GuestDetailSlide
-                    guest={detailData.guest}
-                    guestNumber={detailData.guestNumber}
-                    totalGuests={detailData.totalGuests}
-                    title={detailData.title}
-                  />
-                )
-              })()}
-              {currentSlide.type === 'member' && (() => {
-                const memberData = currentSlide.data as {
-                  member: SlideMember
-                  isSpeechMaster: boolean
-                  group?: SlidePowerGroup
-                  hideMemberInfo?: boolean
-                  hideSpecialRequest?: boolean
-                }
-                const isStartMember =
-                  String(memberData.member.id) === String(startMemberId)
-                return (
-                  <MemberSlide
-                    member={memberData.member}
-                    isSpeechMaster={memberData.isSpeechMaster}
-                    hideMemberInfo={memberData.hideMemberInfo}
-                    hideSpecialRequest={memberData.hideSpecialRequest}
-                    imageSeconds={buildContext.settings.slideImageSeconds ?? 30}
-                    showAttendanceIcon={enableAttendance}
-                    overrideBackgroundColor={isStartMember ? overrideBackgroundColor : undefined}
-                    overrideBackgroundColorRight={
-                      isStartMember ? overrideBackgroundColorRight : undefined
+              {currentSlide.type === 'guests' &&
+                (() => {
+                  const guestsData = currentSlide.data as {
+                    guests: Array<{
+                      name: string
+                      company?: string
+                      description?: string
+                      attendance?: 'onsite' | 'online'
+                    }>
+                    logoUrl: string | null
+                    chapterName: string
+                    pageNumber?: number
+                    totalPages?: number
+                    startIndex?: number
+                    title?: string
+                  }
+                  return (
+                    <GuestsSlide
+                      guests={guestsData.guests}
+                      logoUrl={guestsData.logoUrl}
+                      chapterName={guestsData.chapterName}
+                      pageNumber={guestsData.pageNumber}
+                      totalPages={guestsData.totalPages}
+                      startIndex={guestsData.startIndex}
+                      title={guestsData.title}
+                    />
+                  )
+                })()}
+              {currentSlide.type === 'guest-detail' &&
+                (() => {
+                  const detailData = currentSlide.data as {
+                    guest: {
+                      name: string
+                      company?: string
+                      description?: string
+                      attendance?: 'onsite' | 'online'
                     }
-                    overrideImageMode={isStartMember ? overrideImageMode : undefined}
-                    overrideTemplate={isStartMember ? overrideTemplate : undefined}
-                    translations={translations}
-                    businessGivenMin={buildContext.settings.businessGivenMin ?? 0}
-                    businessReceivedMin={buildContext.settings.businessReceivedMin ?? 0}
-                  />
-                )
-              })()}
-              {currentSlide.type === 'speech-master-ceremony' && (() => {
-                const ceremonyData = currentSlide.data as {
-                  speechMaster: SlideMember
-                  title?: string | null
-                }
-                return (
-                  <SpeechMasterCeremonySlide
-                    speechMaster={ceremonyData.speechMaster}
-                    title={ceremonyData.title}
-                  />
-                )
-              })()}
+                    guestNumber: number
+                    totalGuests: number
+                    title?: string
+                  }
+                  return (
+                    <GuestDetailSlide
+                      guest={detailData.guest}
+                      guestNumber={detailData.guestNumber}
+                      totalGuests={detailData.totalGuests}
+                      title={detailData.title}
+                    />
+                  )
+                })()}
+              {currentSlide.type === 'member' &&
+                (() => {
+                  const memberData = currentSlide.data as {
+                    member: SlideMember
+                    isSpeechMaster: boolean
+                    group?: SlidePowerGroup
+                    hideMemberInfo?: boolean
+                    hideSpecialRequest?: boolean
+                  }
+                  const isStartMember = String(memberData.member.id) === String(startMemberId)
+                  return (
+                    <MemberSlide
+                      member={memberData.member}
+                      isSpeechMaster={memberData.isSpeechMaster}
+                      hideMemberInfo={memberData.hideMemberInfo}
+                      hideSpecialRequest={memberData.hideSpecialRequest}
+                      imageSeconds={buildContext.settings.slideImageSeconds ?? 30}
+                      showAttendanceIcon={enableAttendance}
+                      overrideBackgroundColor={isStartMember ? overrideBackgroundColor : undefined}
+                      overrideBackgroundColorRight={
+                        isStartMember ? overrideBackgroundColorRight : undefined
+                      }
+                      overrideImageMode={isStartMember ? overrideImageMode : undefined}
+                      overrideTemplate={isStartMember ? overrideTemplate : undefined}
+                      translations={translations}
+                      businessGivenMin={buildContext.settings.businessGivenMin ?? 0}
+                      businessReceivedMin={buildContext.settings.businessReceivedMin ?? 0}
+                    />
+                  )
+                })()}
+              {currentSlide.type === 'speech-master-ceremony' &&
+                (() => {
+                  const ceremonyData = currentSlide.data as {
+                    speechMaster: SlideMember
+                    title?: string | null
+                  }
+                  return (
+                    <SpeechMasterCeremonySlide
+                      speechMaster={ceremonyData.speechMaster}
+                      title={ceremonyData.title}
+                    />
+                  )
+                })()}
               {currentSlide.type === 'special-request' && (
                 <SpecialRequestSlide
                   member={(currentSlide.data as { member: SlideMember }).member}
                   title={translations.lookingForPartners}
                 />
               )}
-              {currentSlide.type === 'custom-image' && (() => {
-                const imageData = currentSlide.data as {
-                  imageUrl: string
-                  displayMode: 'contain' | 'cover'
-                  backgroundColor: string
-                }
-                return (
-                  <CustomImageSlide
-                    imageUrl={imageData.imageUrl}
-                    displayMode={imageData.displayMode}
-                    backgroundColor={imageData.backgroundColor}
-                  />
-                )
-              })()}
+              {currentSlide.type === 'custom-image' &&
+                (() => {
+                  const imageData = currentSlide.data as {
+                    imageUrl: string
+                    displayMode: 'contain' | 'cover'
+                    backgroundColor: string
+                  }
+                  return (
+                    <CustomImageSlide
+                      imageUrl={imageData.imageUrl}
+                      displayMode={imageData.displayMode}
+                      backgroundColor={imageData.backgroundColor}
+                    />
+                  )
+                })()}
             </div>
 
             {flashRequest && (
@@ -735,7 +744,6 @@ export function SlideshowViewer({
         </foreignObject>
 
         <SlideshowChrome {...chromeProps} />
-
       </svg>
 
       {/*

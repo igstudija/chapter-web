@@ -16,7 +16,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const body = await request.json()
-    const { request: requestText, registrationNumber, showOnSlide, sortOrder } = body
+    const { request: requestText, registrationNumber, showOnSlide, sortOrder, chapterOnly } = body
 
     // Verify ownership
     const existing = await payload.findByID({
@@ -49,6 +49,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if ('registrationNumber' in body) data.registrationNumber = registrationNumber || undefined
     if (typeof showOnSlide === 'boolean') data.showOnSlide = showOnSlide
     if (typeof sortOrder === 'number') data.sortOrder = sortOrder
+    if (typeof chapterOnly === 'boolean') data.chapterOnly = chapterOnly
 
     const doc = await payload.update({
       collection: 'special-requests',
