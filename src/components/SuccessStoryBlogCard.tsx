@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { CompanyLogo } from '@/components/CompanyLogo'
 
 interface SuccessStoryBlogCardProps {
   id: string
@@ -58,15 +59,7 @@ export function SuccessStoryBlogCard({
         {/* Company logo in bottom right corner */}
         {author.logoUrl && (
           <div className="absolute bottom-3 right-3 bg-white dark:bg-neutral-700 rounded-lg p-1.5 shadow-md">
-            <Image
-              src={author.logoUrl}
-              alt={author.company}
-              // Definite width: an SVG with only a viewBox has no intrinsic
-              // size, and `w-auto` renders it at nothing.
-              width={120}
-              height={60}
-              className="object-contain max-h-8 w-[60px] max-w-full"
-            />
+            <CompanyLogo src={author.logoUrl} alt={author.company} width={60} height={32} />
           </div>
         )}
 

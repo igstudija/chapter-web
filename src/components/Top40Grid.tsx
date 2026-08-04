@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { LayoutGrid, Table, Inbox } from 'lucide-react'
 import Link from 'next/link'
 import slugify from 'slugify'
@@ -9,6 +9,7 @@ import { ListSearch } from './ListSearch'
 import { Pagination } from './Pagination'
 import { ProspectSearchLinks } from './ProspectSearchLinks'
 import { useTranslations } from './TranslationsProvider'
+import { useStoredViewMode, PROSPECT_VIEW_MODE_KEY } from './useStoredViewMode'
 
 const PAGE_SIZE_OPTIONS = [21, 50, 100] as const
 
@@ -34,8 +35,6 @@ interface Top40GridProps {
   /** Controls that sit at the head of the search row — e.g. the Top 40/20 switch. */
   leadingControls?: React.ReactNode
 }
-
-const STORAGE_KEY = 'top40-view-mode'
 
 /** Only a populated relationship carries a name; an unresolved id tells us nothing. */
 function resolveSubmitter(entry: Top40Entry) {
@@ -68,21 +67,7 @@ export function Top40Grid({ entries, leadingControls }: Top40GridProps) {
       .replace('{regNumber}', regNumber)
   }
 
-  // The saved view mode has to wait for mount. Reading localStorage in the
-  // initializer hands the server one value and the browser another, and React
-  // reports the hydration mismatch on every data-active attribute. The first
-  // paint is always 'grid'; the saved choice applies one effect later.
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
-
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'table' || saved === 'grid') setViewMode(saved)
-  }, [])
-
-  const changeViewMode = (mode: 'grid' | 'table') => {
-    setViewMode(mode)
-    localStorage.setItem(STORAGE_KEY, mode)
-  }
+  const [viewMode, changeViewMode] = useStoredViewMode(PROSPECT_VIEW_MODE_KEY)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)

@@ -1,6 +1,7 @@
 'use client'
 
 import { Pencil, Trash2, Award, User } from 'lucide-react'
+import { formatDateShort } from '@/lib/formatDate'
 import Link from 'next/link'
 import { useTranslations } from './TranslationsProvider'
 
@@ -86,7 +87,7 @@ export function SuccessStoryCard({
             )}
 
             <span className="text-xs text-neutral-400 dark:text-neutral-500 ml-auto">
-              {new Date(story.createdAt).toLocaleDateString()}
+              {formatDateShort(story.createdAt)}
             </span>
           </div>
         </div>

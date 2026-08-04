@@ -70,26 +70,31 @@ Skipping step 3 leaves your database and every other install's out of sync.
 
 **Adding an admin component** also needs `pnpm generate:importmap`.
 
-**Host-to-organisation resolution** lives in exactly one place —
-`src/lib/resolveSite.ts`. Four call sites use it: page rendering, access
-control, the login route, and the `beforeLogin` hook. They each used to carry
-their own copy and drifted apart, which is how sessions ended up scoped to a
-different organisation than the request. Don't reintroduce a local copy.
+**Settings** are read through `src/lib/getSiteSettings.ts` — `getSettings()`
+and `getSlideshowSettings()`, both wrapped in React `cache` so a page rendering
+many server components asks the database once rather than dozens of times. Read
+them from there rather than querying the collection directly, or that dedup is
+lost.
 
-**Storage** is likewise centralised in `src/lib/storage.ts`. A new storage
-operation belongs there rather than in a direct call to the provider API.
+**Storage** is centralised in `src/lib/storage.ts`. A new storage operation
+belongs there rather than in a direct call to the provider API.
 
-**Access control** is in `src/access/`. Most collections should use the
-`siteScoped` / `siteBasedListFilter` helpers from `multisite.ts`. A collection
-with hand-rolled access rules is a collection that will eventually leak across
-organisations.
+**Access control** is in `src/access/index.ts`, as named rules —
+`activeMember`, `adminOnly`, `adminOrSelf`, `activeMembersCanRead`. Use those
+rather than writing a predicate inline: a collection with hand-rolled access is
+the one that eventually lets a signed-out visitor read something it should not.
+
+**Anything sized in the header, on a card or on a slide from an uploaded logo**
+goes through `src/components/CompanyLogo.tsx`. Half of these files are SVGs
+carrying only a `viewBox`, which have a ratio but no intrinsic size, and they
+vanish the moment something gives them an automatic width.
 
 ### Adding a language
 
 1. Copy `src/messages/en.json` to `src/messages/<code>.json` and translate the
    values.
 2. Add the code to `Locale` in `src/lib/i18n.ts` and register the import.
-3. Add it to the `locale` options in `src/collections/Sites.ts`.
+3. Add it to the `locale` options in `src/collections/Settings.ts`.
 
 `Messages` is derived from `en.json`, so `pnpm typecheck` will list every key
 your new file is missing. English is the reference translation — new keys go

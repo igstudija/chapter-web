@@ -44,23 +44,6 @@ export const SpecialRequests: CollectionConfig = {
       },
     },
     {
-      /*
-       * Dead, and kept on purpose for one deploy. The production build still
-       * running SELECTs `is_public` in every special-requests query, so the
-       * column has to survive until the chapterOnly code is what's live —
-       * dropping it now is an instant 500 on every listing page. Removing
-       * this field (and then the column) is the second half of the
-       * expand/contract; nothing reads it, and the migration file carries
-       * the real story for fresh installs.
-       */
-      name: 'isPublic',
-      type: 'checkbox',
-      defaultValue: true,
-      admin: {
-        hidden: true,
-      },
-    },
-    {
       name: 'requestedBy',
       type: 'relationship',
       relationTo: 'users',

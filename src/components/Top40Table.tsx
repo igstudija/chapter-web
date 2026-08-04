@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { LayoutGrid, Table, Download, Inbox } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { TagCloud } from './TagCloud'
 import { ListSearch } from './ListSearch'
 import { ProspectSearchLinks } from './ProspectSearchLinks'
 import { useTranslations } from './TranslationsProvider'
+import { useStoredViewMode, PROSPECT_VIEW_MODE_KEY } from './useStoredViewMode'
 
 interface Top40Entry {
   id: string | number
@@ -30,8 +31,6 @@ interface Top40TableProps {
   emptyText?: string
 }
 
-const STORAGE_KEY = 'top40-view-mode'
-
 export function Top40Table({ entries, memberName, listLabel = 'Top 40', emptyText }: Top40TableProps) {
   const { t } = useTranslations()
 
@@ -49,21 +48,7 @@ export function Top40Table({ entries, memberName, listLabel = 'Top 40', emptyTex
   }
 
   const [searchQuery, setSearchQuery] = useState('')
-  // The saved view mode has to wait for mount. Reading localStorage in the
-  // initializer hands the server one value and the browser another, and React
-  // reports the hydration mismatch on every data-active attribute. The first
-  // paint is always 'grid'; the saved choice applies one effect later.
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
-
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved === 'table' || saved === 'grid') setViewMode(saved)
-  }, [])
-
-  const changeViewMode = (mode: 'grid' | 'table') => {
-    setViewMode(mode)
-    localStorage.setItem(STORAGE_KEY, mode)
-  }
+  const [viewMode, changeViewMode] = useStoredViewMode(PROSPECT_VIEW_MODE_KEY)
 
   const filteredEntries = useMemo(() => {
     if (!searchQuery.trim()) {

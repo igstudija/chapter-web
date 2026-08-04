@@ -5,7 +5,8 @@ import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Menu, X, User, Key, LogOut, Shield, Sun, Moon, Monitor, ChevronDown } from 'lucide-react'
-import { useTheme } from './ThemeProvider'
+import type { LucideIcon } from 'lucide-react'
+import { useTheme, type ThemeMode } from './ThemeProvider'
 import { useTranslations } from './TranslationsProvider'
 import { ChangePasswordModal } from './ChangePasswordModal'
 
@@ -53,6 +54,54 @@ const MENU_PANEL =
   'absolute right-0 top-full mt-2 rounded-xl border border-line bg-card py-1.5 shadow-lg dark:border-line-dark dark:bg-surface-raised z-50'
 const MENU_ITEM =
   'flex w-full items-center gap-3 px-3.5 py-2 text-sm text-ink transition-colors hover:bg-neutral-100 dark:text-surface-text dark:hover:bg-neutral-700/60'
+
+/** One theme option: the value stored, the icon shown, the name read aloud. */
+type ThemeOption = {
+  readonly value: ThemeMode
+  readonly icon: LucideIcon
+  readonly label: string
+}
+
+/**
+ * The three themes as a row of icon buttons.
+ *
+ * Rendered twice — inside the profile dropdown and in the mobile menu — and the
+ * two had drifted into different markup for the same control. The signed-out
+ * menu deliberately does not use this: with no dropdown to hide them in, it
+ * shows labelled rows instead.
+ */
+function ThemeIcons({
+  options,
+  theme,
+  setTheme,
+  buttonClassName = '',
+}: {
+  readonly options: readonly ThemeOption[]
+  readonly theme: ThemeMode
+  readonly setTheme: (value: ThemeMode) => void
+  readonly buttonClassName?: string
+}) {
+  return (
+    <>
+      {options.map(({ value, icon: Icon, label }) => (
+        <button
+          key={value}
+          type="button"
+          onClick={() => setTheme(value)}
+          aria-pressed={theme === value}
+          title={label}
+          className={`rounded-lg p-2 transition-colors ${buttonClassName} ${
+            theme === value
+              ? 'bg-brand/10 text-brand'
+              : 'text-ink-soft hover:bg-neutral-200/60 dark:text-neutral-400 dark:hover:bg-neutral-800'
+          }`}
+        >
+          <Icon className="h-4 w-4" />
+        </button>
+      ))}
+    </>
+  )
+}
 
 export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: HeaderClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -285,22 +334,12 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
                         role="group"
                         aria-label={t('common', 'theme')}
                       >
-                        {themeOptions.map(({ value, icon: Icon, label }) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => setTheme(value)}
-                            aria-pressed={theme === value}
-                            title={label}
-                            className={`flex flex-1 items-center justify-center rounded-lg p-2 transition-colors ${
-                              theme === value
-                                ? 'bg-brand/10 text-brand'
-                                : 'text-ink-soft hover:bg-neutral-200/60 dark:text-neutral-400 dark:hover:bg-neutral-800'
-                            }`}
-                          >
-                            <Icon className="h-4 w-4" />
-                          </button>
-                        ))}
+                        <ThemeIcons
+                          options={themeOptions}
+                          theme={theme}
+                          setTheme={setTheme}
+                          buttonClassName="flex flex-1 items-center justify-center"
+                        />
                       </div>
                     </div>
                   )}
@@ -416,22 +455,7 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
             <div className="mt-auto flex items-center gap-3 border-t border-line pt-5 dark:border-line-dark">
               <span className="eyebrow">{t('common', 'theme')}</span>
               <div className="flex gap-1">
-                {themeOptions.map(({ value, icon: Icon, label }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setTheme(value)}
-                    aria-pressed={theme === value}
-                    className={`rounded-lg p-2 transition-colors ${
-                      theme === value
-                        ? 'bg-brand/10 text-brand'
-                        : 'text-ink-soft hover:bg-neutral-200/60 dark:text-neutral-400 dark:hover:bg-neutral-800'
-                    }`}
-                    title={label}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </button>
-                ))}
+                <ThemeIcons options={themeOptions} theme={theme} setTheme={setTheme} />
               </div>
             </div>
           </div>
