@@ -72,4 +72,19 @@ describe('revalidateOnChange', () => {
     expect(revalidateTag).toHaveBeenCalledWith('collection:events')
     expect(revalidateTag).not.toHaveBeenCalledWith('collection:blog')
   })
+
+  it('survives a write that came from a script rather than a request', () => {
+    // `revalidateTag` throws outside a Next request — "static generation store
+    // missing" — and `pnpm bootstrap` creates the settings document from a
+    // terminal. Letting that escape would abort the write and fail an install
+    // at its first step, over a cache that does not exist yet.
+    revalidateTag.mockImplementationOnce(() => {
+      throw new Error('Invariant: static generation store missing in revalidateTag')
+    })
+    const doc = { id: 1 }
+    const hooks = revalidateOnChange('settings')
+
+    expect(() => hooks.afterChange[0]({ doc } as never)).not.toThrow()
+    expect(hooks.afterChange[0]({ doc } as never)).toBe(doc)
+  })
 })
