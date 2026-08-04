@@ -48,8 +48,9 @@ _Avoid_: healthcheck (that is the container's HTTP probe, a different thing)
 **Supported tier**:
 How far the project's promise extends for a given piece of infrastructure. Tier
 1 is guaranteed and proven by CI; tier 2 is documented and best-effort; tier 3
-is a documented seam with no promise attached. A bug report is answered
-according to its tier.
+is a documented seam with no promise attached. The tiers describe how far the
+code is meant to hold, not a support queue — this repo has no issue tracker and
+takes no contributions.
 _Avoid_: supported/unsupported as a binary
 
 ### Between chapters

@@ -1,4 +1,10 @@
-# Issue tracker: GitHub
+# Issue tracker: none
+
+> **This describes a surface that no longer exists.** GitHub issues are disabled
+> on `igstudija/chapter-web`, and the repository takes no outside contributions
+> — see `CONTRIBUTING.md`. Every `gh issue` command below will fail against this
+> repo. The conventions are kept for a fork that turns its own tracker back on;
+> nothing here should be run against this one.
 
 Issues and PRDs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
 

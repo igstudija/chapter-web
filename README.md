@@ -10,9 +10,15 @@ from the standard Payload admin panel.
 
 > **Status: early.** Extracted from a production system that has been running
 > for several organisations, then generalised and reduced to a single-organisation
-> install. The feature set is mature; the
-> packaging for outside installs is new, and rough edges are likely. Issues
-> welcome.
+> install. The feature set is mature; the packaging for outside installs is new,
+> and rough edges are likely.
+>
+> **Development is closed.** The source is published under the AGPL and you are
+> free to run, fork and modify it — but this repository does not take outside
+> contributions. Issues are turned off and pull requests are not reviewed or
+> merged. See [CONTRIBUTING.md](CONTRIBUTING.md) for what that means in
+> practice, and [SECURITY.md](SECURITY.md) for the one channel that does stay
+> open: private vulnerability reports.
 
 ---
 
@@ -243,12 +249,18 @@ Not every combination gets the same promise, and pretending otherwise helps
 nobody. Three tiers, so you know before you start which part of this is
 guaranteed and which part is yours.
 
+These tiers say how far the code is written and tested to hold. They are not a
+support queue: there is no issue tracker here and no contributions are taken
+([CONTRIBUTING.md](CONTRIBUTING.md)). What tier 1 buys you is that the path is
+proven on every commit before it ships, not that someone will answer a ticket.
+
 ### Tier 1 — Supabase and Vercel
 
 **Guaranteed, and proven on every commit.** CI stands up an empty Postgres,
 applies the migrations, runs `pnpm bootstrap` and loads the resulting site in a
 browser. This is the path the code is written against and the one the install
-docs describe. Bug reports are bugs.
+docs describe. A defect on this path is a defect in the code, not a
+misconfiguration on your side — which tells you where to look, not where to file.
 
 ### Tier 2 — any Postgres, on Docker or bare Node
 
@@ -329,7 +341,12 @@ field comparison rather than a database lookup.
 
 [AGPL-3.0-or-later](LICENSE).
 
-You can run, modify and self-host this freely. If you run a modified version as
-a network service, the AGPL requires you to offer your users the modified
-source. If that does not suit your situation, open an issue — other arrangements
-are possible.
+You can run, modify and self-host this freely, and fork it if you want to take
+it somewhere else. If you run a modified version as a network service, the AGPL
+requires you to offer your users the modified source.
+
+Development being closed does not narrow any of that: the licence grants what it
+grants, and none of it depends on this repository accepting your changes back.
+If the AGPL does not suit your situation, reach the maintainer through the
+[igstudija](https://github.com/igstudija) profile — not through issues, which
+are disabled.

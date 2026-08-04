@@ -4,7 +4,7 @@
 
 ### Issue tracker
 
-Issues and PRDs live as GitHub issues in `igstudija/chapter-web`, driven via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+None. GitHub issues are disabled on `igstudija/chapter-web` and the repository takes no outside contributions — see `CONTRIBUTING.md`. Work is tracked outside this repo, so an agent should not try to open, read or label issues, and `docs/agents/issue-tracker.md` describes a surface that is no longer there.
 
 ### Triage labels
 
