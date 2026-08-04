@@ -80,17 +80,21 @@ export function ProspectListSection({
   const [deleting, setDeleting] = useState<string | number | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | number | null>(null)
   const [search, setSearch] = useState('')
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
-    if (globalThis.window !== undefined) {
-      const saved = globalThis.localStorage.getItem(viewModeStorageKey)
-      if (saved === 'table' || saved === 'grid') return saved
-    }
-    return 'grid'
-  })
+  // The saved view mode has to wait for mount. Reading localStorage in the
+  // initializer hands the server one value and the browser another, and React
+  // reports the hydration mismatch on every data-active attribute. The first
+  // paint is always 'grid'; the saved choice applies one effect later.
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
 
   useEffect(() => {
-    globalThis.localStorage.setItem(viewModeStorageKey, viewMode)
-  }, [viewMode, viewModeStorageKey])
+    const saved = globalThis.localStorage.getItem(viewModeStorageKey)
+    if (saved === 'table' || saved === 'grid') setViewMode(saved)
+  }, [viewModeStorageKey])
+
+  const changeViewMode = (mode: 'grid' | 'table') => {
+    setViewMode(mode)
+    globalThis.localStorage.setItem(viewModeStorageKey, mode)
+  }
 
   const filteredEntries = useMemo(() => {
     if (!search.trim()) return entries
@@ -227,7 +231,7 @@ export function ProspectListSection({
         <div className="segmented hidden lg:inline-flex">
           <button
             type="button"
-            onClick={() => setViewMode('grid')}
+            onClick={() => changeViewMode('grid')}
             className="segmented-item h-[38px] w-[38px]"
             data-active={viewMode === 'grid'}
             title={t('common', 'gridView')}
@@ -236,7 +240,7 @@ export function ProspectListSection({
           </button>
           <button
             type="button"
-            onClick={() => setViewMode('table')}
+            onClick={() => changeViewMode('table')}
             className="segmented-item h-[38px] w-[38px]"
             data-active={viewMode === 'table'}
             title={t('common', 'tableView')}

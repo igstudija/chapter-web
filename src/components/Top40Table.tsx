@@ -49,17 +49,21 @@ export function Top40Table({ entries, memberName, listLabel = 'Top 40', emptyTex
   }
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved === 'table' || saved === 'grid') return saved
-    }
-    return 'grid'
-  })
+  // The saved view mode has to wait for mount. Reading localStorage in the
+  // initializer hands the server one value and the browser another, and React
+  // reports the hydration mismatch on every data-active attribute. The first
+  // paint is always 'grid'; the saved choice applies one effect later.
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, viewMode)
-  }, [viewMode])
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (saved === 'table' || saved === 'grid') setViewMode(saved)
+  }, [])
+
+  const changeViewMode = (mode: 'grid' | 'table') => {
+    setViewMode(mode)
+    localStorage.setItem(STORAGE_KEY, mode)
+  }
 
   const filteredEntries = useMemo(() => {
     if (!searchQuery.trim()) {
@@ -123,7 +127,7 @@ export function Top40Table({ entries, memberName, listLabel = 'Top 40', emptyTex
         <div className="segmented hidden lg:inline-flex">
           <button
             type="button"
-            onClick={() => setViewMode('grid')}
+            onClick={() => changeViewMode('grid')}
             className="segmented-item h-[38px] w-[38px]"
             data-active={viewMode === 'grid'}
             title={t('top40Table', 'gridView')}
@@ -132,7 +136,7 @@ export function Top40Table({ entries, memberName, listLabel = 'Top 40', emptyTex
           </button>
           <button
             type="button"
-            onClick={() => setViewMode('table')}
+            onClick={() => changeViewMode('table')}
             className="segmented-item h-[38px] w-[38px]"
             data-active={viewMode === 'table'}
             title={t('top40Table', 'tableView')}
