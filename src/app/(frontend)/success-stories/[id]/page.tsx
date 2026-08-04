@@ -303,9 +303,11 @@ export default async function SuccessStoryPage({ params }: { params: Promise<{ i
                   <Image
                     src={authorLogo.url}
                     alt={authorMembership?.company || ''}
-                    width={120}
-                    height={60}
-                    className="object-contain max-h-12 w-auto max-w-full"
+                    // Definite width: an SVG with only a viewBox has no
+                    // intrinsic size, and `w-auto` renders it at nothing.
+                    width={240}
+                    height={120}
+                    className="object-contain max-h-12 w-[120px] max-w-full"
                   />
                 </div>
               )}

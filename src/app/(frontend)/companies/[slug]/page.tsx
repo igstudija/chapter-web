@@ -131,9 +131,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
                 <Image
                   src={memberLogo.url}
                   alt={membership.company || ''}
-                  width={200}
-                  height={100}
-                  className="max-h-24 w-auto max-w-full object-contain"
+                  // Definite width: an SVG with only a viewBox has no intrinsic
+                  // size, and `w-auto` renders it at nothing.
+                  width={400}
+                  height={200}
+                  className="max-h-24 w-[200px] max-w-full object-contain"
                 />
               </div>
             ) : (

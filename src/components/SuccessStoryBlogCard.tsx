@@ -61,9 +61,11 @@ export function SuccessStoryBlogCard({
             <Image
               src={author.logoUrl}
               alt={author.company}
-              width={60}
-              height={30}
-              className="object-contain max-h-8 w-auto max-w-full"
+              // Definite width: an SVG with only a viewBox has no intrinsic
+              // size, and `w-auto` renders it at nothing.
+              width={120}
+              height={60}
+              className="object-contain max-h-8 w-[60px] max-w-full"
             />
           </div>
         )}

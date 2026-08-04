@@ -8,6 +8,7 @@ import sharp from 'sharp'
 import { ADMIN_TITLE_SUFFIX } from './lib/branding'
 import { IS_SERVERLESS } from './lib/runtime'
 import { resolvePgPoolMax } from './lib/pgPoolSize'
+import { resolvePoolerUrl } from './lib/poolerUrl'
 import { MAX_UPLOAD_BYTES } from './lib/uploadLimits'
 
 import {
@@ -40,6 +41,28 @@ import {
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
+
+/**
+ * The connection string, with the pooler port matched to this host.
+ *
+ * Resolved once here so `.env` and the deploy can hold the same value — see
+ * `lib/poolerUrl.ts` for why the two ports are not interchangeable. The log
+ * line is deliberate: silently rewriting somebody's configuration is only
+ * acceptable if it says so.
+ */
+const DATABASE_URL = resolvePoolerUrl(process.env.POSTGRESS_DATABASE_URL, {
+  isServerless: IS_SERVERLESS,
+  override: process.env.PG_POOLER_PORT,
+})
+
+if (DATABASE_URL.adjusted) {
+  const { from, to } = DATABASE_URL.adjusted
+  console.log(
+    `[DB] Using the Supabase pooler on port ${to} rather than ${from}: ` +
+      `${IS_SERVERLESS ? 'serverless instances need the transaction pooler' : 'this host needs the session pooler'}. ` +
+      `Set PG_POOLER_PORT=as-given to keep the port as written.`,
+  )
+}
 
 /**
  * Per-query ceiling, in ms. `pg` sends this in the connection startup packet as
@@ -107,7 +130,10 @@ export default buildConfig({
      */
     push: process.env.NODE_ENV === 'development',
     pool: {
-      connectionString: process.env.POSTGRESS_DATABASE_URL || '',
+      // One string in `.env` and in the deploy; the pooler port follows the
+      // host. Keeping two values straight by hand is what put production on
+      // the session pooler, where it ran out of connections under load.
+      connectionString: DATABASE_URL.url,
       // Sizing lives in `pgPoolSize` so it can be asserted on: too small a pool
       // deadlocks a single render against itself, and that is worth a test
       // rather than a comment. Override with PG_POOL_MAX.
