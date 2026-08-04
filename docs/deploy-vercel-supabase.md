@@ -59,24 +59,32 @@ most common way this deployment fails:
 | String | Host / port | Use it for |
 |---|---|---|
 | Direct | `db.PROJECT.supabase.co:5432` | Nothing here. On newer projects this is **IPv6-only**, and Vercel's functions are IPv4 — connections time out with no useful error. |
-| Session pooler | `...pooler.supabase.com:5432` | Running migrations from your own machine (step 4). |
-| Transaction pooler | `...pooler.supabase.com:6543` | **Vercel** (step 5). |
+| Session pooler | `...pooler.supabase.com:5432` | **This one.** Copy it once and use it everywhere. |
+| Transaction pooler | `...pooler.supabase.com:6543` | The same host on a different port; the app switches to it by itself when it runs serverless. |
 
-Vercel needs the transaction pooler because each function instance is
-short-lived and opens its own connections; the pooler multiplexes them onto a
-handful of real Postgres backends. Without it, moderate traffic exhausts the
-connection limit and the site starts returning 500s under exactly the load you
-wanted it to handle.
+The two pooler ports are not interchangeable, and which one is right depends on
+the host rather than on you. Serverless needs 6543: each function instance is
+short-lived and opens its own connections, and the transaction pooler
+multiplexes them onto a handful of real Postgres backends. Without it, moderate
+traffic exhausts the connection limit and the site starts returning 500s under
+exactly the load you wanted it to handle. Migrations need 5432, because they
+hold locks and temporary state across statements and the transaction pooler is
+free to answer each one from a different backend.
 
 Copy the string the dashboard shows rather than typing one from the examples
 below — the pooler's hostname and the `postgres.PROJECT` username differ per
 project and per region.
 
-This is the one setting that is *supposed* to differ between your machine and
-your deploy, which is why a wrong one is so hard to see: both environments look
-deliberate on their own. `pnpm preflight` runs on every `pnpm dev` and `pnpm
-start` and compares the port against the host it finds itself on, so a mismatch
-announces itself at startup instead of during the first busy meeting.
+**You only need one of these strings.** Take the session pooler one and use it
+both locally and in your deploy: the app rewrites the port to whichever the host
+it starts on requires, and logs a line saying it did. That is deliberate. Which
+port is correct depends on the host and not on the person configuring it, and
+the version of this that asked you to keep two values straight is what put this
+project's own production on the session pooler — where it ran out of connections
+under load, hours after a deploy that looked fine.
+
+`PG_POOLER_PORT=as-given` disables the rewriting, for an install that has a
+reason to choose for itself.
 
 Replace `[YOUR-PASSWORD]` in the string with the password from step 1. If it
 contains `@`, `:`, `/` or `#`, percent-encode those characters — `@` becomes
@@ -201,7 +209,7 @@ pnpm dev    # then open http://localhost:3050/admin and log in
 
 ```bash
 PAYLOAD_SECRET=<the same value as in .env>
-POSTGRESS_DATABASE_URL=postgresql://postgres.PROJECT:PASSWORD@aws-0-REGION.pooler.supabase.com:6543/postgres
+POSTGRESS_DATABASE_URL=<the same value as in .env>
 SUPABASE_URL=https://PROJECT.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=<service_role key>
 SUPABASE_STORAGE_BUCKET=media
@@ -215,13 +223,13 @@ EMAIL_FROM=noreply@your-domain.org
 EMAIL_FROM_NAME=Your Organisation
 ```
 
-Three things differ from your local `.env`. The port is **6543**, the
-transaction pooler, not the 5432 you used for migrations.
-`NEXT_PUBLIC_SERVER_URL` is your domain here, where it was `localhost:3050`
-locally — it is compiled into the build, so getting it wrong means invitation
-links pointing at a laptop and a rebuild to fix it. And `PG_POOL_MAX` is absent
-here on purpose: the app already drops its pool to a serverless size on its own,
-while locally you set it low to stay under the session pooler's 15 clients.
+Two things differ from your local `.env`, and the connection string is not one
+of them — paste the same value here. `NEXT_PUBLIC_SERVER_URL` is your domain
+where it was `localhost:3050` locally, and it is compiled into the build, so
+getting it wrong means invitation links pointing at a laptop and a rebuild to
+fix it. `PG_POOL_MAX` is absent here on purpose: the app already drops its pool
+to a serverless size on its own, while locally you set it low to stay under the
+session pooler's client limit.
 
 Email is not optional in practice: invitations, password resets and
 notifications all go through SMTP, and an install without it cannot onboard a

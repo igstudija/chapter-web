@@ -350,17 +350,20 @@ export function SpecialRequestsGrid({
                             wordmark on the dark surface is an empty cell. The
                             plate keeps them legible in both themes. */}
                         <div className="rounded-md bg-white p-1.5">
-                          {/* `w-auto` lets the logo keep its own proportions
-                              instead of being pinned to the 72px attribute
-                              while `max-h-10` shrinks the height — that
-                              one-sided change is what Next warns about.
-                              `max-w-full` keeps a wide mark inside the cell. */}
+                          {/* The width has to be a definite length, not `auto`.
+                              Half these logos are SVGs carrying only a
+                              viewBox — no intrinsic size, just a ratio — and
+                              `w-auto` resolves those to nothing at all: the
+                              cell renders empty. `object-contain` does the
+                              fitting instead. The attributes are doubled so
+                              neither dimension matches what CSS renders, which
+                              is what Next's one-sided-change warning checks. */}
                           <Image
                             src={requesterLogo.url}
                             alt={requesterMembership?.company || ''}
-                            width={72}
-                            height={44}
-                            className="max-h-10 w-auto max-w-full object-contain"
+                            width={144}
+                            height={88}
+                            className="max-h-10 w-[72px] max-w-full object-contain"
                           />
                         </div>
                       </div>
