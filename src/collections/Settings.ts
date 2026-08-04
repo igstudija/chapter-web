@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { revalidateOnChange } from '../lib/contentCache'
 import { authenticated, adminOnly } from '../access'
 import { siteSeoFields } from '../fields/seoFields'
 import { DEFAULT_ORG_NAME } from '../lib/branding'
@@ -22,6 +23,9 @@ export const Settings: CollectionConfig = {
       },
     },
   },
+  // Cached reads of this collection are dropped the moment it is saved, so an
+  // editor never has to tell anybody to force-refresh. See lib/contentCache.
+  hooks: revalidateOnChange('settings'),
   access: {
     read: authenticated,
     create: adminOnly,
