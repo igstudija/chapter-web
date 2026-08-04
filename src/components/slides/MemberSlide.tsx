@@ -219,69 +219,6 @@ function ProfilePhoto({
   )
 }
 
-const useIsomorphicLayoutEffect =
-  typeof window === 'undefined' ? React.useEffect : React.useLayoutEffect
-
-/**
- * One line of text that shrinks until it fits, instead of being cut short.
- *
- * A job title is something a member wrote about themselves, so hiding the tail
- * of it behind an ellipsis is the one outcome worth avoiding. Measuring beats
- * guessing here: the slide is a fixed 1920×1080 canvas, but the column it sits
- * in varies by template and the text varies by member, so no single font size
- * is right for both "CEO, Watermelon" and "Valdes priekšsēdētāja, SIA DaJo
- * aģentūra JDP".
- *
- * Below `minFontSize` shrinking stops being readable from the back of a room,
- * and the line is allowed to wrap instead — still whole, just taller.
- */
-function FitToWidth({
-  children,
-  fontSize,
-  minFontSize,
-  className = '',
-  style,
-}: {
-  children: React.ReactNode
-  fontSize: number
-  minFontSize: number
-  className?: string
-  style?: React.CSSProperties
-}) {
-  const ref = React.useRef<HTMLParagraphElement>(null)
-
-  // Layout effect in the browser, plain effect on the server. React warns that
-  // `useLayoutEffect` does nothing during SSR, and this component is rendered
-  // there before it is hydrated — the warning would be noise in every log.
-  useIsomorphicLayoutEffect(() => {
-    const el = ref.current
-    if (!el) return
-
-    // Measure at full size every time: without the reset, a re-run would
-    // measure the shrunken text and conclude it already fits.
-    el.style.whiteSpace = 'nowrap'
-    el.style.fontSize = `${fontSize}px`
-
-    const available = el.clientWidth
-    const needed = el.scrollWidth
-    if (available === 0 || needed <= available) return
-
-    const fitted = fontSize * (available / needed)
-    if (fitted >= minFontSize) {
-      el.style.fontSize = `${fitted}px`
-    } else {
-      el.style.fontSize = `${minFontSize}px`
-      el.style.whiteSpace = 'normal'
-    }
-  })
-
-  return (
-    <p ref={ref} className={`max-w-full ${className}`} style={{ fontSize, ...style }}>
-      {children}
-    </p>
-  )
-}
-
 function Identity({
   ctx,
   color,
@@ -313,22 +250,16 @@ function Identity({
       <h2 className="font-bold leading-tight" style={{ fontSize: nameSize, color }}>
         {member.name} {member.surname}
       </h2>
-      {/* Position and company want one line — wrapped, they read as two
-          stacked facts and the column loses its shape. Rather than truncate,
-          the line shrinks itself to fit: nothing a member wrote about their
-          own job should be hidden behind an ellipsis. */}
-      <FitToWidth
-        className="leading-tight mt-1"
-        fontSize={metaSize * 0.72}
-        minFontSize={metaSize * 0.42}
-        style={{ color, opacity: 0.85 }}
-      >
+      {/* Wraps freely. This is projected in a room, so the floor is what can
+          be read from the back row, not what fits on one line — a long title
+          takes a second line rather than shrinking towards illegible. */}
+      <p className="leading-tight mt-1" style={{ fontSize: metaSize * 0.85, color, opacity: 0.85 }}>
         {member.jobPosition &&
           member.jobPosition !== '-' &&
           member.jobPosition.toLowerCase() !== 'is' &&
           `${member.jobPosition}, `}
         {member.company}
-      </FitToWidth>
+      </p>
       {member.country && (
         <div
           className={`flex items-center gap-2 mt-1 ${rowAlignment}`}
