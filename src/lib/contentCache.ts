@@ -53,7 +53,26 @@ export const revalidateOnChange = (
   afterChange: [CollectionAfterChangeHook]
   afterDelete: [CollectionAfterDeleteHook]
 } => {
-  const drop = () => revalidateTag(cacheTagFor(collection))
+  /*
+   * `revalidateTag` throws outside a Next request — "static generation store
+   * missing" — and a Payload write does not always come from one. `pnpm
+   * bootstrap` creates the settings document from a terminal; so does a seed.
+   * Letting that escape would abort the write itself, so an install would fail
+   * at its first step because of a cache that does not exist yet.
+   *
+   * The trade-off is worth naming rather than hiding: a write from a script
+   * cannot reach a running server's cache, so if one is up it keeps its copy
+   * until something is next saved through the admin. Scripts here run before
+   * or beside a deploy rather than against a live one, which is why that is a
+   * footnote and not a defect.
+   */
+  const drop = () => {
+    try {
+      revalidateTag(cacheTagFor(collection))
+    } catch {
+      // No request, no cache to drop. Carry on with the write.
+    }
+  }
   return {
     afterChange: [
       ({ doc }) => {
