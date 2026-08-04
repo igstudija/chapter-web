@@ -52,9 +52,15 @@ export function useSlideImageCycle(
   cycleMs: number,
   options: { paused?: boolean } = {},
 ): ImageCycle {
-  const imageKey = images.filter(Boolean).join(' ')
+  /*
+   * Joined with a newline, never a space. A storage URL can carry raw spaces
+   * ("…/Compensa Life apdrosinasanas pakalpojumi BNI 1.jpg"), and splitting on
+   * ' ' shattered that one image into six fragments — six stacked layers, each
+   * requesting a dead URL like "1.jpg", and a blank media pane on the slide.
+   */
+  const imageKey = images.filter(Boolean).join('\n')
   const usableImages = React.useMemo(
-    () => (imageKey === '' ? [] : imageKey.split(' ')),
+    () => (imageKey === '' ? [] : imageKey.split('\n')),
     [imageKey],
   )
 

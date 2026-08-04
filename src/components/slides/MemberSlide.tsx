@@ -250,7 +250,15 @@ function Identity({
       <h2 className="font-bold leading-tight" style={{ fontSize: nameSize, color }}>
         {member.name} {member.surname}
       </h2>
-      <p className="leading-tight mt-1" style={{ fontSize: metaSize, color, opacity: 0.85 }}>
+      {/* Position and company hold to one line: wrapped, this reads as two
+          stacked facts instead of one, and the column loses its shape. The
+          size drops below the callers' metaSize to buy that room, and a
+          truly endless title trims with an ellipsis rather than spilling
+          out of the fixed 1920×1080 frame. */}
+      <p
+        className="leading-tight mt-1 max-w-full overflow-hidden whitespace-nowrap text-ellipsis"
+        style={{ fontSize: metaSize * 0.72, color, opacity: 0.85 }}
+      >
         {member.jobPosition &&
           member.jobPosition !== '-' &&
           member.jobPosition.toLowerCase() !== 'is' &&
@@ -414,11 +422,13 @@ function HeroStats({
   color,
   borderColor,
   valueSize = 54,
+  labelSize = 20,
 }: {
   ctx: TemplateContext
   color: string
   borderColor: string
   valueSize?: number
+  labelSize?: number
 }) {
   const { member, showBusinessGiven, showBusinessReceived, t } = ctx
   if (!showBusinessGiven && !showBusinessReceived) return null
@@ -441,7 +451,7 @@ function HeroStats({
         >
           <p
             className="font-semibold uppercase"
-            style={{ fontSize: 20, letterSpacing: '0.08em', color, opacity: 0.6 }}
+            style={{ fontSize: labelSize, letterSpacing: '0.08em', color, opacity: 0.6 }}
           >
             {cell.label}
           </p>
@@ -495,9 +505,22 @@ function ClassicTemplate({ ctx }: { ctx: TemplateContext }) {
         {/* Whatever height is left over collects here, in one place. */}
         <div className="min-h-0 flex-1" />
 
-        <div className="mt-8 flex w-full justify-center border-t pt-8" style={{ borderColor }}>
-          <HeroStats ctx={ctx} color={textColor} borderColor={borderColor} valueSize={44} />
-        </div>
+        {/* The hairline belongs to the figures, not the column: a member whose
+            numbers sit under the chapter minimum renders no HeroStats, and a
+            rule over nothing reads as a mistake at the bottom of the slide. */}
+        {(ctx.showBusinessGiven || ctx.showBusinessReceived) && (
+          <div className="mt-8 flex w-full justify-center border-t pt-8" style={{ borderColor }}>
+            {/* Sized to survive seven-digit figures: at 44/20 a member with a
+                million-euro year ran the pair off both edges of the column. */}
+            <HeroStats
+              ctx={ctx}
+              color={textColor}
+              borderColor={borderColor}
+              valueSize={34}
+              labelSize={15}
+            />
+          </div>
+        )}
       </div>
 
       {/*
