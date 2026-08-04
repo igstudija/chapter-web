@@ -14,6 +14,14 @@ import { MigrateUpArgs, MigrateDownArgs, sql } from '@payloadcms/db-postgres'
  * Written by hand so that the backfill happens between adding the new column
  * and dropping the old one. A generated migration would have replaced one with
  * the other and taken the answers with it.
+ *
+ * **Order matters on an install that is already running.** The `DROP COLUMN`
+ * below is the contract half of an expand/contract, and it is only safe once no
+ * deployed build declares an `isPublic` field — Payload puts every declared
+ * field in its `SELECT`, so a build that still has one starts answering 500 on
+ * every special-requests query the moment the column goes. Deploy the code that
+ * has no `isPublic` first, then run this. For a fresh install the question does
+ * not arise: nothing has been deployed yet, and the two statements are one step.
  */
 export async function up({ db }: MigrateUpArgs): Promise<void> {
   await db.execute(sql`

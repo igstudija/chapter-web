@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   LayoutGrid,
@@ -22,6 +22,7 @@ import { TagCloud } from './TagCloud'
 import { ListSearch } from './ListSearch'
 import { ConfirmDialog } from './ConfirmDialog'
 import { useTranslations } from './TranslationsProvider'
+import { useStoredViewMode } from './useStoredViewMode'
 
 export interface ProspectEntry {
   id: string | number
@@ -80,21 +81,7 @@ export function ProspectListSection({
   const [deleting, setDeleting] = useState<string | number | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | number | null>(null)
   const [search, setSearch] = useState('')
-  // The saved view mode has to wait for mount. Reading localStorage in the
-  // initializer hands the server one value and the browser another, and React
-  // reports the hydration mismatch on every data-active attribute. The first
-  // paint is always 'grid'; the saved choice applies one effect later.
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid')
-
-  useEffect(() => {
-    const saved = globalThis.localStorage.getItem(viewModeStorageKey)
-    if (saved === 'table' || saved === 'grid') setViewMode(saved)
-  }, [viewModeStorageKey])
-
-  const changeViewMode = (mode: 'grid' | 'table') => {
-    setViewMode(mode)
-    globalThis.localStorage.setItem(viewModeStorageKey, mode)
-  }
+  const [viewMode, changeViewMode] = useStoredViewMode(viewModeStorageKey)
 
   const filteredEntries = useMemo(() => {
     if (!search.trim()) return entries

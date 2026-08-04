@@ -1,7 +1,7 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import Link from 'next/link'
-import Image from 'next/image'
+import { CompanyLogo } from '@/components/CompanyLogo'
 import slugify from 'slugify'
 import { PageHeader, Reveal } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
@@ -206,12 +206,11 @@ export default async function CompaniesPage() {
         className="logo-cell h-28"
       >
         {logo?.url ? (
-          <Image
+          <CompanyLogo
             src={logo.url}
             alt={logo.alt || membership.company || ''}
             width={120}
-            height={60}
-            className="max-h-14 w-auto object-contain"
+            height={56}
           />
         ) : (
           <span className="text-center text-sm font-medium text-neutral-900">

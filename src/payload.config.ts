@@ -128,7 +128,15 @@ export default buildConfig({
      * doing damage. Narrow it to an actual dev server, which is where this
      * project genuinely relies on push to land new fields.
      */
-    push: process.env.NODE_ENV === 'development',
+    /*
+     * `PAYLOAD_DB_PUSH=false` turns it off for a dev server that must not
+     * reshape the schema it finds. That is not hypothetical: during the
+     * contract half of a rename, the running deploy still needs a column this
+     * code no longer declares, and push stops at an interactive "about to
+     * delete" prompt — which blocks every request until somebody answers, and
+     * the safe answer costs you the dev server anyway.
+     */
+    push: process.env.PAYLOAD_DB_PUSH !== 'false' && process.env.NODE_ENV === 'development',
     pool: {
       // One string in `.env` and in the deploy; the pooler port follows the
       // host. Keeping two values straight by hand is what put production on

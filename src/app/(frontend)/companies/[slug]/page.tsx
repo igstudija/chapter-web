@@ -6,7 +6,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { Mail, Phone, Globe, User } from 'lucide-react'
 import slugify from 'slugify'
-import { GalleryLightbox } from '@/components'
+import { CompanyLogo, GalleryLightbox } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
@@ -128,14 +128,11 @@ export default async function CompanyPage({ params }: { params: Promise<{ slug: 
           <div className="flex flex-col items-start gap-6 md:flex-row md:gap-8">
             {memberLogo?.url ? (
               <div className="shrink-0 rounded-lg bg-white p-4 ring-1 ring-line">
-                <Image
+                <CompanyLogo
                   src={memberLogo.url}
                   alt={membership.company || ''}
-                  // Definite width: an SVG with only a viewBox has no intrinsic
-                  // size, and `w-auto` renders it at nothing.
-                  width={400}
-                  height={200}
-                  className="max-h-24 w-[200px] max-w-full object-contain"
+                  width={200}
+                  height={96}
                 />
               </div>
             ) : (

@@ -6,7 +6,7 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { Mail, Phone, Globe, User as UserIcon, Award, Calendar, Building2 } from 'lucide-react'
 import slugify from 'slugify'
-import { Breadcrumb } from '@/components'
+import { Breadcrumb, CompanyLogo } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
@@ -300,14 +300,11 @@ export default async function SuccessStoryPage({ params }: { params: Promise<{ i
             <div className="sm:ml-auto flex flex-col items-start sm:items-end gap-3">
               {authorLogo?.url && (
                 <div className="bg-white dark:bg-neutral-700 rounded-lg p-2">
-                  <Image
+                  <CompanyLogo
                     src={authorLogo.url}
                     alt={authorMembership?.company || ''}
-                    // Definite width: an SVG with only a viewBox has no
-                    // intrinsic size, and `w-auto` renders it at nothing.
-                    width={240}
-                    height={120}
-                    className="object-contain max-h-12 w-[120px] max-w-full"
+                    width={120}
+                    height={48}
                   />
                 </div>
               )}

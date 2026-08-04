@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import { CompanyLogo } from '@/components/CompanyLogo'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 
 interface Member {
@@ -128,12 +129,11 @@ export function GroupSlide({ group, members, translations }: GroupSlideProps) {
                   )}
                   {member.logo?.url && (
                     <div className="absolute bottom-3 right-3 rounded-md bg-white/95 px-2 py-1 shadow-sm">
-                      <Image
+                      <CompanyLogo
                         src={member.logo.url}
                         alt={`${member.company} logo`}
                         width={80}
                         height={32}
-                        className="max-h-8 max-w-[80px] object-contain"
                       />
                     </div>
                   )}

@@ -512,7 +512,6 @@ export interface SpecialRequest {
    * Keep this request inside our own chapter. Unticked, it is offered to the chapters we are linked to, along with your name, company, phone and email.
    */
   chapterOnly?: boolean | null;
-  isPublic?: boolean | null;
   requestedBy: number | User;
   status?: ('open' | 'in-progress' | 'fulfilled' | 'closed') | null;
   /**
@@ -2218,7 +2217,6 @@ export interface SpecialRequestsSelect<T extends boolean = true> {
   request?: T;
   registrationNumber?: T;
   chapterOnly?: T;
-  isPublic?: T;
   requestedBy?: T;
   status?: T;
   sortOrder?: T;

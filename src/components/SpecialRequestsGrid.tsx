@@ -11,6 +11,7 @@ import {
   requestCountLabel,
   type GroupableRequest,
 } from '@/lib/specialRequestsGrouping'
+import { CompanyLogo } from '@/components/CompanyLogo'
 import { SpecialRequestDetails } from '@/components/SpecialRequestDetails'
 import { ListSearch } from '@/components/ListSearch'
 import { Pagination } from '@/components/Pagination'
@@ -350,20 +351,11 @@ export function SpecialRequestsGrid({
                             wordmark on the dark surface is an empty cell. The
                             plate keeps them legible in both themes. */}
                         <div className="rounded-md bg-white p-1.5">
-                          {/* The width has to be a definite length, not `auto`.
-                              Half these logos are SVGs carrying only a
-                              viewBox — no intrinsic size, just a ratio — and
-                              `w-auto` resolves those to nothing at all: the
-                              cell renders empty. `object-contain` does the
-                              fitting instead. The attributes are doubled so
-                              neither dimension matches what CSS renders, which
-                              is what Next's one-sided-change warning checks. */}
-                          <Image
+                          <CompanyLogo
                             src={requesterLogo.url}
                             alt={requesterMembership?.company || ''}
-                            width={144}
-                            height={88}
-                            className="max-h-10 w-[72px] max-w-full object-contain"
+                            width={72}
+                            height={40}
                           />
                         </div>
                       </div>
