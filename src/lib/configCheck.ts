@@ -30,6 +30,18 @@ export type Finding = {
 type Values = Record<string, string | undefined>
 
 /**
+ * Where this process runs, for the checks that have no single right answer.
+ *
+ * The connection string is the one setting that is *correctly different*
+ * between a laptop and a deploy, which makes a wrong one impossible to spot by
+ * reading either environment on its own — both look deliberate.
+ */
+type Host = {
+  /** Vercel, Netlify, Lambda: many short-lived instances rather than one process. */
+  isServerless: boolean
+}
+
+/**
  * A capability the install loses when its settings are missing. Grouping by
  * capability rather than by variable is what lets the warning say "invitations
  * and password resets will not work" instead of naming an environment variable
@@ -86,13 +98,80 @@ export const KNOWN_SETTINGS: string[] = [
 
 const missing = (values: Values, setting: string): boolean => !values[setting]?.trim()
 
+/** Supavisor's two ports. Same database, opposite trade-offs. */
+const SESSION_POOLER_PORT = '5432'
+const TRANSACTION_POOLER_PORT = '6543'
+
+/**
+ * The pooler port has to match the host, and neither environment can tell.
+ *
+ * Session mode hands a connection to a client and keeps it until that client
+ * disconnects. On one long-running server that is what you want. On serverless
+ * it is fatal at exactly the wrong moment: every instance holds a slot for its
+ * whole life, the pool empties under load rather than at boot, and the site
+ * answers 500 to the traffic it was supposed to handle. Raising the pool size
+ * buys hours, not a fix.
+ *
+ * The reverse is milder but still worth saying, because it is the mistake a
+ * developer makes after reading the production config and copying it: schema
+ * migrations need a session to hold advisory locks and temporary state, and the
+ * transaction pooler hands each statement whichever backend is free.
+ *
+ * Only pooler hostnames are judged. A plain Postgres on 5432 — Docker, a
+ * managed instance, a colleague's machine — is not Supavisor and none of this
+ * applies to it.
+ */
+const poolerFindings = (url: string | undefined, host: Host): Finding[] => {
+  const value = url?.trim()
+  if (!value || !value.includes('pooler.supabase.com')) return []
+
+  const port = /pooler\.supabase\.com:(\d+)/.exec(value)?.[1]
+
+  if (host.isServerless && port === SESSION_POOLER_PORT) {
+    return [
+      {
+        severity: 'degraded',
+        settings: ['POSTGRESS_DATABASE_URL'],
+        message:
+          `POSTGRESS_DATABASE_URL points at the session pooler (port ${SESSION_POOLER_PORT}) on a serverless host. ` +
+          `Each function instance will hold its own connection for its whole life, so the pool runs out under load ` +
+          `and the site starts returning 500s. Use the transaction pooler: port ${TRANSACTION_POOLER_PORT}.`,
+      },
+    ]
+  }
+
+  if (!host.isServerless && port === TRANSACTION_POOLER_PORT) {
+    return [
+      {
+        severity: 'degraded',
+        settings: ['POSTGRESS_DATABASE_URL'],
+        message:
+          `POSTGRESS_DATABASE_URL points at the transaction pooler (port ${TRANSACTION_POOLER_PORT}) on a long-running host. ` +
+          `That is the right choice for serverless, but migrations need a session that survives more than one statement. ` +
+          `Use the session pooler locally: port ${SESSION_POOLER_PORT}.`,
+      },
+    ]
+  }
+
+  return []
+}
+
 /**
  * Inspect configuration and describe everything wrong with it.
  *
  * Returns every problem rather than the first, because a Self-hoster filling in
  * a fresh `.env` should learn what is missing once, not one restart at a time.
  */
-export const checkConfiguration = (values: Values): Finding[] => {
+export const checkConfiguration = (
+  values: Values,
+  /*
+   * Passed in, never read from the environment here. This module promises to
+   * be a pure function over its arguments — and making it explicit also means
+   * the compiler asks every new call site the question, which is the one that
+   * has no default worth guessing.
+   */
+  host: Host = { isServerless: false },
+): Finding[] => {
   const findings: Finding[] = []
 
   for (const { setting, purpose, malformed } of FATAL) {
@@ -118,6 +197,8 @@ export const checkConfiguration = (values: Values): Finding[] => {
       })
     }
   }
+
+  findings.push(...poolerFindings(values.POSTGRESS_DATABASE_URL, host))
 
   for (const capability of DEGRADED) {
     const absent = capability.settings.filter((setting) => missing(values, setting))

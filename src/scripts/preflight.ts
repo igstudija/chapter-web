@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { checkConfiguration, hasFatal } from '../lib/configCheck'
+import { IS_SERVERLESS } from '../lib/runtime'
 
 /**
  * Preflight — the instant, offline half of configuration checking.
@@ -14,7 +15,7 @@ import { checkConfiguration, hasFatal } from '../lib/configCheck'
  * network and belong to `pnpm diagnose`.
  */
 
-const findings = checkConfiguration(process.env)
+const findings = checkConfiguration(process.env, { isServerless: IS_SERVERLESS })
 
 if (findings.length === 0) {
   process.exit(0)

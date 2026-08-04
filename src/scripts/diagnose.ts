@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { checkConfiguration, hasFatal } from '../lib/configCheck'
+import { IS_SERVERLESS } from '../lib/runtime'
 import {
   checkDataApi,
   checkDatabase,
@@ -119,7 +120,7 @@ const checkChapterLinks = async (): Promise<Outcome> => {
 const main = async (): Promise<void> => {
   console.log('\nChecking the infrastructure this install points at.\n')
 
-  const configFindings = checkConfiguration(process.env)
+  const configFindings = checkConfiguration(process.env, { isServerless: IS_SERVERLESS })
   for (const finding of configFindings) {
     console.log(`${finding.severity === 'fatal' ? '✖' : '⚠'} Configuration: ${finding.message}`)
   }

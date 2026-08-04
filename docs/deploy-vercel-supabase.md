@@ -72,6 +72,12 @@ Copy the string the dashboard shows rather than typing one from the examples
 below — the pooler's hostname and the `postgres.PROJECT` username differ per
 project and per region.
 
+This is the one setting that is *supposed* to differ between your machine and
+your deploy, which is why a wrong one is so hard to see: both environments look
+deliberate on their own. `pnpm preflight` runs on every `pnpm dev` and `pnpm
+start` and compares the port against the host it finds itself on, so a mismatch
+announces itself at startup instead of during the first busy meeting.
+
 Replace `[YOUR-PASSWORD]` in the string with the password from step 1. If it
 contains `@`, `:`, `/` or `#`, percent-encode those characters — `@` becomes
 `%40` — or the URL parses wrongly and you get an authentication error naming a
