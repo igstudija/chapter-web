@@ -123,6 +123,26 @@ function TemplateThumb({ template }: { readonly template: MemberSlideTemplate })
     )
   }
 
+  // Full-bleed media with everything anchored along the bottom over a scrim.
+  // This used to fall through to the two-column drawing below, so the button
+  // for it promised the classic layout and the preview showed something else.
+  if (template === 'cover') {
+    return (
+      <div className="relative h-7 w-11 overflow-hidden rounded-[2px]">
+        <div className={`${block} absolute inset-0 opacity-70`} />
+        <div className={`${block} absolute inset-x-0 bottom-0 h-[13px] opacity-100`} />
+        <div className="absolute bottom-[3px] left-[3px] flex items-end gap-[3px]">
+          <div className="h-[7px] w-[7px] rounded-[2px] bg-white/85" />
+          <div className="flex flex-col gap-[2px]">
+            <div className="h-[3px] w-[14px] rounded-[1px] bg-white/85" />
+            <div className="h-[2px] w-[9px] rounded-[1px] bg-white/50" />
+          </div>
+        </div>
+        <div className="absolute right-[3px] bottom-[4px] h-[4px] w-[8px] rounded-[1px] bg-white/85" />
+      </div>
+    )
+  }
+
   // Two columns: text left, media right.
   return (
     <div className="flex h-7 w-11 gap-[3px]">
