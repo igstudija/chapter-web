@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { revalidateOnChange } from '../lib/contentCache'
 import { authenticated, adminOnly } from '../access'
 import { SlideBlocks } from './blocks/SlideBlocks'
 
@@ -25,6 +26,9 @@ export const SlideshowSettingsCollection: CollectionConfig = {
       },
     },
   },
+  // Cached reads of this collection are dropped the moment it is saved, so an
+  // editor never has to tell anybody to force-refresh. See lib/contentCache.
+  hooks: revalidateOnChange('slideshow-settings-collection'),
   access: {
     read: authenticated,
     create: adminOnly,
