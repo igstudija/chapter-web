@@ -5,6 +5,11 @@ photos, business figures — on installs run by organisations that are not us. A
 flaw here is somebody's members' data, so please report it privately and give us
 a chance to ship a fix before it is public.
 
+This repository does not take contributions and its issue tracker is turned off
+([CONTRIBUTING.md](CONTRIBUTING.md) explains why). Vulnerability reports are the
+deliberate exception: the channel below stays open, and a report sent through it
+is read.
+
 ## Reporting a vulnerability
 
 Use GitHub's private reporting: **[Report a
@@ -12,17 +17,18 @@ vulnerability](https://github.com/igstudija/chapter-web/security/advisories/new)
 or the *Security* tab → *Report a vulnerability*. The report is visible only to
 the maintainers until an advisory is published.
 
-Please do not open a public issue for a security problem. A public issue is a
-working exploit against every install that has not upgraded yet.
-
-If you cannot use GitHub, open a normal issue saying only that you have a
-security report and how to reach you privately — no details.
+There is no public issue tracker to fall back on, and that is on purpose — a
+public issue is a working exploit against every install that has not upgraded
+yet. If you cannot use GitHub's private reporting at all, reach the maintainer
+through the [igstudija](https://github.com/igstudija) profile and say only that
+you have a security report and how to reach you privately — no details.
 
 ## What to expect
 
 - **An acknowledgement within a week.** If you have not heard back in that time,
-  assume the notification was lost and prod the maintainer publicly, without
-  detail.
+  assume the notification was lost and say so on the
+  [igstudija](https://github.com/igstudija) profile, without detail — issues are
+  disabled, so there is no public thread to nudge.
 - **An assessment within two weeks**, saying whether we agree it is a
   vulnerability and what we plan to do.
 - **Credit in the advisory** unless you would rather not be named.

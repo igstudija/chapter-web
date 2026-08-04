@@ -1,5 +1,9 @@
 # Triage Labels
 
+> **No tracker to label.** GitHub issues are disabled on this repo and it takes
+> no outside contributions — see `CONTRIBUTING.md`. Kept for a fork that runs
+> its own tracker.
+
 The skills speak in terms of five canonical triage roles. This file maps those roles to the actual label strings used in this repo's issue tracker.
 
 | Label in mattpocock/skills | Label in our tracker | Meaning                                  |
