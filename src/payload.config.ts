@@ -10,6 +10,7 @@ import { IS_SERVERLESS } from './lib/runtime'
 import { resolvePgPoolMax } from './lib/pgPoolSize'
 import { resolvePoolerUrl } from './lib/poolerUrl'
 import { MAX_UPLOAD_BYTES } from './lib/uploadLimits'
+import { backfillMissingVersions } from './lib/documentVersions'
 
 import {
   Users,
@@ -74,7 +75,6 @@ if (DATABASE_URL.adjusted) {
  */
 const STATEMENT_TIMEOUT_MS = Number(process.env.PG_STATEMENT_TIMEOUT ?? 30_000)
 
-
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -98,7 +98,7 @@ export default buildConfig({
     Top40,
     Top20,
     SuccessStories,
-        ContactSubmissions,
+    ContactSubmissions,
     EventSubmissions,
     Wiki,
     AuditLogs,
@@ -171,6 +171,47 @@ export default buildConfig({
       dbPool.on('error', (err: Error) => {
         console.warn(`[DB Pool] Idle client error (recovered): ${err.message}`)
       })
+    }
+
+    /*
+     * A document written straight into a drafts-enabled collection's table —
+     * by the legacy migration, by a SQL restore, or by turning drafts on after
+     * the rows existed — has no row in `_<collection>_v`, and the admin list
+     * reads only that table. The document is then invisible to every editor
+     * while the public API still serves it. See `lib/documentVersions.ts`.
+     *
+     * Repaired here rather than left to a command somebody must remember,
+     * because the state is always a defect and the repair is always the same
+     * one row per document. `pnpm preflight` would be the obvious home and is
+     * the wrong one: it is documented as making no network calls, and this
+     * needs the database.
+     *
+     * Dev only. A production boot is the wrong moment to start writing rows —
+     * on Vercel that is once per cold start, several at a time — so a restore
+     * straight into production is repaired with `pnpm backfill:versions
+     * --apply`, which is also what the script exists for. The flag is how that
+     * script stops this from pre-empting its own dry run.
+     */
+    if (
+      process.env.NODE_ENV === 'development' &&
+      process.env.PAYLOAD_SKIP_VERSION_BACKFILL !== '1'
+    ) {
+      try {
+        const reports = await backfillMissingVersions(payload, { apply: true })
+        for (const report of reports) {
+          if (report.backfilled > 0) {
+            console.warn(
+              `[versions] ${report.collection}: ${report.backfilled} document(s) had no version row and were not listed in the admin. Fixed.`,
+            )
+          }
+          for (const failure of report.failed) {
+            console.error(`[versions] ${report.collection}#${failure.id}: ${failure.error}`)
+          }
+        }
+      } catch (error) {
+        // Never keep the dev server from starting over a repair.
+        console.warn(`[versions] Version check skipped: ${(error as Error).message}`)
+      }
     }
 
     // Per-query timing. In dev defaults to 100ms threshold so admin slowdowns

@@ -15,7 +15,13 @@
  *
  * What is deliberately left behind:
  *   - version/draft history (`_*_v`) — published content lives in the main
- *     tables; the drafts belong to a schema that no longer exists
+ *     tables, and the old drafts belong to a schema that no longer exists.
+ *     Dropping the history is fine; dropping every row is not, because the
+ *     admin list for a drafts-enabled collection reads `_<table>_v` and no
+ *     other table, so a copied document with no version row is invisible to
+ *     editors while the public API still serves it. `--apply` therefore ends
+ *     by rebuilding one current version per copied document. See
+ *     `src/lib/documentVersions.ts`.
  *   - `audit_logs` — its action enum still names superadmin events
  *   - `ai_settings`, `sites` — collections this install does not have
  *   - `users_sessions`, `payload_*` — session and editor state, not data
@@ -24,6 +30,7 @@
  * keep the credentials they already have.
  */
 import fs from 'node:fs'
+import { spawnSync } from 'node:child_process'
 import pg from 'pg'
 
 const argv = process.argv.slice(2)
@@ -286,6 +293,27 @@ async function main() {
         .catch(() => {})
     }
     console.log('Sequences advanced past the copied ids.\n')
+
+    /*
+     * The copied rows have no version history, and for a drafts-enabled
+     * collection that is the difference between a document an editor can open
+     * and one that is not in the list at all. Run as a child process rather
+     * than imported: this file is plain `.mjs` talking to `pg`, the backfill is
+     * TypeScript that builds the whole Payload config, and keeping them apart
+     * is what lets this script run without one.
+     */
+    console.log('Rebuilding versions for drafts-enabled collections...\n')
+    const backfill = spawnSync(
+      'pnpm',
+      ['exec', 'tsx', 'src/scripts/backfillVersions.ts', '--apply'],
+      { stdio: 'inherit', shell: process.platform === 'win32' },
+    )
+    if (backfill.status !== 0) {
+      console.warn(
+        '\n⚠ Versions were not rebuilt. Copied documents in events/blog/wiki will not appear in\n' +
+          '  the admin until you run: pnpm backfill:versions --apply\n',
+      )
+    }
   }
 
   console.log('--- summary ---')
