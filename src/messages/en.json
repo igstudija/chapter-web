@@ -472,7 +472,14 @@
   "about": {
     "title": "About Us",
     "description": "Learn more about our organisation.",
-    "principlesTitle": "Core Values & Principles"
+    "principlesTitle": "Core Values & Principles",
+    "howWeWork": "How We Work",
+    "meetingSchedule": "Meeting Schedule",
+    "frequency": "Frequency",
+    "time": "Time",
+    "location": "Location",
+    "virtualMeetings": "Virtual meetings available",
+    "joinUs": "Join Our Chapter"
   },
   "privacy": {
     "title": "Privacy Policy"

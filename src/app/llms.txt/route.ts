@@ -2,7 +2,13 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import slugify from 'slugify'
 import { getSettings } from '@/lib/getSiteSettings'
-import { orgNameFrom, plainTextFrom, siteOrigin, socialProfileUrls } from '@/lib/seoHelpers'
+import {
+  isOnlineLocation,
+  orgNameFrom,
+  plainTextFrom,
+  siteOrigin,
+  socialProfileUrls,
+} from '@/lib/seoHelpers'
 import { GUEST_PATH, findNextPublicEvent, formatMeetingDate } from '@/lib/nextMeeting'
 
 export const dynamic = 'force-dynamic'
@@ -88,7 +94,7 @@ export async function GET() {
     out.push(`## ${c.meetings}`, '')
     for (const m of meetings) {
       const parts = [m.frequency, m.time, m.location?.replace(/\s+/g, ' ')].filter(Boolean)
-      if (m.isVirtual) parts.push(c.online)
+      if (m.isVirtual && !isOnlineLocation(m.location)) parts.push(c.online)
       if (parts.length) out.push(`- ${parts.join(', ')}`)
     }
     if (nextEvent) {

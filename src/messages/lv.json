@@ -472,7 +472,14 @@
   "about": {
     "title": "Par mums",
     "description": "Uzzini vairāk par mūsu organizāciju.",
-    "principlesTitle": "Vērtības un principi"
+    "principlesTitle": "Vērtības un principi",
+    "howWeWork": "Kā mēs strādājam",
+    "meetingSchedule": "Tikšanās grafiks",
+    "frequency": "Biežums",
+    "time": "Laiks",
+    "location": "Vieta",
+    "virtualMeetings": "Iespējams piedalīties arī tiešsaistē",
+    "joinUs": "Pievienojies mums"
   },
   "privacy": {
     "title": "Privātuma politika"
