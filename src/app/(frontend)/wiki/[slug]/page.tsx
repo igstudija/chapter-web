@@ -362,7 +362,7 @@ export async function generateMetadata({ params }: PageProps) {
       seo: (page as any).seo,
       contentTitle: page.title,
       siteSettings: siteSettings,
-      siteBranding: siteSettings?.branding,
+      siteBranding: siteSettings,
       baseUrl,
       pathname: `/wiki/${slug}`,
     })

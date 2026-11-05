@@ -37,17 +37,19 @@ const nextConfig = {
     // Ignore TypeScript errors during build (PostgreSQL migration in progress)
     ignoreBuildErrors: true,
   },
-  eslint: {
-    // Ignore ESLint errors during build
-    ignoreDuringBuilds: true,
-  },
   images: {
-    // Images are served straight from object storage, unoptimized on purpose.
-    // The server-side optimizer (sharp) was the main driver of unbounded RSS
-    // growth in production: every remote image was re-fetched and re-encoded
-    // in-process, and those buffers held RSS above the container health-check
-    // threshold until it got killed. Storage serves them fine as-is.
-    unoptimized: true,
+    // Self-hosted (Docker): served straight from object storage, unoptimized
+    // on purpose. The in-process optimizer (sharp) was the main driver of
+    // unbounded RSS growth there: every remote image was re-fetched and
+    // re-encoded in the app's own memory, which held RSS above the container
+    // health-check threshold until it got killed.
+    //
+    // On Vercel that reason does not exist — optimisation runs in Vercel's
+    // image service, not in the app's function — and leaving it off cost the
+    // home page its LCP: a 1920 px, 457 KB hero downloaded in full on phones
+    // (7.2 s mobile LCP in the 2026-11-04 audit). There it is on, with AVIF/WebP.
+    unoptimized: process.env.VERCEL !== '1',
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: imageHosts(),
   },
   webpack: (webpackConfig, { isServer }) => {

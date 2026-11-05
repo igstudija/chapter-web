@@ -11,7 +11,9 @@ import * as migration_20260727_060000_member_slide_overrides from './20260727_06
 import * as migration_20260728_000000_drop_slide_chrome from './20260728_000000_drop_slide_chrome';
 import * as migration_20260727_120000_drop_referrals_and_meetings from './20260727_120000_drop_referrals_and_meetings';
 import * as migration_20260801_000000_special_request_exchange from './20260801_000000_special_request_exchange';
+import * as migration_20261105_000000_payload_3_93_columns from './20261105_000000_payload_3_93_columns';
 
+import * as migration_20261105_010000_homepage_meeting_note from './20261105_010000_homepage_meeting_note';
 export const migrations = [
   {
     up: migration_20260725_172248.up,
@@ -77,5 +79,15 @@ export const migrations = [
     up: migration_20260801_000000_special_request_exchange.up,
     down: migration_20260801_000000_special_request_exchange.down,
     name: '20260801_000000_special_request_exchange',
+  },
+  {
+    up: migration_20261105_000000_payload_3_93_columns.up,
+    down: migration_20261105_000000_payload_3_93_columns.down,
+    name: '20261105_000000_payload_3_93_columns',
+  },
+  {
+    up: migration_20261105_010000_homepage_meeting_note.up,
+    down: migration_20261105_010000_homepage_meeting_note.down,
+    name: '20261105_010000_homepage_meeting_note',
   },
 ];

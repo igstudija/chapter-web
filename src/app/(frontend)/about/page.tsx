@@ -43,7 +43,7 @@ export async function generateMetadata() {
     seo: page?.seo,
     contentTitle: page?.title,
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: '/about',
   })

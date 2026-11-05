@@ -5,6 +5,7 @@ import { ChevronRight } from 'lucide-react'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { replacePolicyPlaceholders, buildPlaceholders } from '@/lib/policyUtils'
+import { legalPageMetadata } from '@/lib/legalPageMetadata'
 
 export default async function CookiePolicyPage() {
   const payload = await getPayload({ config })
@@ -68,6 +69,6 @@ export default async function CookiePolicyPage() {
   )
 }
 
-export const metadata = {
-  title: 'Cookie Policy',
+export async function generateMetadata() {
+  return legalPageMetadata('cookies', '/cookie-policy')
 }

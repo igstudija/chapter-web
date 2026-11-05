@@ -2,7 +2,8 @@ import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
-import ContactsClient from './ContactsClient'
+import ContactsClient, { type ContactPerson } from './ContactsClient'
+import { encodeEmail } from '@/lib/emailObfuscation'
 import { PageHeader } from '@/components'
 import { headers } from 'next/headers'
 import { generateMetadata as generateSeoMetadata } from '@/lib/seoHelpers'
@@ -40,7 +41,7 @@ export async function generateMetadata() {
     seo: page?.seo,
     contentTitle: page?.title || 'Contact Us',
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: '/contacts',
   })
@@ -73,6 +74,40 @@ export default async function ContactsPage() {
 
   const pageTitle = pageData.title || t('contacts', 'title')
 
+  /*
+   * Only what the cards print crosses to the client. This page used to hand
+   * ContactsClient the whole depth-2 document, so every contact person's
+   * member *and* user record — role, sessions, and the magic-link token — was
+   * serialised into the public HTML. Whatever a client component receives is
+   * published; build the props from a whitelist.
+   */
+  const meaningful = (value: unknown): string => {
+    const text = typeof value === 'string' ? value.trim() : ''
+    // A lone "-" typed into an optional field is "nothing", not a job title.
+    return /[\p{L}\p{N}]/u.test(text) ? text : ''
+  }
+  const contactPersons = ((pageData as any).contactPersons ?? [])
+    .map((item: any) => {
+      const member = item?.member
+      if (!member || typeof member !== 'object') return null
+      const user = member.user && typeof member.user === 'object' ? member.user : null
+      const image =
+        member.profileImage && typeof member.profileImage === 'object' ? member.profileImage : null
+      return {
+        id: String(member.id),
+        name: meaningful(user?.name || member.name),
+        surname: meaningful(user?.surname || member.surname),
+        emailEncoded: encodeEmail(member.email || user?.email || ''),
+        phone: meaningful(member.phone),
+        orgRole: meaningful(member.orgRole),
+        jobPosition: meaningful(member.jobPosition),
+        company: meaningful(member.company),
+        profileImageUrl: image?.url || null,
+      }
+    })
+    .filter(Boolean) as ContactPerson[]
+  const formSettings = (pageData as any).formSettings ?? null
+
   return (
     <div className="min-h-screen bg-paper dark:bg-surface">
       <PageHeader
@@ -81,7 +116,8 @@ export default async function ContactsPage() {
       />
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
         <ContactsClient
-          pageData={pageData}
+          contactPersons={contactPersons}
+          formSettings={formSettings}
           labels={{
             name: t('contacts', 'name'),
             email: t('contacts', 'email'),

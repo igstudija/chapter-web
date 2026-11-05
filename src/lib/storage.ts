@@ -70,6 +70,9 @@ export const objectKey = (...segments: Array<string | undefined>): string =>
 export const publicUrl = (key: string, config: StorageConfig = getStorageConfig()): string =>
   `${config.baseUrl}/storage/v1/object/public/${config.bucket}/${key}`
 
+/** Browser cache lifetime stored on uploaded objects. */
+export const OBJECT_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
+
 /** Upload (or overwrite) an object. */
 export const uploadObject = async (
   key: string,
@@ -85,6 +88,11 @@ export const uploadObject = async (
       // Resized variants are written under deterministic names and re-uploaded
       // whenever an image is reprocessed; without upsert the second write 409s.
       'x-upsert': 'true',
+      // Stored with the object and sent on every public download. Without it
+      // Supabase answers `no-cache`, so every repeat visit re-validated every
+      // image. A week, not a year: upserts reuse names, so a replaced image
+      // has to reach browsers eventually.
+      'cache-control': `max-age=${OBJECT_MAX_AGE_SECONDS}`,
     },
     body: new Uint8Array(buffer),
   })

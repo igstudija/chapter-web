@@ -4,7 +4,12 @@ import Image from 'next/image'
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { EventCard, BlogCard, Reveal } from '@/components'
+// Direct imports, not the @/components barrel: the barrel re-exports every
+// client component in the app, and pulling three through it shipped a large
+// chunk the home page mostly never ran (audit: 137 KB, 84% unused).
+import { EventCard } from '@/components/EventCard'
+import { BlogCard } from '@/components/BlogCard'
+import { Reveal } from '@/components/Reveal'
 import { ArrowRight } from 'lucide-react'
 import type { Media } from '@/payload-types'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
@@ -14,6 +19,11 @@ import {
 } from '@/lib/seoHelpers'
 import { JsonLd } from '@/components/JsonLd'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
+import { iconPath } from '@/lib/iconPath'
+import { GUEST_PATH, findNextPublicEvent, formatMeetingDate } from '@/lib/nextMeeting'
+
+/** How long after its newest post the home page keeps showing the blog band. */
+const BLOG_FRESH_FOR_MS = 180 * 24 * 60 * 60 * 1000
 
 export async function generateMetadata() {
   const headersList = await headers()
@@ -53,7 +63,7 @@ export async function generateMetadata() {
     contentTitle: homepage?.hero?.title,
     contentDescription: homepage?.hero?.description,
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     homepageHero: homepage,
     baseUrl,
     pathname: '/',
@@ -95,11 +105,11 @@ export default async function HomePage() {
   const baseUrl = `https://${host}`
   const organizationSchema = generateOrganizationSchema({
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
   })
 
-  const [eventsData, blogData] = await Promise.all([
+  const [eventsData, blogData, nextGuestEvent] = await Promise.all([
     payload.find({
       collection: 'events',
       limit: 3,
@@ -119,11 +129,18 @@ export default async function HomePage() {
         _status: { equals: 'published' },
       },
     }),
+    findNextPublicEvent(payload),
   ])
 
   const hero = homepage?.hero
   const stats = homepage?.stats
   const cta = homepage?.cta
+  const timezone = currentSite?.timezone || 'Europe/Riga'
+  const guestButtonFromCms = hero?.primaryButtonLink === GUEST_PATH
+  const newestPostAt = blogData.docs[0]?.publishedAt || blogData.docs[0]?.createdAt
+  const blogIsFresh =
+    Boolean(newestPostAt) &&
+    Date.now() - new Date(newestPostAt as string).getTime() < BLOG_FRESH_FOR_MS
   const backgroundImage =
     hero?.backgroundImage && typeof hero.backgroundImage === 'object'
       ? (hero.backgroundImage as Media)
@@ -160,7 +177,7 @@ export default async function HomePage() {
     'mdi:handshake',
   ]
   const statIconUrl = (icon: string | null | undefined, index: number) =>
-    `https://api.iconify.design/${icon || DEFAULT_STAT_ICONS[index] || 'mdi:chart-line'}.svg`
+    iconPath(icon, DEFAULT_STAT_ICONS[index] || 'mdi:chart-line')
 
   return (
     <>
@@ -288,23 +305,56 @@ export default async function HomePage() {
             >
               {hero?.description}
             </p>
+            {/*
+              The one action a chapter's website exists for is getting a
+              prospect to a meeting as a guest. It used to be absent from the
+              hero — the red button went to the member list — so it now leads,
+              and the CMS buttons follow it. An editor who points a CMS button
+              at /viesis themselves gets it once, not twice.
+            */}
             <div
-              className="rise-in mt-11 flex flex-col gap-3 sm:flex-row"
+              className="rise-in mt-11 flex flex-col gap-3 sm:flex-row sm:items-center"
               style={{ animationDelay: '300ms' }}
             >
+              {!guestButtonFromCms && (
+                <Link href={GUEST_PATH} className="btn btn-primary px-7 py-3.5">
+                  {t('home', 'guestCta')}
+                </Link>
+              )}
               <Link
                 href={hero?.primaryButtonLink || '/companies'}
-                className="btn btn-primary px-7 py-3.5"
+                className={`btn px-7 py-3.5 ${guestButtonFromCms ? 'btn-primary' : 'btn-line-invert'}`}
               >
                 {hero?.primaryButtonText || t('home', 'viewMembers')}
               </Link>
               <Link
                 href={hero?.secondaryButtonLink || '/contacts'}
-                className="btn btn-line-invert px-7 py-3.5"
+                className="px-2 py-2 text-sm font-medium text-ink-soft underline-offset-4 transition-colors hover:text-brand hover:underline dark:text-white/70 sm:ml-2"
               >
                 {hero?.secondaryButtonText || t('contacts', 'title')}
               </Link>
             </div>
+            {(nextGuestEvent || hero?.meetingNote) && (
+              <div
+                className="rise-in mt-8 max-w-xl space-y-2 border-l-2 border-brand pl-4"
+                style={{ animationDelay: '360ms' }}
+              >
+                {nextGuestEvent && (
+                  <p className="text-sm text-ink dark:text-white/85">
+                    <span className="eyebrow mr-2 dark:text-white/55">{t('home', 'nextMeeting')}</span>
+                    <time dateTime={nextGuestEvent.date} className="font-medium">
+                      {formatMeetingDate(nextGuestEvent.date, locale, timezone)}
+                    </time>
+                    {nextGuestEvent.location && <span> · {nextGuestEvent.location}</span>}
+                  </p>
+                )}
+                {hero?.meetingNote && (
+                  <p className="text-sm leading-relaxed text-ink-soft dark:text-white/65">
+                    {hero.meetingNote}
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -466,7 +516,13 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Latest Blog Posts */}
+      {/*
+        Latest Blog Posts — only while the blog is alive. A "latest news" band
+        whose newest item is most of a year old tells a visitor the chapter has
+        gone quiet, which is the opposite of what it is for. It comes back on
+        its own with the next post.
+      */}
+      {blogIsFresh && (
       <section className="border-t border-line bg-card py-20 md:py-28 dark:border-line-dark dark:bg-surface-raised">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal className="mb-12 flex flex-wrap items-end justify-between gap-x-8 gap-y-5 border-b border-line pb-6 dark:border-line-dark">
@@ -521,6 +577,7 @@ export default async function HomePage() {
           )}
         </div>
       </section>
+      )}
 
       {/*
         CTA — the closing statement, at the scale of one.
@@ -548,12 +605,19 @@ export default async function HomePage() {
             <p className="mx-auto mt-7 max-w-xl text-base leading-relaxed text-ink-soft dark:text-white/65">
               {cta?.description || t('home', 'ctaDescription')}
             </p>
-            <Link
-              href={cta?.buttonLink || '/contacts'}
-              className="btn btn-primary mt-11 px-9 py-4 text-base"
-            >
-              {cta?.buttonText || t('home', 'getInTouch')}
-            </Link>
+            <div className="mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              {cta?.buttonLink !== GUEST_PATH && (
+                <Link href={GUEST_PATH} className="btn btn-primary px-9 py-4 text-base">
+                  {t('home', 'guestCta')}
+                </Link>
+              )}
+              <Link
+                href={cta?.buttonLink || '/contacts'}
+                className={`btn px-9 py-4 text-base ${cta?.buttonLink === GUEST_PATH ? 'btn-primary' : 'btn-line-invert'}`}
+              >
+                {cta?.buttonText || t('home', 'getInTouch')}
+              </Link>
+            </div>
           </Reveal>
         </div>
       </section>

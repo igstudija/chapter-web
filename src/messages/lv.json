@@ -53,7 +53,7 @@
     "companies": "Uzņēmumi",
     "events": "Pasākumi",
     "successStories": "Veiksmes stāsti",
-    "faq": "BUJ",
+    "faq": "Jautājumi",
     "contacts": "Kontakti",
     "members": "Biedri",
     "specialRequests": "Specifiskie prasījumi",
@@ -91,7 +91,9 @@
     "ctaTitle": "Gatavs attīstīt savu biznesu?",
     "ctaDescription": "Pievienojies mūsu profesionāļu tīklam un sāc veidot vērtīgas biznesa attiecības jau šodien.",
     "getInTouch": "Sazināties",
-    "viewMembers": "Skatīt biedrus"
+    "viewMembers": "Skatīt biedrus",
+    "guestCta": "Nāc kā viesis",
+    "nextMeeting": "Nākamā tikšanās"
   },
   "events": {
     "title": "Pasākumi",
@@ -137,7 +139,11 @@
     "gallery": "Galerija",
     "visitUs": "Apmeklē mūs",
     "visitUsDescription": "Mēs tiekamies 4 reizes mēnesī, vienu reizi klātienē un trīs reizes Zoom platformā. Mēs priecāsimies tevi satikt klātienē vai kādā no mūsu tiešsaistes sanāksmēm.",
-    "noMembersYet": "Vēl nav biedru."
+    "noMembersYet": "Vēl nav biedru.",
+    "allSectors": "Visas nozares",
+    "noResults": "Nekas netika atrasts. Pamēģini citu vārdu.",
+    "searchLabel": "Meklēt pēc uzņēmuma, cilvēka vai nozares",
+    "metaDescription": "{company} — {sector}. Pārstāvis {organisation}: {person}."
   },
   "contacts": {
     "title": "Kontakti",

@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: Props) {
     contentDescription: post.excerpt,
     contentImage: post.featuredImage as Media | undefined,
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: `/blog/${slug}`,
   })
@@ -79,6 +79,9 @@ export default async function BlogPostPage({ params }: Props) {
       collection: 'events',
       where: {
         and: [
+          // A public page links only to events a signed-out visitor can open.
+          { _status: { equals: 'published' } },
+          { isPublic: { equals: true } },
           { date: { greater_than_equal: new Date().toISOString() } },
         ],
       },

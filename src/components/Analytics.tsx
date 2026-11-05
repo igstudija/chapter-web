@@ -7,12 +7,15 @@ interface AnalyticsProps {
   googleAnalyticsId?: string
   googleTagManagerId?: string
   facebookPixelId?: string
+  /** This request's CSP nonce; inline scripts without it are blocked. */
+  nonce?: string
 }
 
 export function Analytics({
   googleAnalyticsId,
   googleTagManagerId,
   facebookPixelId,
+  nonce,
 }: Readonly<AnalyticsProps>) {
   useEffect(() => {
     if (facebookPixelId) {
@@ -49,6 +52,7 @@ export function Analytics({
           <Script
             id="gtm-script"
             strategy="afterInteractive"
+            nonce={nonce}
             dangerouslySetInnerHTML={{
               __html: `
                 (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -77,10 +81,12 @@ export function Analytics({
           <Script
             src={`https://www.googletagmanager.com/gtag/js?id=${googleAnalyticsId}`}
             strategy="afterInteractive"
+            nonce={nonce}
           />
           <Script
             id="ga-script"
             strategy="afterInteractive"
+            nonce={nonce}
             dangerouslySetInnerHTML={{
               __html: `
                 globalThis.dataLayer = globalThis.dataLayer || [];

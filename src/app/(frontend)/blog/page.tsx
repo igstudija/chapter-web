@@ -41,7 +41,7 @@ export async function generateMetadata() {
     contentTitle: listingSeo?.blogPage?.pageTitle || 'Blog',
     contentDescription: listingSeo?.blogPage?.pageDescription || 'Latest news and articles from our organisation.',
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: '/blog',
   })

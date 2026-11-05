@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { GUEST_PATH } from '@/lib/nextMeeting'
 import Image from 'next/image'
 import { Menu, X, User, Key, LogOut, Shield, Sun, Moon, Monitor, ChevronDown } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -345,9 +346,22 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
                   )}
                 </div>
               ) : (
-                <Link href="/login" className="btn btn-primary px-5 py-2.5">
-                  {t('nav', 'login')}
-                </Link>
+                /*
+                  Members are a small share of visitors, so signing in is a
+                  quiet link; the red button belongs to the action a prospect
+                  came for — attending a meeting as a guest.
+                */
+                <div className="flex items-center gap-2">
+                  <Link
+                    href="/login"
+                    className="px-3 py-2 text-sm font-medium text-ink-soft transition-colors hover:text-ink dark:text-neutral-400 dark:hover:text-white"
+                  >
+                    {t('nav', 'login')}
+                  </Link>
+                  <Link href={GUEST_PATH} className="btn btn-primary px-5 py-2.5">
+                    {t('home', 'guestCta')}
+                  </Link>
+                </div>
               )}
             </div>
 
@@ -440,14 +454,23 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
                   </button>
                 </div>
               ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="btn btn-primary w-full"
-                >
-                  <User className="h-4 w-4" />
-                  {t('nav', 'login')}
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href={GUEST_PATH}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="btn btn-primary w-full"
+                  >
+                    {t('home', 'guestCta')}
+                  </Link>
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="btn btn-line w-full"
+                  >
+                    <User className="h-4 w-4" />
+                    {t('nav', 'login')}
+                  </Link>
+                </div>
               )}
             </div>
 

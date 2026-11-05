@@ -1,4 +1,4 @@
-import sharp from 'sharp'
+import sharp, { type Metadata } from 'sharp'
 import type { Payload } from 'payload'
 import {
   getStorageConfig,
@@ -67,7 +67,7 @@ export async function uploadMediaWithSizes(
 
     // Generate and upload sized variants (raster images only; SVG has no
     // meaningful raster size and sharp would rasterise it).
-    let metadata: sharp.Metadata | undefined
+    let metadata: Metadata | undefined
     const isSvg = mimeType.includes('svg') || filename.toLowerCase().endsWith('.svg')
 
     if (mimeType.startsWith('image/') && !isSvg) {

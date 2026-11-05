@@ -20,6 +20,8 @@ export async function GET(request: Request) {
         emailChangeToken: { equals: token },
       },
       limit: 1,
+      overrideAccess: true,
+      showHiddenFields: true,
     })
 
     if (users.docs.length === 0) {

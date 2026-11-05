@@ -13,6 +13,8 @@ import { getMessages, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
 import { VersionCheck } from '@/components/VersionCheck'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
+import { ogLocale, orgNameFrom, siteOrigin } from '@/lib/seoHelpers'
+import type { Metadata } from 'next'
 
 /**
  * Every page here is database-backed and most are per-member, so none may be
@@ -56,19 +58,46 @@ const dataFont = IBM_Plex_Mono({
   weight: ['400', '500', '600'],
   display: 'swap',
   variable: '--font-data-face',
+  // Six files (three weights x two subsets) for dates and eyebrows, none of
+  // them above the fold's largest paint. Preloading them made ten font
+  // requests compete with the hero image on every first visit; they still
+  // load, just when the browser reaches text that uses them.
+  preload: false,
 })
 
 /**
- * Fallback metadata only. Title and description come from `Settings` /
- * `ListingPagesSeo` and override this on every real page; what remains here is
- * what a fresh install serves before any content exists.
+ * Defaults every page inherits. Pages set their own title and description; the
+ * title template and the fallbacks come from Settings.
+ *
+ * This used to be a static object built from DEFAULT_ORG_NAME, the env-var
+ * fallback, so every child page was titled "<page> | Your Organisation" on an
+ * install that had set its real name in Settings long ago — the template never
+ * looked there. Read the name the organisation actually entered.
  */
-export const metadata = {
-  title: {
-    default: DEFAULT_ORG_NAME,
-    template: `%s | ${DEFAULT_ORG_NAME}`,
-  },
-  description: 'A member directory and business network for professional organisations.',
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getSettings()
+  const name = orgNameFrom(settings)
+  const seo = settings?.seo
+  const origin = siteOrigin()
+  const defaultImage =
+    seo?.defaultOgImage && typeof seo.defaultOgImage === 'object' ? seo.defaultOgImage.url : null
+
+  return {
+    ...(origin && { metadataBase: new URL(origin) }),
+    title: {
+      default: name,
+      // A configured suffix is appended by the page helpers already; adding the
+      // name here as well would print it twice.
+      template: seo?.titleSuffix ? '%s' : `%s | ${name}`,
+    },
+    description: seo?.defaultDescription || undefined,
+    openGraph: {
+      siteName: seo?.ogSiteName || name,
+      locale: ogLocale(settings?.locale),
+      type: 'website',
+      ...(defaultImage && { images: [{ url: defaultImage, width: 1200, height: 630 }] }),
+    },
+  }
 }
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
@@ -86,6 +115,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const messages = getMessages(locale)
+  // Set by src/proxy.ts with the Content-Security-Policy; our inline scripts
+  // need it to run, Next.js applies it to its own.
+  const nonce = (await headers()).get('x-nonce') ?? undefined
 
   return (
     <html
@@ -113,10 +145,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           googleAnalyticsId={settings?.googleAnalyticsId || undefined}
           googleTagManagerId={settings?.googleTagManagerId || undefined}
           facebookPixelId={settings?.facebookPixelId || undefined}
+          nonce={nonce}
         />
       </head>
       <body className="min-h-screen flex flex-col bg-paper text-ink dark:bg-surface dark:text-surface-text transition-colors antialiased">
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

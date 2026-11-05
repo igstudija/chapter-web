@@ -53,6 +53,8 @@ export default async function VerifyEmailChangePage({ searchParams }: PageProps)
       emailChangeToken: { equals: token },
     },
     limit: 1,
+    overrideAccess: true,
+    showHiddenFields: true,
   })
 
   if (users.docs.length === 0) {

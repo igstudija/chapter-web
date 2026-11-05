@@ -51,6 +51,8 @@ export default async function MyProfilePage() {
   const freshUser = await payload.findByID({
     collection: 'users',
     id: user.id,
+    // emailChangeExpiry is a hidden field; it is read here, never passed on.
+    showHiddenFields: true,
   })
   const hasPendingEmailChange =
     freshUser.pendingEmail &&

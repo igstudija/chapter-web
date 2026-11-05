@@ -41,7 +41,7 @@ export async function generateMetadata() {
     contentTitle: listingSeo?.eventsPage?.pageTitle || 'Events',
     contentDescription: listingSeo?.eventsPage?.pageDescription || 'Upcoming events and meetings at our organisation.',
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: '/events',
   })

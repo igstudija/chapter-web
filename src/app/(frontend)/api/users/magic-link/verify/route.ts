@@ -36,6 +36,7 @@ export async function GET(request: Request) {
       limit: 1,
       depth: 0,
       overrideAccess: true,
+      showHiddenFields: true,
     })
 
     console.log('Users found:', users.docs.length)

@@ -49,6 +49,10 @@ export async function POST(request: Request) {
       data: { email: String(email).toLowerCase().trim(), password },
     })
 
+    if (!result.user) {
+      return NextResponse.json({ error: 'Invalid email or password' }, { status: 401 })
+    }
+
     const response = NextResponse.json({
       success: true,
       user: {
