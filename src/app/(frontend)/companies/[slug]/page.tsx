@@ -11,6 +11,12 @@ import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
 import { isUserActive, type UserWithContext } from '@/lib/userHelpers'
 import type { Member, User as PayloadUser } from '@/payload-types'
+import {
+  generateMetadata as generateSeoMetadata,
+  orgNameFrom,
+  plainTextFrom,
+  siteOrigin,
+} from '@/lib/seoHelpers'
 
 function generateCompanySlug(company: string): string {
   return slugify(company, { lower: true, strict: true })
@@ -47,10 +53,46 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     return { title: 'Company Not Found' }
   }
 
-  return {
-    title: membership.company,
-    description: membership.companyDescription || `Learn more about ${membership.company}`,
-  }
+  /*
+   * 78 member pages were the thinnest on the site and had no canonical and no
+   * share image — the pages a referral network most wants found. The CMS
+   * description leads when there is one; otherwise a sentence assembled from
+   * what the record does say, in the chapter's language.
+   */
+  const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
+  const t = getTranslations(locale)
+  const sector =
+    membership.powerGroup && typeof membership.powerGroup === 'object'
+      ? membership.powerGroup.title
+      : membership.jobPosition || ''
+  const person = [membership.name, membership.surname].filter(Boolean).join(' ')
+  const fallback = t('companies', 'metaDescription')
+    .replace('{company}', membership.company!)
+    .replace('{sector}', sector)
+    .replace('{organisation}', orgNameFrom(settings))
+    .replace('{person}', person)
+    .replace(' — .', '.')
+    .replace(/:\s*\.$/, '.')
+  const logo = membership.logo && typeof membership.logo === 'object' ? membership.logo : null
+  const portrait =
+    membership.profileImage && typeof membership.profileImage === 'object'
+      ? membership.profileImage
+      : null
+  // Social previews do not render SVG; a portrait is the better fallback then.
+  const shareImage =
+    logo?.url && !/\.svg($|\?)/i.test(logo.url) ? logo : portrait?.url ? portrait : null
+  const headersList = await getHeaders()
+  const baseUrl = siteOrigin() || `https://${headersList.get('host')}`
+
+  return generateSeoMetadata({
+    contentTitle: membership.company,
+    contentDescription: plainTextFrom(membership.companyDescription, 160) || fallback,
+    contentImage: shareImage,
+    siteSettings: settings as never,
+    siteBranding: settings,
+    baseUrl,
+    pathname: `/companies/${slug}`,
+  })
 }
 
 export default async function CompanyPage({ params }: { params: Promise<{ slug: string }> }) {

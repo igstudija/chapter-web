@@ -40,7 +40,8 @@ export interface SiteSeoSettings {
  */
 export interface SiteBranding {
   siteName?: string | null
-  siteLogo?: Media | string | null
+  /** A bare id (number) is an unpopulated relation and yields no URL. */
+  siteLogo?: Media | string | number | null
 }
 
 /**
@@ -138,8 +139,11 @@ export function socialProfileUrls(
 /**
  * Get media URL from Media object or string
  */
-function getMediaUrl(media: Media | string | null | undefined, baseUrl: string): string | null {
-  if (!media) return null
+function getMediaUrl(
+  media: Media | string | number | null | undefined,
+  baseUrl: string,
+): string | null {
+  if (!media || typeof media === 'number') return null
   if (typeof media === 'string') return media
   if (media.url) {
     // If URL is relative, prepend base URL
