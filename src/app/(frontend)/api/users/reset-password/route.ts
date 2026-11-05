@@ -29,6 +29,7 @@ export async function POST(request: Request) {
       limit: 1,
       depth: 0,
       overrideAccess: true,
+      showHiddenFields: true,
     })
 
     if (users.docs.length === 0) {

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Mail, Phone } from 'lucide-react'
 import { getThumbnailUrl } from '@/lib/getThumbnailUrl'
+import { decodeEmail } from '@/lib/emailObfuscation'
 
 interface ContactsLabels {
   name: string
@@ -16,12 +17,88 @@ interface ContactsLabels {
   sendError: string
 }
 
+/** One contact person, as built server-side in page.tsx — nothing more crosses. */
+export interface ContactPerson {
+  id: string
+  name: string
+  surname: string
+  /** See src/lib/emailObfuscation.ts. */
+  emailEncoded: string
+  phone: string
+  orgRole: string
+  jobPosition: string
+  company: string
+  profileImageUrl: string | null
+}
+
 interface ContactsPageProps {
-  pageData: any
+  contactPersons: ContactPerson[]
+  formSettings: {
+    formTitle?: string | null
+    formDescription?: string | null
+    submitButtonText?: string | null
+    successMessage?: string | null
+  } | null
   labels: ContactsLabels
 }
 
-export default function ContactsPageClient({ pageData, labels }: ContactsPageProps) {
+/** The address, assembled only in the browser so it never sits in the HTML. */
+function ObfuscatedEmail({ encoded }: { readonly encoded: string }) {
+  const [email, setEmail] = useState('')
+  useEffect(() => {
+    setEmail(decodeEmail(encoded))
+  }, [encoded])
+  if (!encoded) return null
+  return (
+    <a
+      href={email ? `mailto:${email}` : undefined}
+      className="flex min-h-5 items-center justify-center gap-1.5 break-words text-sm text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
+    >
+      <Mail className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+      <span>{email}</span>
+    </a>
+  )
+}
+
+function ContactCard({ person }: { readonly person: ContactPerson }) {
+  const fullName = [person.name, person.surname].filter(Boolean).join(' ')
+  const roleLine = [person.jobPosition, person.company].filter(Boolean).join(', ')
+  return (
+    <div className="max-w-xs space-y-2 text-center">
+      {person.profileImageUrl && (
+        <div className="mb-3 flex justify-center">
+          <img
+            src={getThumbnailUrl(person.profileImageUrl, 'thumbnail') || person.profileImageUrl}
+            alt={fullName}
+            className="h-24 w-24 rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
+            loading="lazy"
+          />
+        </div>
+      )}
+      <h3 className="font-display text-lg font-semibold tracking-tight text-ink dark:text-surface-text">
+        {fullName}
+      </h3>
+      {person.orgRole && <p className="eyebrow">{person.orgRole}</p>}
+      {roleLine && <p className="text-sm text-ink-soft dark:text-neutral-400">{roleLine}</p>}
+      <ObfuscatedEmail encoded={person.emailEncoded} />
+      {person.phone && (
+        <a
+          href={`tel:${person.phone}`}
+          className="tabular flex items-center justify-center gap-1.5 font-mono text-xs text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
+        >
+          <Phone className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+          <span>{person.phone}</span>
+        </a>
+      )}
+    </div>
+  )
+}
+
+export default function ContactsPageClient({
+  contactPersons,
+  formSettings,
+  labels,
+}: ContactsPageProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -85,152 +162,22 @@ export default function ContactsPageClient({ pageData, labels }: ContactsPagePro
     setFormData((prev) => ({ ...prev, [e.target.name]: value }))
   }
 
-  const page = pageData
-  const formSettings = page?.formSettings
-  const contactPersons = page?.contactPersons || []
+  const [first, ...others] = contactPersons
 
   return (
     <>
       {/* Contact Persons */}
-      {contactPersons.length > 0 && (
+      {first && (
         <div className="mb-16">
-          {/* First Contact - Separate Row */}
-          {contactPersons.length > 0 &&
-            (() => {
-              const item = contactPersons[0]
-              const member = item.member
-              if (!member || typeof member !== 'object') return null
-
-              const user = typeof member.user === 'object' ? member.user : null
-              const name = user?.name || ''
-              const surname = user?.surname || ''
-              const email = member.email || user?.email || ''
-              const phone = member.phone || ''
-              const orgRole = member.orgRole || ''
-              const jobPosition = member.jobPosition || ''
-              const company = member.company || ''
-
-              const profileImage =
-                member.profileImage && typeof member.profileImage === 'object'
-                  ? member.profileImage.url
-                  : null
-
-              return (
-                <div className="flex justify-center mb-8">
-                  <div className="text-center space-y-2 max-w-xs">
-                    {profileImage && (
-                      <div className="flex justify-center mb-3">
-                        <img
-                          src={getThumbnailUrl(profileImage, 'thumbnail') || profileImage}
-                          alt={`${name} ${surname}`}
-                          className="h-24 w-24 rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    <h3 className="font-display text-lg font-semibold tracking-tight text-ink dark:text-surface-text">
-                      {name} {surname}
-                    </h3>
-                    {orgRole && (
-                      <p className="eyebrow">{orgRole}</p>
-                    )}
-                    {(jobPosition || company) && (
-                      <p className="text-sm text-ink-soft dark:text-neutral-400">
-                        {jobPosition}
-                        {jobPosition && company && ', '}
-                        {company}
-                      </p>
-                    )}
-                    {email && (
-                      <a
-                        href={`mailto:${email}`}
-                        className="flex items-center justify-center gap-1.5 break-words text-sm text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
-                      >
-                        <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span>{email}</span>
-                      </a>
-                    )}
-                    {phone && (
-                      <a
-                        href={`tel:${phone}`}
-                        className="tabular flex items-center justify-center gap-1.5 font-mono text-xs text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
-                      >
-                        <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span>{phone}</span>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )
-            })()}
-
-          {/* Remaining Contacts - Centered Grid */}
-          {contactPersons.length > 1 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
-              {contactPersons.slice(1).map((item: any, index: number) => {
-                const member = item.member
-                if (!member || typeof member !== 'object') return null
-
-                const user = typeof member.user === 'object' ? member.user : null
-                const name = user?.name || ''
-                const surname = user?.surname || ''
-                const email = member.email || user?.email || ''
-                const phone = member.phone || ''
-                const orgRole = member.orgRole || ''
-                const jobPosition = member.jobPosition || ''
-                const company = member.company || ''
-
-                const profileImage =
-                  member.profileImage && typeof member.profileImage === 'object'
-                    ? member.profileImage.url
-                    : null
-
-                return (
-                  <div key={member.id || index} className="text-center space-y-2 max-w-xs">
-                    {profileImage && (
-                      <div className="flex justify-center mb-3">
-                        <img
-                          src={getThumbnailUrl(profileImage, 'thumbnail') || profileImage}
-                          alt={`${name} ${surname}`}
-                          className="h-24 w-24 rounded-full object-cover ring-1 ring-line dark:ring-line-dark"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    <h3 className="font-display text-lg font-semibold tracking-tight text-ink dark:text-surface-text">
-                      {name} {surname}
-                    </h3>
-                    {orgRole && (
-                      <p className="eyebrow">{orgRole}</p>
-                    )}
-                    {(jobPosition || company) && (
-                      <p className="text-sm text-ink-soft dark:text-neutral-400">
-                        {jobPosition}
-                        {jobPosition && company && ', '}
-                        {company}
-                      </p>
-                    )}
-                    {email && (
-                      <a
-                        href={`mailto:${email}`}
-                        className="flex items-center justify-center gap-1.5 break-words text-sm text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
-                      >
-                        <Mail className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span>{email}</span>
-                      </a>
-                    )}
-                    {phone && (
-                      <a
-                        href={`tel:${phone}`}
-                        className="tabular flex items-center justify-center gap-1.5 font-mono text-xs text-ink-soft transition-colors hover:text-brand dark:text-neutral-400"
-                      >
-                        <Phone className="h-3.5 w-3.5 flex-shrink-0" />
-                        <span>{phone}</span>
-                      </a>
-                    )}
-                  </div>
-                )
-              })}
+          {/* First contact — the chapter's lead — gets a row of its own. */}
+          <div className="mb-8 flex justify-center">
+            <ContactCard person={first} />
+          </div>
+          {others.length > 0 && (
+            <div className="grid grid-cols-1 justify-items-center gap-8 sm:grid-cols-2 lg:grid-cols-3">
+              {others.map((person) => (
+                <ContactCard key={person.id} person={person} />
+              ))}
             </div>
           )}
         </div>

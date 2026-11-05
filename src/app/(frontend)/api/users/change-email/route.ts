@@ -171,6 +171,8 @@ export async function GET() {
     const freshUser = await payload.findByID({
       collection: 'users',
       id: user.id,
+      // emailChangeExpiry is a hidden field; only this server-side check reads it.
+      showHiddenFields: true,
     })
 
     const hasPendingChange =

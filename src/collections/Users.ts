@@ -130,25 +130,33 @@ export const Users: CollectionConfig = {
     },
 
     // === HIDDEN FIELDS FOR AUTH CONTEXT ===
+    //
+    // `hidden: true` on the field, not only `admin.hidden`. The admin flag
+    // hides a field from the edit form and nothing else: these tokens were
+    // returned by every read of a user — the REST API to any signed-in member,
+    // and the public /contacts page, which serialised its contact persons'
+    // user records (magicLinkToken included) into the HTML. A magic-link token
+    // read off a public page is a login as that person. Hidden fields never
+    // leave the server; the routes that need one ask with showHiddenFields.
     {
       name: 'customResetToken',
       type: 'text',
-      admin: { hidden: true },
+      hidden: true,
     },
     {
       name: 'customResetExpiry',
       type: 'date',
-      admin: { hidden: true },
+      hidden: true,
     },
     {
       name: 'magicLinkToken',
       type: 'text',
-      admin: { hidden: true },
+      hidden: true,
     },
     {
       name: 'magicLinkExpiry',
       type: 'date',
-      admin: { hidden: true },
+      hidden: true,
     },
 
     // === EMAIL CHANGE VERIFICATION FIELDS ===
@@ -160,12 +168,12 @@ export const Users: CollectionConfig = {
     {
       name: 'emailChangeToken',
       type: 'text',
-      admin: { hidden: true },
+      hidden: true,
     },
     {
       name: 'emailChangeExpiry',
       type: 'date',
-      admin: { hidden: true },
+      hidden: true,
     },
 
   ],
