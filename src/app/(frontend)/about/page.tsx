@@ -160,7 +160,7 @@ export default async function AboutPage() {
         {page.howWeWork && (
           <section className="mb-16 panel p-8">
             <h2 className="display-2 mb-6 text-ink dark:text-surface-text">
-              {page.howWeWork.title || 'How We Work'}
+              {page.howWeWork.title || t('about', 'howWeWork')}
             </h2>
             {page.howWeWork.description && (
               <div
@@ -171,7 +171,7 @@ export default async function AboutPage() {
             {page.howWeWork.meetings && page.howWeWork.meetings.length > 0 && (
               <div className="space-y-4">
                 <h3 className="text-xl font-semibold text-ink dark:text-surface-text mb-4">
-                  Meeting Schedule
+                  {t('about', 'meetingSchedule')}
                 </h3>
                 <div className="grid md:grid-cols-2 gap-4">
                   {page.howWeWork.meetings.map((meeting: any, index: number) => (
@@ -179,23 +179,23 @@ export default async function AboutPage() {
                       <div className="space-y-2 text-neutral-700 dark:text-neutral-300">
                         {meeting.frequency && (
                           <p>
-                            <strong>Frequency:</strong> {meeting.frequency}
+                            <strong>{t('about', 'frequency')}:</strong> {meeting.frequency}
                           </p>
                         )}
                         {meeting.time && (
                           <p>
-                            <strong>Time:</strong> {meeting.time}
+                            <strong>{t('about', 'time')}:</strong> {meeting.time}
                           </p>
                         )}
                         {meeting.location && (
                           <p>
-                            <strong>Location:</strong>
+                            <strong>{t('about', 'location')}:</strong>
                             <br />
                             {meeting.location}
                           </p>
                         )}
                         {meeting.isVirtual && (
-                          <p className="text-brand font-medium">✓ Virtual meetings available</p>
+                          <p className="text-brand font-medium">✓ {t('about', 'virtualMeetings')}</p>
                         )}
                       </div>
                     </div>
@@ -230,7 +230,7 @@ export default async function AboutPage() {
         {page.membershipInfo && (
           <section className="relative overflow-hidden rounded-xl bg-neutral-900 p-10 text-center text-white dark:bg-neutral-950">
             <h2 className="display-2 mb-4">
-              {page.membershipInfo.title || 'Join Our Chapter'}
+              {page.membershipInfo.title || t('about', 'joinUs')}
             </h2>
             {page.membershipInfo.description && (
               <div
