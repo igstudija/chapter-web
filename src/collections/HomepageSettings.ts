@@ -77,6 +77,15 @@ export const HomepageSettings: CollectionConfig = {
                   },
                 },
                 {
+                  name: 'meetingNote',
+                  label: 'Meeting Info',
+                  type: 'textarea',
+                  admin: {
+                    description:
+                      'When, where and how often the group meets, in one or two sentences — shown in the hero under the next meeting date. E.g. "Every Wednesday at 6:45: once a month in person at …, the other weeks on Zoom."',
+                  },
+                },
+                {
                   type: 'row',
                   fields: [
                     {

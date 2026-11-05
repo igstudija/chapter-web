@@ -1,9 +1,13 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import Link from 'next/link'
-import { CompanyLogo } from '@/components/CompanyLogo'
+import {
+  CompaniesDirectory,
+  type DirectoryCompany,
+  type DirectoryGroup,
+} from '@/components/CompaniesDirectory'
 import slugify from 'slugify'
-import { PageHeader, Reveal } from '@/components'
+import { PageHeader } from '@/components'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
 import type { Member } from '@/payload-types'
@@ -69,7 +73,7 @@ export async function generateMetadata() {
         listingSeo?.companiesPage?.pageDescription ||
         'Browse companies in our organisation.',
       siteSettings: siteSettings,
-      siteBranding: siteSettings?.branding,
+      siteBranding: siteSettings,
       baseUrl,
       pathname: '/companies',
     })
@@ -196,30 +200,31 @@ export default async function CompaniesPage() {
       return b.avgRating - a.avgRating
     })
 
-  const renderMemberCard = (membership: MemberWithRating) => {
-    const logo = membership.logo && typeof membership.logo === 'object' ? membership.logo : null
-
-    return (
-      <Link
-        key={membership.id}
-        href={'/companies/' + slugify(membership.company || '', { lower: true, strict: true })}
-        className="logo-cell h-28"
-      >
-        {logo?.url ? (
-          <CompanyLogo
-            src={logo.url}
-            alt={logo.alt || membership.company || ''}
-            width={120}
-            height={56}
-          />
-        ) : (
-          <span className="text-center text-sm font-medium text-neutral-900">
-            {membership.company}
-          </span>
-        )}
-      </Link>
-    )
-  }
+  /*
+   * Serialised for the client-side directory. A member with no company name
+   * has no company page to link to and rendered as an empty tile, so they are
+   * left out here rather than shown as a blank square.
+   */
+  const directoryGroups: DirectoryGroup[] = sortedGroups
+    .map((group) => ({
+      id: String(group.groupId),
+      title: group.title,
+      companies: group.members
+        .filter((m) => m.company?.trim())
+        .map((m): DirectoryCompany => {
+          const logo = m.logo && typeof m.logo === 'object' ? m.logo : null
+          return {
+            id: String(m.id),
+            href: '/companies/' + slugify(m.company || '', { lower: true, strict: true }),
+            company: m.company!.trim(),
+            person: [m.name, m.surname].filter(Boolean).join(' '),
+            role: m.jobPosition || '',
+            logoUrl: logo?.url || null,
+            logoAlt: logo?.alt || m.company || '',
+          }
+        }),
+    }))
+    .filter((group) => group.companies.length > 0)
 
   // Use settings with translation fallbacks
   const pageTitle = settings?.title || t('companies', 'title')
@@ -253,30 +258,19 @@ export default async function CompaniesPage() {
           rides in the same hairline-and-tick device the homepage uses for its
           section marks.
         */}
-        {sortedGroups.map((group, groupIndex) => (
-          <Reveal as="section" key={group.groupId} delay={groupIndex * 40} className="mb-14 last:mb-0">
-            <div className="mb-6 flex items-baseline gap-4">
-              <h2 className="font-display text-xl font-bold tracking-tight text-ink dark:text-surface-text md:text-2xl">
-                {group.title}
-              </h2>
-              <span
-                className="tabular font-mono text-xs text-ink-soft dark:text-neutral-500"
-                aria-label={`${group.members.length}`}
-              >
-                {String(group.members.length).padStart(2, '0')}
-              </span>
-              <span
-                className="h-px flex-1 bg-line dark:bg-line-dark"
-                aria-hidden="true"
-              />
-            </div>
-            <div className="logo-wall grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {group.members.map(renderMemberCard)}
-            </div>
-          </Reveal>
-        ))}
+        {directoryGroups.length > 0 && (
+          <CompaniesDirectory
+            groups={directoryGroups}
+            labels={{
+              search: t('companies', 'searchLabel'),
+              searchPlaceholder: t('companies', 'searchPlaceholder'),
+              allSectors: t('companies', 'allSectors'),
+              noResults: t('companies', 'noResults'),
+            }}
+          />
+        )}
 
-        {membershipsData.docs.length === 0 && (
+        {directoryGroups.length === 0 && (
           <p className="border-t border-line py-12 text-sm text-ink-soft dark:border-line-dark dark:text-neutral-400">
             {t('companies', 'noMembersYet')}
           </p>

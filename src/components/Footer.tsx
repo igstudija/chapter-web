@@ -86,7 +86,7 @@ export async function Footer() {
           </div>
 
           <div>
-            <h4 className="eyebrow mb-5">{t('footer', 'quickLinks')}</h4>
+            <h3 className="eyebrow mb-5">{t('footer', 'quickLinks')}</h3>
             <ul className="space-y-3">
               {quickLinks.map((link) => (
                 <li key={link.href}>
@@ -99,7 +99,7 @@ export async function Footer() {
           </div>
 
           <div>
-            <h4 className="eyebrow mb-5">{t('footer', 'legal')}</h4>
+            <h3 className="eyebrow mb-5">{t('footer', 'legal')}</h3>
             <ul className="space-y-3">
               {legalLinks.map((link) => (
                 <li key={link.href}>

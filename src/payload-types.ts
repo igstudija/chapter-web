@@ -932,6 +932,10 @@ export interface HomepageSetting {
      * Supporting text below the main title
      */
     description?: string | null;
+    /**
+     * When, where and how often the group meets, in one or two sentences — shown in the hero under the next meeting date. E.g. "Every Wednesday at 6:45: once a month in person at …, the other weeks on Zoom."
+     */
+    meetingNote?: string | null;
     primaryButtonText?: string | null;
     primaryButtonLink?: string | null;
     secondaryButtonText?: string | null;
@@ -2441,6 +2445,7 @@ export interface HomepageSettingsSelect<T extends boolean = true> {
         title?: T;
         highlightedText?: T;
         description?: T;
+        meetingNote?: T;
         primaryButtonText?: T;
         primaryButtonLink?: T;
         secondaryButtonText?: T;

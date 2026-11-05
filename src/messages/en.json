@@ -91,7 +91,9 @@
     "ctaTitle": "Ready to Grow Your Business?",
     "ctaDescription": "Join our network of professionals and start building valuable business relationships today.",
     "getInTouch": "Get in Touch",
-    "viewMembers": "View Members"
+    "viewMembers": "View Members",
+    "guestCta": "Visit as a guest",
+    "nextMeeting": "Next meeting"
   },
   "events": {
     "title": "Events",
@@ -137,7 +139,11 @@
     "gallery": "Gallery",
     "visitUs": "Visit Us",
     "visitUsDescription": "We meet 4 times a month, once in person and three times on Zoom. We would be happy to meet you in person or at one of our online meetings.",
-    "noMembersYet": "No members to display yet."
+    "noMembersYet": "No members to display yet.",
+    "allSectors": "All sectors",
+    "noResults": "Nothing matches. Try another word.",
+    "searchLabel": "Search by company, person or sector",
+    "metaDescription": "{company} — {sector}. Represented at {organisation} by {person}."
   },
   "contacts": {
     "title": "Contacts",

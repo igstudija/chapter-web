@@ -13,6 +13,7 @@ import * as migration_20260727_120000_drop_referrals_and_meetings from './202607
 import * as migration_20260801_000000_special_request_exchange from './20260801_000000_special_request_exchange';
 import * as migration_20261105_000000_payload_3_93_columns from './20261105_000000_payload_3_93_columns';
 
+import * as migration_20261105_010000_homepage_meeting_note from './20261105_010000_homepage_meeting_note';
 export const migrations = [
   {
     up: migration_20260725_172248.up,
@@ -83,5 +84,10 @@ export const migrations = [
     up: migration_20261105_000000_payload_3_93_columns.up,
     down: migration_20261105_000000_payload_3_93_columns.down,
     name: '20261105_000000_payload_3_93_columns',
+  },
+  {
+    up: migration_20261105_010000_homepage_meeting_note.up,
+    down: migration_20261105_010000_homepage_meeting_note.down,
+    name: '20261105_010000_homepage_meeting_note',
   },
 ];

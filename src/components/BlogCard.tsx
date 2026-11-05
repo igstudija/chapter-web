@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { formatDateDotted } from '@/lib/formatDate'
 import Image from 'next/image'
 
 interface BlogCardProps {
@@ -22,11 +23,7 @@ export function BlogCard({
   variant = 'default',
 }: Readonly<BlogCardProps>) {
   const formattedDate = publishedAt
-    ? new Date(publishedAt).toLocaleDateString(undefined, {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-      })
+    ? formatDateDotted(publishedAt)
     : null
 
   return (
