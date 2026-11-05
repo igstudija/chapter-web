@@ -43,7 +43,7 @@ export async function generateMetadata() {
     contentTitle: listingSeo?.successStoriesPage?.pageTitle || 'Success Stories',
     contentDescription: listingSeo?.successStoriesPage?.pageDescription || 'Read success stories from our members.',
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: '/success-stories',
   })

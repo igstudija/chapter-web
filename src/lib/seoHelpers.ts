@@ -53,6 +53,88 @@ export interface HomepageHero {
   } | null
 }
 
+/** The placeholder a Settings document is created with before anyone names it. */
+const PLACEHOLDER_ORG_NAME = 'Your Organisation'
+
+/**
+ * The organisation's name as entered in Settings, falling back to the
+ * NEXT_PUBLIC_DEFAULT_ORG_NAME env var.
+ *
+ * Settings' Branding tab is unnamed, so `siteName` sits on the document itself —
+ * there is no `settings.branding`. Reading that non-existent group is how the
+ * name never reached a title, og:site_name or the Organization schema.
+ */
+export function orgNameFrom(settings?: { siteName?: string | null } | null): string {
+  const name = settings?.siteName?.trim()
+  if (name && name !== PLACEHOLDER_ORG_NAME) return name
+  return DEFAULT_ORG_NAME
+}
+
+/** Open Graph locale for an interface language: `lv` -> `lv_LV`. */
+export function ogLocale(locale?: string | null): string {
+  switch (locale) {
+    case 'lt':
+      return 'lt_LT'
+    case 'et':
+      return 'et_EE'
+    case 'en':
+      return 'en_GB'
+    case 'lv':
+    default:
+      return 'lv_LV'
+  }
+}
+
+/**
+ * The public origin from NEXT_PUBLIC_SERVER_URL, without a trailing slash, or
+ * null when it is unset or not a URL.
+ */
+export function siteOrigin(): string | null {
+  const raw = process.env.NEXT_PUBLIC_SERVER_URL?.trim()
+  if (!raw) return null
+  try {
+    return new URL(raw).origin
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Plain text from CMS rich text (TinyMCE HTML), for meta descriptions and
+ * JSON-LD. Search engines show a description verbatim, so `<p>` and `&nbsp;`
+ * must not reach them.
+ */
+export function plainTextFrom(html: unknown, maxLength = 300): string {
+  if (typeof html !== 'string' || !html) return ''
+  const text = html
+    .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<br\s*\/?>|<\/(p|div|li|h[1-6])>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;|&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (text.length <= maxLength) return text
+  const cut = text.slice(0, maxLength - 1)
+  const lastSpace = cut.lastIndexOf(' ')
+  return `${(lastSpace > maxLength * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`
+}
+
+/** Social profile URLs from Settings' Social Media tab, in a stable order. */
+export function socialProfileUrls(
+  settings?: { socialMedia?: Record<string, string | null | undefined> | null } | null,
+): string[] {
+  const social = settings?.socialMedia
+  if (!social) return []
+  return ['facebook', 'instagram', 'linkedin', 'tiktok', 'twitter', 'youtube']
+    .map((key) => social[key]?.trim())
+    .filter((url): url is string => Boolean(url && /^https?:\/\//.test(url)))
+}
+
 /**
  * Get media URL from Media object or string
  */
@@ -104,8 +186,8 @@ export function generateMetadata({
   const titleSuffix = siteSeo?.titleSuffix || ''
 
   // Build title
-  const pageTitle =
-    seo?.metaTitle || contentTitle || siteSeo?.defaultTitle || siteBranding?.siteName || DEFAULT_ORG_NAME
+  const orgName = orgNameFrom(siteBranding)
+  const pageTitle = seo?.metaTitle || contentTitle || siteSeo?.defaultTitle || orgName
   const fullTitle = titleSuffix && !pageTitle.includes(titleSuffix)
     ? `${pageTitle}${titleSuffix}`
     : pageTitle
@@ -152,7 +234,10 @@ export function generateMetadata({
       title: ogTitle,
       description: ogDescription || undefined,
       url: canonicalUrl,
-      siteName: siteSeo?.ogSiteName || siteBranding?.siteName || undefined,
+      // A page's openGraph replaces the layout's wholesale, so the site-wide
+      // fields are repeated here or they vanish from every real page.
+      siteName: siteSeo?.ogSiteName || orgName,
+      locale: ogLocale((siteSettings as { locale?: string | null } | null)?.locale),
       type: 'website',
       ...(ogImageUrl && {
         images: [
@@ -217,14 +302,15 @@ export function generateOrganizationSchema({
   baseUrl: string
 }): object | null {
   const schema = siteSettings?.schema
-  if (!schema?.organizationName && !siteBranding?.siteName) return null
+  const name = schema?.organizationName || orgNameFrom(siteBranding)
+  if (!name) return null
 
   const logoUrl = getMediaUrl(schema?.organizationLogo, baseUrl) || getMediaUrl(siteBranding?.siteLogo, baseUrl)
 
   const orgSchema: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': schema?.organizationType || 'Organization',
-    name: schema?.organizationName || siteBranding?.siteName,
+    name,
     url: baseUrl,
   }
 
@@ -255,8 +341,17 @@ export function generateOrganizationSchema({
     }
   }
 
-  if (schema?.sameAs && schema.sameAs.length > 0) {
-    orgSchema.sameAs = schema.sameAs.filter((s) => s.url).map((s) => s.url)
+  // Profiles entered once under Social Media count as sameAs too; asking an
+  // editor to type the same URLs into a second list is how they end up in
+  // neither.
+  const sameAs = [
+    ...new Set([
+      ...(schema?.sameAs ?? []).map((s) => s.url?.trim()).filter((u): u is string => Boolean(u)),
+      ...socialProfileUrls(siteSettings as Parameters<typeof socialProfileUrls>[0]),
+    ]),
+  ]
+  if (sameAs.length > 0) {
+    orgSchema.sameAs = sameAs
   }
 
   return orgSchema
@@ -345,8 +440,10 @@ export function generateEventSchema({
   startDate,
   endDate,
   location,
+  organizerName,
 }: {
   name: string
+  /** Plain text or CMS HTML; tags are stripped either way. */
   description?: string | null
   baseUrl: string
   pathname?: string
@@ -354,25 +451,44 @@ export function generateEventSchema({
   startDate?: string | null
   endDate?: string | null
   location?: string | null
+  organizerName?: string | null
 }): object {
   const imageUrl = getMediaUrl(image, baseUrl)
+  const url = pathname ? `${baseUrl}${pathname}` : baseUrl
+  const text = plainTextFrom(description, 500)
+  const online = isOnlineLocation(location)
 
   return {
     '@context': 'https://schema.org',
     '@type': 'Event',
     name,
-    ...(description && { description }),
-    url: pathname ? `${baseUrl}${pathname}` : baseUrl,
+    ...(text && { description: text }),
+    url,
     ...(imageUrl && { image: imageUrl }),
     ...(startDate && { startDate }),
     ...(endDate && { endDate }),
-    ...(location && {
-      location: {
-        '@type': 'Place',
-        name: location,
-      },
+    eventStatus: 'https://schema.org/EventScheduled',
+    eventAttendanceMode: online
+      ? 'https://schema.org/OnlineEventAttendanceMode'
+      : 'https://schema.org/OfflineEventAttendanceMode',
+    // Google wants an address on a Place and a URL on a VirtualLocation. The
+    // CMS has one free-text location field, so it doubles as the address; the
+    // join link is not public, so the event page stands in for it.
+    ...(online
+      ? { location: { '@type': 'VirtualLocation', url } }
+      : location
+        ? { location: { '@type': 'Place', name: location, address: location } }
+        : {}),
+    ...(organizerName && {
+      organizer: { '@type': 'Organization', name: organizerName, url: baseUrl },
     }),
   }
+}
+
+/** Whether a free-text event location describes an online meeting. */
+export function isOnlineLocation(location?: string | null): boolean {
+  if (!location) return false
+  return /\b(zoom|teams|google meet|online|tiešsaist|nuotolin|veebis)/i.test(location)
 }
 
 /**

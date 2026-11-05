@@ -58,7 +58,7 @@ export async function generateMetadata() {
   return generateSeoMetadata({
     contentTitle: 'Wiki',
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: '/wiki',
   })

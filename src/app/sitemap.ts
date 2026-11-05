@@ -54,8 +54,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const payload = await getPayload({ config })
 
   const [posts, events, members] = await Promise.all([
-    payload.find({ collection: 'blog', limit: 1000, depth: 0 }),
-    payload.find({ collection: 'events', limit: 1000, depth: 0 }),
+    // Only what a signed-out visitor can open. A draft or a members-only event
+    // answers 404 to a crawler, and a sitemap that lists 404s teaches search
+    // engines to trust it less.
+    payload.find({
+      collection: 'blog',
+      where: { _status: { equals: 'published' } },
+      limit: 1000,
+      depth: 0,
+    }),
+    payload.find({
+      collection: 'events',
+      where: { and: [{ _status: { equals: 'published' } }, { isPublic: { equals: true } }] },
+      limit: 1000,
+      depth: 0,
+    }),
     payload.find({
       collection: 'members',
       where: { status: { equals: 'active' } },

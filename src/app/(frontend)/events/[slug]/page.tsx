@@ -8,8 +8,14 @@ import { EventRegistrationForm, PageHeader } from '@/components'
 import { getSettings } from '@/lib/getSiteSettings'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { headers } from 'next/headers'
-import { generateMetadata as generateSeoMetadata, generateEventSchema } from '@/lib/seoHelpers'
+import {
+  generateMetadata as generateSeoMetadata,
+  generateEventSchema,
+  orgNameFrom,
+  plainTextFrom,
+} from '@/lib/seoHelpers'
 import { JsonLd } from '@/components/JsonLd'
+import { GUEST_REGISTRATION_ANCHOR } from '@/lib/nextMeeting'
 import type { Media } from '@/payload-types'
 
 interface Props {
@@ -47,9 +53,10 @@ export async function generateMetadata({ params }: Props) {
   return generateSeoMetadata({
     seo: (event as any).seo,
     contentTitle: event.title,
+    contentDescription: plainTextFrom(event.description, 160) || undefined,
     contentImage: event.image as Media | undefined,
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: `/events/${slug}`,
   })
@@ -129,7 +136,9 @@ export default async function EventPage({ params }: Props) {
     pathname: `/events/${slug}`,
     image: event.image as Media | undefined,
     startDate: event.date,
+    endDate: event.endDate,
     location: event.location,
+    organizerName: orgNameFrom(currentSite),
   })
 
   return (
@@ -185,7 +194,8 @@ export default async function EventPage({ params }: Props) {
               />
             )}
 
-            {/* Event Registration Form */}
+            {/* Event Registration Form — /viesis and every "come as a guest" link land here. */}
+            <div id={GUEST_REGISTRATION_ANCHOR} className="scroll-mt-28" />
             <EventRegistrationForm
               eventId={String(event.id)}
               eventTitle={event.title}

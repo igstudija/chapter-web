@@ -45,7 +45,7 @@ export async function generateMetadata() {
     contentTitle: faq?.pageTitle || 'FAQ',
     contentDescription: faq?.pageDescription,
     siteSettings: siteSettings,
-    siteBranding: siteSettings?.branding,
+    siteBranding: siteSettings,
     baseUrl,
     pathname: '/faq',
   })
@@ -69,6 +69,8 @@ export default async function FaqPage() {
       where: {
         and: [
           { _status: { equals: 'published' } },
+          // A public page links only to events a signed-out visitor can open.
+          { isPublic: { equals: true } },
           { date: { greater_than: new Date().toISOString() } },
         ],
       },
