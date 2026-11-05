@@ -115,6 +115,9 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
 
   const locale = (settings?.locale as Locale) || DEFAULT_LOCALE
   const messages = getMessages(locale)
+  // Set by src/proxy.ts with the Content-Security-Policy; our inline scripts
+  // need it to run, Next.js applies it to its own.
+  const nonce = (await headers()).get('x-nonce') ?? undefined
 
   return (
     <html
@@ -142,10 +145,12 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           googleAnalyticsId={settings?.googleAnalyticsId || undefined}
           googleTagManagerId={settings?.googleTagManagerId || undefined}
           facebookPixelId={settings?.facebookPixelId || undefined}
+          nonce={nonce}
         />
       </head>
       <body className="min-h-screen flex flex-col bg-paper text-ink dark:bg-surface dark:text-surface-text transition-colors antialiased">
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               (function() {

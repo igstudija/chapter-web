@@ -7,7 +7,9 @@ export function JsonLd({ data }: { data: object | null }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      // `<` escaped so an event or company name containing `</script>` cannot
+      // close this element and continue as HTML.
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, '\\u003c') }}
     />
   )
 }

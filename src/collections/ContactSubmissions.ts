@@ -105,7 +105,11 @@ export const ContactSubmissions: CollectionConfig = {
   },
   access: {
     read: adminOnly,
-    create: () => true,
+    // Public submissions go through /api/contact (overrideAccess), which is
+    // where the honeypot, the fill-time check and the rate limits live. Open
+    // create access let POST /api/contact-submissions skip all three — and
+    // every create sends a confirmation email to whatever address it names.
+    create: adminOnly,
     update: adminOnly,
     delete: adminOnly,
   },

@@ -141,7 +141,9 @@ export default function ContactsPageClient({
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, _submitTime: fillTime }),
+        // `website` is the honeypot: the server checks it too, since a bot
+        // posting straight to /api/contact never runs this component.
+        body: JSON.stringify({ ...formData, website: honeypot, _submitTime: fillTime }),
       })
 
       if (!res.ok) {
