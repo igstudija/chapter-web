@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 /**
- * Middleware.
+ * Proxy (Next 16's name for middleware).
  *
  * Security headers, and nothing else.
  *
@@ -24,7 +24,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   return response
 }
 
-export function middleware(_request: NextRequest) {
+export function proxy(_request: NextRequest) {
   return addSecurityHeaders(NextResponse.next())
 }
 

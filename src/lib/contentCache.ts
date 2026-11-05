@@ -68,7 +68,10 @@ export const revalidateOnChange = (
    */
   const drop = () => {
     try {
-      revalidateTag(cacheTagFor(collection))
+      // `expire: 0` keeps the old meaning: gone now, not served stale once more.
+      // Next 16 made the profile argument required, and 'max' would mean
+      // stale-while-revalidate, so an edit would show only on the second load.
+      revalidateTag(cacheTagFor(collection), { expire: 0 })
     } catch {
       // No request, no cache to drop. Carry on with the write.
     }

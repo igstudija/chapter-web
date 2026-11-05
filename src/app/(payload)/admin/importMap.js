@@ -10,8 +10,9 @@ import { default as default_832c11fe0d04d582cadd45e1b296f508 } from '@/component
 import { default as default_b09e7671e8fbecd6e8409ae1dfe4aea9 } from '@/components/admin/SiteSettingsList'
 import { default as default_a0fa20022f54a7b015db062199402b0c } from '@/components/admin/SlideshowSettingsList'
 import { default as default_338f6ac5afc767383c68b6a5312e1092 } from '@/components/admin/CompaniesPageList'
-import { CollectionCards as CollectionCards_ab83ff7e88da8d3530831f296ec4756a } from '@payloadcms/ui/rsc'
+import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
+/** @type import('payload').ImportMap */
 export const importMap = {
   "@/components/admin/ExportToExcelButton#default": default_222018914acfb139b7aac72fa6c4d45a,
   "@/fields/HtmlEditor/Field#HtmlEditorField": HtmlEditorField_73d3368c8617587483f42c6a7d5a44ce,
@@ -25,5 +26,5 @@ export const importMap = {
   "@/components/admin/SiteSettingsList#default": default_b09e7671e8fbecd6e8409ae1dfe4aea9,
   "@/components/admin/SlideshowSettingsList#default": default_a0fa20022f54a7b015db062199402b0c,
   "@/components/admin/CompaniesPageList#default": default_338f6ac5afc767383c68b6a5312e1092,
-  "@payloadcms/ui/rsc#CollectionCards": CollectionCards_ab83ff7e88da8d3530831f296ec4756a
+  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

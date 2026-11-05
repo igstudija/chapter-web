@@ -37,10 +37,6 @@ const nextConfig = {
     // Ignore TypeScript errors during build (PostgreSQL migration in progress)
     ignoreBuildErrors: true,
   },
-  eslint: {
-    // Ignore ESLint errors during build
-    ignoreDuringBuilds: true,
-  },
   images: {
     // Images are served straight from object storage, unoptimized on purpose.
     // The server-side optimizer (sharp) was the main driver of unbounded RSS
