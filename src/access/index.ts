@@ -62,6 +62,23 @@ export const publishedOrAuthenticated: Access = ({ req: { user } }) => {
 }
 
 /**
+ * Members-only content with drafts: nothing for a signed-out visitor or a
+ * blocked user, published documents for an active member, everything for an
+ * administrator.
+ *
+ * The page that renders such a collection redirecting to /login is not enough
+ * on its own — the REST and GraphQL APIs read through this rule, not through the
+ * page, so a collection whose page is gated but whose rule is public hands its
+ * content to anyone who asks `/api/<slug>` directly.
+ */
+export const publishedForActiveMembers: Access = ({ req: { user } }) => {
+  if (!user) return false
+  if (isAdmin(user)) return true
+  if (isActiveMember(user)) return { _status: { equals: 'published' } }
+  return false
+}
+
+/**
  * Administrators may act on any document; members only on the ones they own.
  *
  * `ownerField` is the relationship holding the author — `submittedBy`,

@@ -1,5 +1,5 @@
 import type { CollectionConfig } from 'payload'
-import { adminOnly, createUniqueSlugValidation, publishedOrAuthenticated } from '../access'
+import { adminOnly, createUniqueSlugValidation, publishedForActiveMembers } from '../access'
 import { tinyEditor } from '../lib/tinyEditor'
 import { createSeoFields } from '../fields/seoFields'
 
@@ -26,7 +26,9 @@ export const Wiki: CollectionConfig = {
     },
   },
   access: {
-    read: publishedOrAuthenticated,
+    // Members-only: /wiki redirects signed-out visitors to /login, and the API
+    // has to agree with it or /api/wiki serves the same documents anonymously.
+    read: publishedForActiveMembers,
     create: adminOnly,
     update: adminOnly,
     delete: adminOnly,
