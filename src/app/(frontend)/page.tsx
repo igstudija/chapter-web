@@ -4,7 +4,12 @@ import Image from 'next/image'
 import { headers } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { EventCard, BlogCard, Reveal } from '@/components'
+// Direct imports, not the @/components barrel: the barrel re-exports every
+// client component in the app, and pulling three through it shipped a large
+// chunk the home page mostly never ran (audit: 137 KB, 84% unused).
+import { EventCard } from '@/components/EventCard'
+import { BlogCard } from '@/components/BlogCard'
+import { Reveal } from '@/components/Reveal'
 import { ArrowRight } from 'lucide-react'
 import type { Media } from '@/payload-types'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'

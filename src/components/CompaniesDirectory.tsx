@@ -135,9 +135,12 @@ export function CompaniesDirectory({
                   )}
                 </div>
                 <div className="w-full text-center leading-tight">
-                  <p className="truncate text-xs font-semibold text-neutral-900" title={c.company}>
-                    {c.company}
-                  </p>
+                  {/* Without a logo the name is already the tile's centrepiece. */}
+                  {c.logoUrl && (
+                    <p className="truncate text-xs font-semibold text-neutral-900" title={c.company}>
+                      {c.company}
+                    </p>
+                  )}
                   {c.person && (
                     <p className="mt-1 truncate text-[11px] text-neutral-500" title={c.person}>
                       {c.person}
