@@ -1,5 +1,6 @@
-import type { CollectionConfig, Access, Where } from 'payload'
+import { APIError, ValidationError, type CollectionConfig, type Access, type Where } from 'payload'
 import { adminFieldAccess, isAdmin } from '../access'
+import { isRetiredPassword } from '../lib/retiredPasswords'
 
 /**
  * Users — authentication and authorisation.
@@ -51,6 +52,24 @@ export const Users: CollectionConfig = {
     delete: adminOnly,
   },
   hooks: {
+    beforeValidate: [
+      // A password everyone can read in the source is not a password. See
+      // lib/retiredPasswords.ts.
+      ({ data }) => {
+        if (isRetiredPassword(data?.password)) {
+          throw new ValidationError({
+            collection: 'users',
+            errors: [
+              {
+                path: 'password',
+                message: 'This password was published as a default and cannot be used. Choose another.',
+              },
+            ],
+          })
+        }
+        return data
+      },
+    ],
     beforeChange: [
       // Lowercase email fields
       async ({ data }) => {
@@ -105,6 +124,23 @@ export const Users: CollectionConfig = {
       },
     ],
     beforeLogin: [
+      // Payload's own sign-in (the admin panel, /api/users/login) checks the
+      // password before this runs, so an account still holding a retired
+      // password would get in. Refuse it here; /api/auth/login refuses it
+      // before asking Payload at all.
+      async ({ req, user }) => {
+        if (isRetiredPassword((req.data as { password?: unknown } | undefined)?.password)) {
+          // 401 and public, so the admin's sign-in form shows the reason
+          // rather than "Something went wrong".
+          throw new APIError(
+            'This password is no longer accepted: it was a published default. Reset it with "Forgot password".',
+            401,
+            null,
+            true,
+          )
+        }
+        return user
+      },
       // A blocked account keeps its record and its history but cannot sign in.
       async ({ user }) => {
         if (user.status === 'blocked') {

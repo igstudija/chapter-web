@@ -18,7 +18,10 @@ jobs:
   # that nobody learns to ignore it.
   static:
     name: Typecheck, lint, tests, build
-    runs-on: ubuntu-latest
+    # Pinned, not ubuntu-latest: when latest moved to 26.04, Playwright 1.56
+    # had no browser build for it and the install-path job failed before it
+    # tested anything. Move both jobs together, once Playwright supports it.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
 
     steps:
@@ -62,7 +65,7 @@ jobs:
   # database is a path nobody here ever runs by hand. See ADR 0003.
   install-path:
     name: Install from empty against a real Postgres
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     services:
