@@ -4,6 +4,7 @@ import { promisify } from 'util'
 import { sql } from '@payloadcms/db-postgres'
 import { getPayload } from 'payload'
 import config from '../payload.config'
+import { RETIRED_PASSWORDS } from '../lib/retiredPasswords'
 
 /**
  * Find the accounts that the old fixed password still opens, and close them.
@@ -19,12 +20,12 @@ import config from '../payload.config'
  * Read-only without `--apply`: it checks the stored hash directly instead of
  * trying to sign in, so it never counts a failed attempt or locks an account.
  * Afterwards those members sign in by magic link, as before, or set a password
- * through "forgot password". Nothing else about the account changes.
+ * through "forgot password". Nothing else about the account changes. Anyone
+ * who tries the old password is told why it stopped working (login page).
  *
  * See docs/howto/upgrade-to-the-november-2026-release.md.
  */
 
-const OLD_DEFAULT = 'ChangeMe123!'
 const apply = process.argv.includes('--apply')
 const pbkdf2Async = promisify(pbkdf2)
 
@@ -62,7 +63,12 @@ const run = async () => {
 
   const exposed: typeof users = []
   for (const user of users) {
-    if (await opensWith(OLD_DEFAULT, user.salt, user.hash)) exposed.push(user)
+    for (const retired of RETIRED_PASSWORDS) {
+      if (await opensWith(retired, user.salt, user.hash)) {
+        exposed.push(user)
+        break
+      }
+    }
   }
 
   console.log(`${users.length} accounts with a password; ${exposed.length} still open with the old default.`)

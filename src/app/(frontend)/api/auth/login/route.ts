@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { checkRateLimit, getClientIp, RATE_LIMITS } from '@/lib/rateLimit'
+import { isRetiredPassword, RETIRED_PASSWORD_CODE } from '@/lib/retiredPasswords'
 
 /**
  * POST /api/auth/login
@@ -41,6 +42,17 @@ export async function POST(request: Request) {
 
     if (!email || !password) {
       return NextResponse.json({ error: 'Email and password are required' }, { status: 400 })
+    }
+
+    // The old published default. Refused before Payload is asked, with the same
+    // answer whether or not the address has an account — so it closes accounts
+    // that still hold it, tells the person why, and reveals nothing about which
+    // addresses are registered. See lib/retiredPasswords.ts.
+    if (isRetiredPassword(password)) {
+      return NextResponse.json(
+        { error: 'This password is no longer accepted', code: RETIRED_PASSWORD_CODE },
+        { status: 401 },
+      )
     }
 
     const payload = await getPayload({ config })

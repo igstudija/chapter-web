@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useTranslations } from '@/components'
+import { RETIRED_PASSWORD_CODE } from '@/lib/retiredPasswords'
 
 type LoginMode = 'password' | 'magic-link'
 
@@ -20,6 +21,9 @@ function LoginContent() {
   const [magicLinkSent, setMagicLinkSent] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  // The account's old password was the published default and has been
+  // switched off; explain instead of saying "wrong password".
+  const [retiredPassword, setRetiredPassword] = useState(false)
 
   useEffect(() => {
     const errorParam = searchParams.get('error')
@@ -38,6 +42,7 @@ function LoginContent() {
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
+    setRetiredPassword(false)
     setLoading(true)
 
     if (honeypot) {
@@ -65,6 +70,12 @@ function LoginContent() {
       // Always use translated message for invalid credentials (401)
       // Payload returns English error message, we use our translation instead
       if (res.status === 401) {
+        const data = await res.json().catch(() => null)
+        if (data?.code === RETIRED_PASSWORD_CODE) {
+          setPassword('')
+          setRetiredPassword(true)
+          return
+        }
         setError(t('login', 'invalidCredentials'))
       } else {
         const data = await res.json()
@@ -164,6 +175,31 @@ function LoginContent() {
           {error && (
             <div className="mb-5 rounded-lg border border-rose-600/25 bg-rose-500/10 p-3.5 text-sm text-rose-800 dark:text-rose-300">
               {error}
+            </div>
+          )}
+
+          {retiredPassword && (
+            <div
+              role="alert"
+              className="mb-5 rounded-lg border border-amber-600/30 bg-amber-500/10 p-4 text-sm text-amber-900 dark:text-amber-200"
+            >
+              <p className="mb-1 font-semibold">{t('login', 'retiredPasswordTitle')}</p>
+              <p className="mb-3">{t('login', 'retiredPasswordBody')}</p>
+              <div className="flex flex-wrap gap-2">
+                <Link href="/forgot-password" className="btn btn-primary px-4 py-2 text-sm">
+                  {t('login', 'retiredPasswordReset')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRetiredPassword(false)
+                    setLoginMode('magic-link')
+                  }}
+                  className="btn btn-line px-4 py-2 text-sm"
+                >
+                  {t('login', 'retiredPasswordMagicLink')}
+                </button>
+              </div>
             </div>
           )}
 

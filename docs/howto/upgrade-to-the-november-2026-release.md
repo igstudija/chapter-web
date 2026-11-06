@@ -47,6 +47,15 @@ password nobody knows. Those members carry on signing in by magic link, or set a
 password through "forgot password". New accounts get a random password from the
 start.
 
+The old password is also refused at sign-in from the moment the new build is
+live — on the member login page and in the admin panel — so accounts are closed
+even before `secure:passwords` runs, and it can no longer be set as anyone's
+password. Someone who tries it on the login page is told that it was a shared
+starting password and has been switched off, with buttons to set a new one or
+have a sign-in link emailed. The answer is the same whether or not the address
+has an account, so it reveals nothing about who is registered. The list lives in
+[`src/lib/retiredPasswords.ts`](../../src/lib/retiredPasswords.ts).
+
 **Sign-in tokens were readable.** Magic-link, password-reset and email-change
 tokens were returned with the user record — on the public Contacts page's data
 and through `/api/users` to any signed-in member — which was enough to sign in
