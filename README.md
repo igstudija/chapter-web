@@ -1,119 +1,163 @@
 # ChapterOS
 
-A self-hostable member portal for professional networking organisations — the
-kind that meet regularly, do business with each other, and want their own site
-rather than a seat in someone else's platform.
+A website and member portal for professional networking chapters — groups that
+meet every week, pass each other business, and want a site of their own rather
+than a seat in someone else's platform.
 
-Built on [Payload CMS 3](https://payloadcms.com) and Next.js 16. One install
-serves one organisation: its members, its content, its branding, administered
-from the standard Payload admin panel.
+One install is one chapter: its public website, its members' portal and the
+slides for its meetings, all managed from one admin panel. Built on
+[Payload CMS 3](https://payloadcms.com) and [Next.js 16](https://nextjs.org).
 
-> **Status: early.** Extracted from a production system that has been running
-> for several organisations, then generalised and reduced to a single-organisation
-> install. The feature set is mature; the packaging for outside installs is new,
-> and rough edges are likely.
+> **Status: early.** Taken from a site that has run for several chapters, then
+> generalised for anyone to install. The features are mature; the packaging for
+> outside installs is new, so expect rough edges.
 >
 > **Development is closed.** The source is published under the AGPL and you are
 > free to run, fork and modify it — but this repository does not take outside
-> contributions. Issues are turned off and pull requests are not reviewed or
-> merged. See [CONTRIBUTING.md](CONTRIBUTING.md) for what that means in
-> practice, and [SECURITY.md](SECURITY.md) for the one channel that does stay
-> open: private vulnerability reports.
+> contributions: issues are turned off and pull requests are not reviewed. See
+> [CONTRIBUTING.md](CONTRIBUTING.md), and [SECURITY.md](SECURITY.md) for the one
+> channel that stays open: private vulnerability reports.
 
 ---
 
-## What it does
+## Start here
 
-**Members**
-Member directory with profiles, companies, photos and contact details. Profiles
-are member-editable; visibility is controlled under Settings.
-
-**Top 40 / Top 20**
-Each member maintains a list of companies and contacts they want to be
-introduced to. Other members search across all lists to find where they can
-help. Optional AI tagging classifies entries by industry so the search works on
-meaning rather than exact company names.
-
-**Special requests**
-Short-lived "I'm looking for X" posts, visible to the membership.
-
-**Events**
-Event pages with registration, guest submissions and calendar invites.
-
-**Presentations**
-A slideshow mode that renders member and power-group slides for meetings —
-photos, business figures, what each member is looking for.
-
-**Content**
-Blog, wiki, FAQ, success stories, static pages, and a policy-template system
-with placeholder substitution.
-
-**Guests**
-One short link — `/viesis` on a Latvian site, `/guest` otherwise — that always
-leads to the next public meeting's registration form, for buttons, social
-profiles and printed QR codes.
-
-**MCP server**
-An administrator can connect Claude or another assistant at `/api/mcp` with a
-key whose permissions they tick one by one — drafting events, editing pages,
-leaving absent members off the slides. No deletes, and never user accounts.
-See [Connect Claude with MCP](docs/howto/connect-claude-with-mcp.md).
+| I want to… | Go to |
+| --- | --- |
+| Create a website for my chapter | [Create a new site](#create-a-new-site) |
+| Put it on the internet | [Deploying to Vercel + Supabase](docs/deploy-vercel-supabase.md) |
+| Leave absent members out of this week's slides | [Skip members from the slideshow](docs/howto/skip-members-from-the-slideshow.md) |
+| Let Claude draft events, posts and pages for me | [Connect Claude with MCP](docs/howto/connect-claude-with-mcp.md) |
+| Be found on Google and look right when shared | [Search and sharing checklist](docs/howto/launch-checklist-search-and-sharing.md) |
+| Update a site that is already running | [Update an existing site](#update-an-existing-site) |
+| Fix something that stopped working | [When something is wrong](docs/deploy-vercel-supabase.md#when-something-is-wrong) |
+| See every guide | [docs/howto](docs/howto/README.md) |
 
 ---
 
-## Requirements
+## What you get
 
-- **Node.js** 20.9 or newer — Next.js 16 no longer runs on 18
-- **pnpm** 9 or 10
-- **A Supabase project** — provides both Postgres and object storage
-- **An SMTP provider** — sends invitations and password resets
-
-Any Postgres works if you prefer to run it yourself, but file uploads target
-Supabase Storage out of the box, and that is the combination the project
-guarantees. See [What is supported](#what-is-supported) before choosing
-otherwise.
-
-Any provider speaking SMTP works. This project is developed against
-[Mailjet](https://www.mailjet.com), which has a free tier large enough for a
-chapter, and `.env.example` carries its settings as the worked example. The site
-starts and runs without one — it warns on every start and then cannot invite a
-member or reset a password, which is most of what a member portal does.
-
-**Not required:** a Cloudflare account, or any other CDN. The rate limiter reads
-`cf-connecting-ip` if it happens to be behind Cloudflare, the same way it reads
-Vercel's and nginx's headers, and falls back to the socket address when there is
-nothing in front of the app at all.
+- **A public website** — home page, about, events, member companies, blog,
+  success stories, FAQ and contacts, in Latvian or English.
+- **A guest link** — `/viesis` on a Latvian site, `/guest` otherwise. It always
+  opens the registration form of the next public meeting, so you can put it on
+  buttons, in social media bios and on printed QR codes once and never update
+  it.
+- **A members' portal** — profiles, the member directory, and each member's
+  **Top 40 / Top 20**: the companies and contacts they want to be introduced
+  to. Members search each other's lists to find where they can help; optional
+  AI tagging lets the search work by industry rather than exact names.
+- **Special requests** — short "I'm looking for…" posts, and optionally
+  [shared with another chapter](docs/special-request-exchange.md).
+- **Meeting slides** — a presentation built from member profiles: photo,
+  business figures, what each member is looking for, power groups, Speech
+  Master. Leave absent members out with one field.
+- **Events** — event pages with registration, guest sign-ups and calendar
+  invites.
+- **An admin panel** for all of it — no code needed to run the site day to day.
+- **An assistant, if you want one** — connect Claude to the site and ask it to
+  draft next week's event, update the FAQ or take absent members off the
+  slides. You decide, key by key, what it may touch; it can never delete
+  anything or see logins.
 
 ---
 
-## Install
+## Create a new site
+
+Allow about an hour the first time, most of it waiting for accounts to be
+created. You do not need to be a developer, but you will copy a few commands
+into a terminal.
+
+### What you need first
+
+- **A computer with [Node.js](https://nodejs.org) 20.9 or newer** and
+  **[pnpm](https://pnpm.io/installation)** 9 or 10.
+- **A [Supabase](https://supabase.com) account** (free) — it holds the database
+  and the uploaded photos.
+- **An email sending service** — anything that speaks SMTP. The examples use
+  [Mailjet](https://www.mailjet.com), whose free tier is enough for a chapter.
+  Without one the site still runs, but it cannot invite members or reset
+  passwords.
+- **To put it online:** a [Vercel](https://vercel.com) account (free) and a
+  GitHub account. Not needed to try it on your own computer.
+
+### Step 1 — Create the database and file storage
+
+1. In [Supabase](https://supabase.com/dashboard), click **New project**. Pick
+   the region closest to your members, and save the **database password** — it
+   is shown once.
+2. Open **Storage → New bucket**, name it `media`, and switch **Public bucket**
+   on. (It has to be public: photos are served straight from it.)
+
+### Step 2 — Get the code
 
 ```bash
 git clone https://github.com/igstudija/chapter-web.git
 cd chapter-web
 pnpm install
+```
+
+### Step 3 — Run the setup wizard
+
+```bash
 pnpm wizard
 ```
 
-`pnpm wizard` asks for one setting at a time, checks each answer against the
-thing it describes before moving on, writes `.env`, and then runs the remaining
-steps in the order they have to happen in. A wrong password is one sentence at
-the prompt rather than a puzzle three commands later.
+It asks one thing at a time and checks each answer before moving on:
 
-It still needs the accounts below — it can check a Supabase project and a
-storage bucket, not create them.
+1. **This install** — the address the site will have.
+2. **Database** — the connection string from Supabase's **Connect** button
+   (use the *Session pooler* one).
+3. **File storage** — the Supabase project URL and `service_role` key
+   (**Project Settings → API**), and the bucket name.
+4. **Email** — your SMTP details and the address mail is sent from.
 
-> **Run it yourself rather than having a coding agent run it.** The answers are
-> credentials, and an agent's transcript is the last place they belong. The
-> wizard never prints a secret back: a value already in `.env` is offered as
-> `[kept]`, and what you type is not echoed.
+Then it writes the settings file, builds the database, locks it against public
+access, and creates your **chapter name and administrator account**.
 
-It needs a terminal, and says so instead of hanging if it does not have one. For
-an unattended install — or to see exactly what it does — here is the same thing
-by hand.
+> **Run the wizard yourself, not through an AI coding assistant.** The answers
+> are passwords and keys, and an assistant's conversation log is the last place
+> they belong. The wizard never prints a secret back.
+
+### Step 4 — Try it on your computer
+
+```bash
+pnpm dev
+```
+
+- The website — <http://localhost:3050>
+- The admin panel — <http://localhost:3050/admin> — sign in with the
+  administrator account from step 3.
+
+### Step 5 — Put it online
+
+Follow **[Deploying to Vercel + Supabase](docs/deploy-vercel-supabase.md)** —
+about 30 minutes, with a check at the end that everything works. Docker and
+other hosts are covered [below](#hosting-options).
+
+### Step 6 — Make it yours
+
+In the admin panel:
+
+- [ ] **Settings → Branding** — chapter name and logo.
+- [ ] **Settings → Organisation** — language and timezone.
+- [ ] **Settings → SEO** — a share image (1200 × 630, a group photo works best)
+      and a one-line description.
+- [ ] **Settings → Social Media** — your profile links.
+- [ ] **Homepage** — the headline and the *meeting note*: when, where and how
+      often you meet.
+- [ ] **Members → Create New** — add each member; tick **Create New User** to
+      give them a login. They sign in with a link sent by email.
+- [ ] **Events** — publish the next meeting, so the guest link has somewhere to
+      go.
+- [ ] **Policy Templates** — fill in the `[bracketed]` parts of the Terms,
+      Privacy and Cookie pages, and have them checked (see [Legal](#legal)).
+
+Then work through the
+**[search and sharing checklist](docs/howto/launch-checklist-search-and-sharing.md)**.
 
 <details>
-<summary><strong>The same install, step by step</strong></summary>
+<summary><strong>The same setup by hand, step by step</strong></summary>
 
 ```bash
 cp .env.example .env
@@ -124,109 +168,110 @@ Fill in `.env`. The five that matter to start:
 | Variable                    | Where to get it                                                  |
 | --------------------------- | ---------------------------------------------------------------- |
 | `PAYLOAD_SECRET`            | `openssl rand -base64 32`                                        |
-| `POSTGRESS_DATABASE_URL`    | Supabase → Project Settings → Database → Connection string (URI) |
+| `POSTGRESS_DATABASE_URL`    | Supabase → **Connect** → Session pooler connection string        |
 | `SUPABASE_URL`              | Supabase → Project Settings → API → Project URL                  |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase → Project Settings → API → `service_role`               |
-| `SUPABASE_STORAGE_BUCKET`   | the bucket you make below — `media` unless you rename it         |
-
-In Supabase, create a **public** storage bucket named `media`. It must be public:
-files are served directly from Supabase, so a private bucket makes every image
-render broken rather than protected.
+| `SUPABASE_STORAGE_BUCKET`   | the bucket from step 1 — `media` unless you renamed it           |
 
 Then:
 
 ```bash
 pnpm diagnose          # check those values before relying on them
-pnpm migrate           # create the schema — applies the migrations in src/migrations
-pnpm secure:db --apply # close the tables to Supabase's public API roles
-pnpm bootstrap         # your settings + administrator account (it asks five questions)
+pnpm migrate           # create the database tables
+pnpm secure:db --apply # close the tables to Supabase's public API
+pnpm bootstrap         # your chapter name + administrator account (five questions)
 pnpm seed:policies     # fill the three policy pages the footer links to
 pnpm dev
 ```
 
-> **Run these in this order, and do not start `pnpm dev` before `pnpm migrate`.**
-> In development Payload writes the schema itself rather than applying the
-> migrations, and records it as a migration named `dev`. From then on
-> `pnpm migrate` believes the schema has drifted and stops to ask whether to
-> reset the database — with nothing at the keyboard, it waits forever and prints
-> nothing at all. `pnpm diagnose` reports a database in that state, but the
-> cheaper move is not to get there.
+**Keep this order, and never start `pnpm dev` before `pnpm migrate`.** In
+development the app writes the database tables itself and records that as a
+migration named `dev`; from then on `pnpm migrate` stops to ask whether to reset
+the database, and with nothing at the keyboard it waits forever.
+[Recover from a dev push](docs/howto/recover-from-a-dev-push.md) repairs it, but
+it is cheaper not to get there.
 
-`pnpm diagnose` is first on purpose. It connects to the database, checks the
+`pnpm diagnose` comes first on purpose: it connects to the database, checks the
 bucket exists and is public, and opens a connection to your mail server, so a
-mistyped password or a private bucket is a sentence now rather than a puzzle
-three steps later. Everything it reports names what to change. Before
-`pnpm migrate` it reports the missing schema as expected rather than as a
-failure, so the first command in the list does not exit with an error.
+mistyped password is one sentence now rather than a puzzle three steps later.
 
-`pnpm seed:policies` is listed last but is not decoration. The footer links to
-Terms, Privacy and Cookie policy on every page, and without templates those
-pages render a heading over nothing — a blank privacy policy reads as a claim
-that nothing is collected, which is worse than no page at all. The skeletons it
-writes still have to be edited before launch; they say so in brackets.
+`pnpm seed:policies` is not decoration. The footer links to Terms, Privacy and
+Cookie policy on every page, and without templates those pages are empty — a
+blank privacy policy reads as a claim that nothing is collected.
+
+To run `pnpm bootstrap` without a terminal, set `SETUP_ORG_NAME`,
+`SETUP_ADMIN_EMAIL` and `SETUP_ADMIN_PASSWORD`.
 
 </details>
 
-`pnpm secure:db` is the one step you cannot skip on Supabase. Supabase publishes
-every table in `public` over HTTP to the role behind the anon key — a value that
-ships in browsers — and Postgres creates tables with row-level security off, so
-a fresh install's member data is world-readable until this runs. It turns RLS on
-everywhere, revokes the grants, and installs an event trigger so tables added
-later stay closed. On plain Postgres there is nothing to close and it says so.
+<details>
+<summary><strong>Why the database has to be locked (<code>pnpm secure:db</code>)</strong></summary>
 
-While you are in Supabase, turn the Data API off as well — *Integrations → Data
-API → Enable Data API*. Nothing here calls `/rest/v1/`; uploads go to
-`/storage/v1/`, which is a different service and keeps working. Expect the
-Security Advisor's *Info* tab to keep listing every table as “RLS Enabled No
-Policy” afterwards. That is the intended state, not a leftover.
-See [ADR 0006](docs/adr/0006-the-database-is-closed-to-supabases-api-roles.md).
+Supabase publishes every table over HTTP to the role behind its *anon* key — a
+value that ships in browsers — and new tables start with row-level security
+off. Until `pnpm secure:db --apply` runs, a fresh install's member data is
+readable by anyone who knows the project's address. It turns row-level security
+on everywhere, removes the grants, and installs a trigger so tables added later
+start closed. On plain Postgres there is nothing to close and it says so. The
+wizard runs it for you.
 
-- Member portal — <http://localhost:3050>
-- Admin panel — <http://localhost:3050/admin>
+While you are in Supabase, also switch the Data API off — *Integrations → Data
+API → Enable Data API*. Nothing here uses it; uploads go through Storage, which
+keeps working. The Security Advisor's *Info* tab will keep listing every table
+as "RLS Enabled No Policy" — that is the intended state. See
+[ADR 0006](docs/adr/0006-the-database-is-closed-to-supabases-api-roles.md).
 
-Administration is the standard Payload admin panel. A user with the
-`member-admin` role can reach it; a plain member cannot.
-
-**Running it from here on:** [docs/howto](docs/howto/README.md) has short guides
-for the recurring jobs — leaving absent members off the slides, connecting
-Claude, running migrations in production, recovering a database a dev server
-pushed to, and the launch checklist for search and sharing.
-
-### Sharing special requests with another chapter
-
-Two installs can show each other's special requests. An admin on each side
-creates a connection, hands the other a key, and members see both chapters'
-requests in one list with a filter in the header.
-
-It sends the requester's contact details to the other chapter's server, so it
-needs an agreement between the two organisations before it needs any
-configuration.
-
-**→ [docs/special-request-exchange.md](docs/special-request-exchange.md)**
+</details>
 
 ---
 
-## Deploy
+## Day to day
 
-### Vercel + Supabase
+| Job | How |
+| --- | --- |
+| Someone is away this week | [Leave them out of the slides](docs/howto/skip-members-from-the-slideshow.md) — Settings → Slideshow → *Skip Members*, pick by name. Empty it after the meeting. |
+| Invite guests | Share `https://your-domain/viesis` (or `/guest`). It always opens the next meeting's registration. |
+| Get help from Claude | [Connect Claude with MCP](docs/howto/connect-claude-with-mcp.md) — create a key under MCP → API Keys, tick what it may do. |
+| Add a member | Members → Create New, tick **Create New User**. They sign in with an email link. |
+| Show another chapter's requests | [Special request exchange](docs/special-request-exchange.md) — needs an agreement between the chapters first. |
 
-No server to maintain: Supabase provides the database and the file storage,
-Vercel runs the app. About 30 minutes end to end.
+Only users with the **Member + Admin** role can open the admin panel.
 
-**→ [docs/deploy-vercel-supabase.md](docs/deploy-vercel-supabase.md)**
+---
 
-The app adapts itself when it detects a serverless host — a small database pool
-per instance, console-only logging, thumbnails held open with `after()` instead
-of detached. One limitation is the platform's rather than ours: Vercel rejects
-request bodies over 4.5MB, so uploads are capped well below the 15MB/50MB a
-normal server allows. The guide covers that and the rest of the sharp edges.
+## Update an existing site
+
+1. Get the new version (`git pull`, or merge it into your copy) and run
+   `pnpm install`.
+2. Run `pnpm migrate` against the live database **before** putting the new
+   version online — updates only add to the database, so the running site keeps
+   working, while the new version cannot work without them.
+   [Run migrations in production](docs/howto/run-migrations-in-production.md)
+   explains how, including from Vercel.
+3. Deploy.
+
+**Coming from a Next.js 15 version?** Read
+[Upgrade to the November 2026 release](docs/howto/upgrade-to-the-november-2026-release.md)
+first — it closes security holes that need a command run on your data, not only
+a deploy.
+
+---
+
+## Hosting options
+
+### Vercel + Supabase — recommended
+
+No server to maintain: Supabase holds the database and files, Vercel runs the
+site. **→ [docs/deploy-vercel-supabase.md](docs/deploy-vercel-supabase.md)**
+
+One limit is Vercel's rather than ours: it rejects uploads over 4.5 MB, so
+photos straight off a camera must be resized first. The guide covers that and
+the other sharp edges.
 
 ### Docker
 
 `docker-compose.yml` reads `.env`. Prepare the database first, in the same order
-as every other path — the app has nothing to serve until the schema exists, and
-the window between creating tables and closing them is not one to spend with the
-site already up:
+as everywhere else:
 
 ```bash
 docker compose run --rm migrate
@@ -240,79 +285,57 @@ Then start it:
 docker compose up -d --build
 ```
 
-These are one-off containers, not `exec` into the running app: the runtime image
-is a standalone Next.js bundle carrying neither the Payload CLI nor the
-TypeScript sources, so both tasks run from the `builder` stage instead.
-
-Set `SETUP_ORG_NAME`, `SETUP_ADMIN_EMAIL` and `SETUP_ADMIN_PASSWORD` to run
-setup without a terminal.
+These are one-off containers rather than `exec` into the running app: the
+runtime image is a standalone Next.js bundle without the Payload CLI or the
+TypeScript sources, so these tasks run from the `builder` stage. Set
+`SETUP_ORG_NAME`, `SETUP_ADMIN_EMAIL` and `SETUP_ADMIN_PASSWORD` to run setup
+without a terminal. On a normal server uploads may be up to 15 MB for images
+and 50 MB for audio.
 
 ### Anywhere that runs Node
 
 `pnpm build && pnpm start`. The build produces a standalone Next.js output.
 
 On a **serverless** host other than Vercel, Netlify or Lambda — which are
-detected automatically — set `SERVERLESS=1`. It switches the same three
-behaviours: one database connection per instance instead of fifty, logging to
-the console instead of a file that the platform discards, and no memory
-watchdog restarting a process that has no supervisor to restart it.
+detected automatically — set `SERVERLESS=1`. It switches three behaviours: one
+database connection per instance instead of fifty, logging to the console
+instead of a file the platform discards, and no memory watchdog restarting a
+process that has no supervisor to restart it.
 
----
-
-## Upgrading
-
-Pull the release, `pnpm install`, then run `pnpm migrate` against production
-**before** deploying — migrations here only add, so the old build keeps working
-against the new schema, while the new build cannot work against the old one.
-[Run migrations in production](docs/howto/run-migrations-in-production.md) has
-the details, including how to do it from Vercel's build step.
-
-Moving from a Next.js 15 install: read
-[Upgrade to the November 2026 release](docs/howto/upgrade-to-the-november-2026-release.md)
-first. It closes security holes that need a command run on your data, not only
-a deploy.
+**Not required:** Cloudflare or any other CDN. The rate limiter reads
+`cf-connecting-ip` if the site happens to be behind Cloudflare, the same way it
+reads Vercel's and nginx's headers.
 
 ---
 
 ## What is supported
 
-Not every combination gets the same promise, and pretending otherwise helps
-nobody. Three tiers, so you know before you start which part of this is
-guaranteed and which part is yours.
-
-These tiers say how far the code is written and tested to hold. They are not a
-support queue: there is no issue tracker here and no contributions are taken
-([CONTRIBUTING.md](CONTRIBUTING.md)). What tier 1 buys you is that the path is
-proven on every commit before it ships, not that someone will answer a ticket.
+Not every combination gets the same promise. Three tiers, so you know before
+you start which part is guaranteed and which part is yours. They describe how
+far the code is written and tested to hold — not a support queue: there is no
+issue tracker here ([CONTRIBUTING.md](CONTRIBUTING.md)).
 
 ### Tier 1 — Supabase and Vercel
 
 **Guaranteed, and proven on every commit.** CI stands up an empty Postgres,
 applies the migrations, runs `pnpm bootstrap` and loads the resulting site in a
-browser. This is the path the code is written against and the one the install
-docs describe. A defect on this path is a defect in the code, not a
-misconfiguration on your side — which tells you where to look, not where to file.
+browser. This is the path the code is written against and the one these
+instructions describe. A defect on this path is a defect in the code, not a
+misconfiguration on your side.
 
 ### Tier 2 — any Postgres, on Docker or bare Node
 
 **Documented, best-effort.** Point `POSTGRESS_DATABASE_URL` anywhere; nothing
 outside that variable assumes Supabase for the database, and CI exercises the
-schema against stock Postgres rather than Supabase specifically. What is not
-covered is the whole combination — a report here is welcome and may take a
-while, because reproducing it means building your setup rather than opening a
-terminal.
+schema against stock Postgres. The whole combination is not covered.
 
 ### Tier 3 — any other object storage
 
 **A seam, and no promise.** Provider-specific code lives in
-[`src/lib/storage.ts`](src/lib/storage.ts): nine exports, of which all but two
-speak to the provider. Reimplement them for S3, R2, Bunny or a local disk and
-nothing else changes — the Payload adapter, the thumbnail generator and the bulk
-uploader all go through that module.
-
-Nothing tests this, here or anywhere. If you take it on you are the one who
-knows whether it works, and a patch is more useful to both of us than a bug
-report.
+[`src/lib/storage.ts`](src/lib/storage.ts): nine exports, all but two speaking
+to the provider. Reimplement them for S3, R2, Bunny or a local disk and nothing
+else changes. Nothing tests this; if you take it on, you are the one who knows
+whether it works.
 
 ---
 
@@ -326,8 +349,12 @@ overridden at runtime.
 
 **Another language.** Add `src/messages/<code>.json` alongside `en.json`, add the
 code to `Locale` in [`src/lib/i18n.ts`](src/lib/i18n.ts), and register it.
-`Messages` is derived from `en.json`, so TypeScript will list every key you are
-missing. The active language is set under Settings.
+`Messages` is derived from `en.json`, so TypeScript lists every key you are
+missing. The active language is chosen under Settings.
+
+**A third-party script** (chat widget, booking embed, tracking): the public
+pages run a strict Content-Security-Policy, so see
+[Add a third-party script](docs/howto/add-a-third-party-script.md).
 
 ---
 
@@ -335,10 +362,9 @@ missing. The active language is set under Settings.
 
 **The policy templates are skeletons, not legal documents.** `pnpm seed:policies`
 creates Terms, Privacy and Cookie drafts with the usual sections and every
-substantive claim left as a `[bracketed]` prompt. This is deliberate: a
-prewritten policy naming another country's supervisory authority would look
-authoritative while being wrong. Fill them in and have a lawyer in your
-jurisdiction review them before publishing.
+substantive claim left as a `[bracketed]` prompt — a prewritten policy naming
+another country's authority would look authoritative while being wrong. Fill
+them in and have a lawyer in your jurisdiction review them before publishing.
 
 This software stores personal data about members — names, contact details,
 photos, business figures. Wherever you operate, that comes with obligations
@@ -346,26 +372,27 @@ around lawful basis, retention, access and deletion. Those are yours to meet.
 
 ---
 
-## Development
+## For developers
 
 ```bash
-pnpm dev              # dev server on :3050
-pnpm typecheck        # tsc --noEmit
-pnpm test:int         # vitest
-pnpm test:e2e         # playwright
-pnpm generate:types   # regenerate payload-types.ts after schema changes
-pnpm migrate:create   # create a migration after changing collections
-pnpm migrate:reconcile # repair migration records after a dev push — see docs/howto
+pnpm dev                # dev server on :3050
+pnpm typecheck          # tsc --noEmit
+pnpm lint               # eslint
+pnpm test:int           # vitest
+pnpm test:e2e           # playwright
+pnpm generate:types     # regenerate payload-types.ts after schema changes
+pnpm migrate:create     # create a migration after changing collections
+pnpm migrate:reconcile  # repair migration records after a dev push
 ```
 
 Collections live in `src/collections/` and are registered in
 `src/payload.config.ts`. After changing a collection, run `generate:types` and
-`migrate:create`.
+`migrate:create`. Access control is centralised in `src/access/`; `role` and
+`status` live on the user record and travel in the session token, so an access
+check is a field comparison rather than a database lookup.
 
-Access control is centralised in `src/access/` — most collections use the
-helpers from `src/access/index.ts` rather than hand-rolled rules. `role` and
-`status` live on the User record and travel in the JWT, so an access check is a
-field comparison rather than a database lookup.
+[CONTRIBUTING.md](CONTRIBUTING.md) has the rest of what a maintainer of a fork
+should know.
 
 ---
 
