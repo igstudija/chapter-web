@@ -69,6 +69,7 @@ export const SpeechMasterBlock: Block = {
       label: 'Speech Master',
       admin: {
         description: 'Member to display with crown icon. Default duration uses speechMasterMultiplier.',
+        sortOptions: 'displayName',
       },
       filterOptions: () => ({ status: { equals: 'active' } }),
     },
@@ -99,6 +100,9 @@ export const SpeechMasterCeremonyBlock: Block = {
       relationTo: 'members',
       required: true,
       label: 'Speech Master',
+      admin: {
+        sortOptions: 'displayName',
+      },
       filterOptions: () => ({ status: { equals: 'active' } }),
     },
     customSlideSecondsField,

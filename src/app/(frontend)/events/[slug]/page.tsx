@@ -194,7 +194,7 @@ export default async function EventPage({ params }: Props) {
               />
             )}
 
-            {/* Event Registration Form — /viesis and every "come as a guest" link land here. */}
+            {/* Event Registration Form — /viesis, /guest and every "come as a guest" link land here. */}
             <div id={GUEST_REGISTRATION_ANCHOR} className="scroll-mt-28" />
             <EventRegistrationForm
               eventId={String(event.id)}

@@ -2,6 +2,7 @@ import { cookies, headers } from 'next/headers'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { HeaderClient } from './HeaderClient'
+import { guestPathFor } from '@/lib/nextMeeting'
 import type { Media } from '@/payload-types'
 import { getTranslations, type Locale, DEFAULT_LOCALE } from '@/lib/i18n'
 import { getSettings } from '@/lib/getSiteSettings'
@@ -77,6 +78,7 @@ export async function Header() {
       siteLogoUrl={siteLogo && typeof siteLogo !== 'string' ? siteLogo.url || undefined : undefined}
       navigation={navigation}
       user={user ? { isAdmin: showAdminLink } : null}
+      guestPath={guestPathFor(locale)}
     />
   )
 }

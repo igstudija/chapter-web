@@ -63,6 +63,47 @@ export const Users: CollectionConfig = {
         return data
       },
     ],
+    afterChange: [
+      // A member renaming themselves on their profile page writes this record
+      // only. Carry the name to their member profile, which is what the admin
+      // lists, the slideshow and every member picker show. The reverse
+      // direction lives in Members' beforeChange; each tells the other through
+      // `context` so neither writes the change straight back.
+      async ({ doc, previousDoc, operation, req, context }) => {
+        if (operation !== 'update' || context?.syncingNameFromMember) return doc
+        if (doc.name === previousDoc?.name && doc.surname === previousDoc?.surname) return doc
+
+        const { docs } = await req.payload.find({
+          collection: 'members',
+          where: { user: { equals: doc.id } },
+          limit: 1,
+          depth: 0,
+        })
+        const member = docs[0]
+        if (!member || (member.name === doc.name && member.surname === doc.surname)) return doc
+
+        await req.payload.update({
+          collection: 'members',
+          id: member.id,
+          data: { name: doc.name, surname: doc.surname },
+          depth: 0,
+          context: { syncingNameFromUser: true },
+        })
+        return doc
+      },
+    ],
+    beforeDelete: [
+      // An MCP key acts as its owner and cannot outlive them: its `user`
+      // column is NOT NULL, so the delete would otherwise fail on it.
+      async ({ req, id }) => {
+        await req.payload.delete({
+          collection: 'payload-mcp-api-keys',
+          where: { user: { equals: id } },
+          overrideAccess: true,
+          req,
+        })
+      },
+    ],
     beforeLogin: [
       // A blocked account keeps its record and its history but cannot sign in.
       async ({ user }) => {

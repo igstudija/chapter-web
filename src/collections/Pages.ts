@@ -112,6 +112,9 @@ export const Wiki: CollectionConfig = {
               type: 'relationship',
               relationTo: 'members',
               hasMany: true,
+              admin: {
+                sortOptions: 'displayName',
+              },
             },
           ],
         },

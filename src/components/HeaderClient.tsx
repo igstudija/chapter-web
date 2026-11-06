@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { GUEST_PATH } from '@/lib/nextMeeting'
 import Image from 'next/image'
 import { Menu, X, User, Key, LogOut, Shield, Sun, Moon, Monitor, ChevronDown } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -16,6 +15,8 @@ interface HeaderClientProps {
   readonly siteLogoUrl?: string
   readonly navigation: readonly { readonly name: string; readonly href: string }[]
   readonly user: { readonly isAdmin?: boolean } | null
+  /** The guest short link in the site's language — see lib/nextMeeting.ts. */
+  readonly guestPath: string
 }
 
 /**
@@ -104,7 +105,13 @@ function ThemeIcons({
   )
 }
 
-export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: HeaderClientProps) {
+export function HeaderClient({
+  siteName,
+  siteLogoUrl,
+  navigation,
+  user,
+  guestPath,
+}: HeaderClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -358,7 +365,7 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
                   >
                     {t('nav', 'login')}
                   </Link>
-                  <Link href={GUEST_PATH} className="btn btn-primary px-5 py-2.5">
+                  <Link href={guestPath} className="btn btn-primary px-5 py-2.5">
                     {t('home', 'guestCta')}
                   </Link>
                 </div>
@@ -456,7 +463,7 @@ export function HeaderClient({ siteName, siteLogoUrl, navigation, user }: Header
               ) : (
                 <div className="flex flex-col gap-2">
                   <Link
-                    href={GUEST_PATH}
+                    href={guestPath}
                     onClick={() => setMobileMenuOpen(false)}
                     className="btn btn-primary w-full"
                   >

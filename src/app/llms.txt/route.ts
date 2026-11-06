@@ -9,7 +9,7 @@ import {
   siteOrigin,
   socialProfileUrls,
 } from '@/lib/seoHelpers'
-import { GUEST_PATH, findNextPublicEvent, formatMeetingDate } from '@/lib/nextMeeting'
+import { findNextPublicEvent, formatMeetingDate, guestPathFor } from '@/lib/nextMeeting'
 
 export const dynamic = 'force-dynamic'
 
@@ -101,7 +101,7 @@ export async function GET() {
       const when = formatMeetingDate(nextEvent.date, locale, settings?.timezone || 'Europe/Riga')
       out.push(
         `- ${c.nextMeeting}: ${when}${nextEvent.location ? `, ${nextEvent.location}` : ''}`,
-        `- ${c.guest}: ${origin}${GUEST_PATH}`,
+        `- ${c.guest}: ${origin}${guestPathFor(locale)}`,
       )
     }
     out.push('')

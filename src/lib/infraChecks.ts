@@ -113,7 +113,7 @@ export const checkDatabase = async (connectionString?: string): Promise<Outcome>
       return {
         ok: true,
         detail: `reachable, schema applied (${rows.length} recorded, one of them a dev push)`,
-        fix: 'A dev push has touched this database. `pnpm migrate` will stop to ask whether to reset it, and hang if nothing can answer. Land schema changes by restarting the dev server, or apply a migration SQL by hand.',
+        fix: 'A dev push has touched this database. `pnpm migrate` will stop to ask whether to reset it, and hang if nothing can answer. Run `pnpm migrate:reconcile` — it checks the schema matches the code and then records the migrations. See docs/howto/recover-from-a-dev-push.md.',
       }
     }
 
