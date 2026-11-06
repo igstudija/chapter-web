@@ -70,6 +70,15 @@ Skipping step 3 leaves your database and every other install's out of sync.
 
 **Adding an admin component** also needs `pnpm generate:importmap`.
 
+**Do not point `pnpm dev` at a database you care about.** It pushes the schema
+and records a `dev` migration, after which `pnpm migrate` stops to ask whether to
+reset it. Use a local Postgres, or set `PAYLOAD_DB_PUSH=false`. Repair is
+`pnpm migrate:reconcile` ([docs/howto/recover-from-a-dev-push.md](docs/howto/recover-from-a-dev-push.md)).
+
+**Offering another collection over MCP** is an entry in `MCP_COLLECTIONS` in
+`src/lib/mcp.ts` *and* a migration: each operation is a column in
+`payload_mcp_api_keys`. Never add `users`, and never a delete.
+
 **Settings** are read through `src/lib/getSiteSettings.ts` — `getSettings()`
 and `getSlideshowSettings()`, both wrapped in React `cache` so a page rendering
 many server components asks the database once rather than dozens of times. Read
