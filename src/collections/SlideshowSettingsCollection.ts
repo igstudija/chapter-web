@@ -141,9 +141,10 @@ export const SlideshowSettingsCollection: CollectionConfig = {
       hasMany: true,
       label: 'Skip Members from Slideshow',
       admin: {
-        description: 'Members to skip from slideshow (e.g., absent members)',
+        description: 'Members to skip from slideshow (e.g., absent members). Type a name to search.',
         isSortable: true,
         allowCreate: false,
+        sortOptions: 'displayName',
       },
       filterOptions: activeMembersOnly,
     },

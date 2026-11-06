@@ -64,6 +64,7 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     users: UserAuthOperations;
+    'payload-mcp-api-keys': PayloadMcpApiKeyAuthOperations;
   };
   blocks: {};
   collections: {
@@ -91,6 +92,7 @@ export interface Config {
     'slideshow-settings-collection': SlideshowSettingsCollection;
     'listing-pages-seo': ListingPagesSeo;
     'companies-page-settings': CompaniesPageSetting;
+    'payload-mcp-api-keys': PayloadMcpApiKey;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -122,6 +124,7 @@ export interface Config {
     'slideshow-settings-collection': SlideshowSettingsCollectionSelect<false> | SlideshowSettingsCollectionSelect<true>;
     'listing-pages-seo': ListingPagesSeoSelect<false> | ListingPagesSeoSelect<true>;
     'companies-page-settings': CompaniesPageSettingsSelect<false> | CompaniesPageSettingsSelect<true>;
+    'payload-mcp-api-keys': PayloadMcpApiKeysSelect<false> | PayloadMcpApiKeysSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -137,13 +140,31 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: User | PayloadMcpApiKey;
   jobs: {
     tasks: unknown;
     workflows: unknown;
   };
 }
 export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
+export interface PayloadMcpApiKeyAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -247,6 +268,7 @@ export interface Member {
    * Last name (synced with user account)
    */
   surname?: string | null;
+  displayName?: string | null;
   /**
    * Contact phone number for this chapter
    */
@@ -1586,7 +1608,7 @@ export interface SlideshowSettingsCollection {
       )[]
     | null;
   /**
-   * Members to skip from slideshow (e.g., absent members)
+   * Members to skip from slideshow (e.g., absent members). Type a name to search.
    */
   skipMembers?: (number | Member)[] | null;
   /**
@@ -1880,6 +1902,226 @@ export interface CompaniesPageSetting {
   createdAt: string;
 }
 /**
+ * API keys control which collections, resources, tools, and prompts MCP clients can access
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-mcp-api-keys".
+ */
+export interface PayloadMcpApiKey {
+  id: number;
+  /**
+   * The user that the API key is associated with.
+   */
+  user: number | User;
+  /**
+   * A useful label for the API key.
+   */
+  label?: string | null;
+  /**
+   * The purpose of the API key.
+   */
+  description?: string | null;
+  events?: {
+    /**
+     * Allow clients to find events.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create events.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update events.
+     */
+    update?: boolean | null;
+  };
+  eventSubmissions?: {
+    /**
+     * Allow clients to find event-submissions.
+     */
+    find?: boolean | null;
+  };
+  blog?: {
+    /**
+     * Allow clients to find blog.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create blog.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update blog.
+     */
+    update?: boolean | null;
+  };
+  successStories?: {
+    /**
+     * Allow clients to find success-stories.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create success-stories.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update success-stories.
+     */
+    update?: boolean | null;
+  };
+  wiki?: {
+    /**
+     * Allow clients to find wiki.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create wiki.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update wiki.
+     */
+    update?: boolean | null;
+  };
+  specialRequests?: {
+    /**
+     * Allow clients to find special-requests.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to create special-requests.
+     */
+    create?: boolean | null;
+    /**
+     * Allow clients to update special-requests.
+     */
+    update?: boolean | null;
+  };
+  members?: {
+    /**
+     * Allow clients to find members.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update members.
+     */
+    update?: boolean | null;
+  };
+  powerGroups?: {
+    /**
+     * Allow clients to find power-groups.
+     */
+    find?: boolean | null;
+  };
+  top40?: {
+    /**
+     * Allow clients to find top40.
+     */
+    find?: boolean | null;
+  };
+  top20?: {
+    /**
+     * Allow clients to find top20.
+     */
+    find?: boolean | null;
+  };
+  contactSubmissions?: {
+    /**
+     * Allow clients to find contact-submissions.
+     */
+    find?: boolean | null;
+  };
+  media?: {
+    /**
+     * Allow clients to find media.
+     */
+    find?: boolean | null;
+  };
+  settings?: {
+    /**
+     * Allow clients to find settings.
+     */
+    find?: boolean | null;
+  };
+  homepageSettings?: {
+    /**
+     * Allow clients to find homepage-settings.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update homepage-settings.
+     */
+    update?: boolean | null;
+  };
+  aboutUsSettings?: {
+    /**
+     * Allow clients to find about-us-settings.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update about-us-settings.
+     */
+    update?: boolean | null;
+  };
+  faqSettings?: {
+    /**
+     * Allow clients to find faq-settings.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update faq-settings.
+     */
+    update?: boolean | null;
+  };
+  contactsPageSettings?: {
+    /**
+     * Allow clients to find contacts-page-settings.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update contacts-page-settings.
+     */
+    update?: boolean | null;
+  };
+  companiesPageSettings?: {
+    /**
+     * Allow clients to find companies-page-settings.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update companies-page-settings.
+     */
+    update?: boolean | null;
+  };
+  listingPagesSeo?: {
+    /**
+     * Allow clients to find listing-pages-seo.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update listing-pages-seo.
+     */
+    update?: boolean | null;
+  };
+  slideshowSettingsCollection?: {
+    /**
+     * Allow clients to find slideshow-settings-collection.
+     */
+    find?: boolean | null;
+    /**
+     * Allow clients to update slideshow-settings-collection.
+     */
+    update?: boolean | null;
+  };
+  updatedAt: string;
+  createdAt: string;
+  enableAPIKey?: boolean | null;
+  apiKey?: string | null;
+  apiKeyIndex?: string | null;
+  hasAPIKey?: boolean | null;
+  collection: 'payload-mcp-api-keys';
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -1998,12 +2240,21 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'companies-page-settings';
         value: number | CompaniesPageSetting;
+      } | null)
+    | ({
+        relationTo: 'payload-mcp-api-keys';
+        value: number | PayloadMcpApiKey;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'payload-mcp-api-keys';
+        value: number | PayloadMcpApiKey;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -2013,10 +2264,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: number;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: number | User;
+      }
+    | {
+        relationTo: 'payload-mcp-api-keys';
+        value: number | PayloadMcpApiKey;
+      };
   key?: string | null;
   value?:
     | {
@@ -2100,6 +2356,7 @@ export interface MembersSelect<T extends boolean = true> {
   status?: T;
   name?: T;
   surname?: T;
+  displayName?: T;
   phone?: T;
   profileImage?: T;
   description?: T;
@@ -2888,6 +3145,139 @@ export interface CompaniesPageSettingsSelect<T extends boolean = true> {
       };
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "payload-mcp-api-keys_select".
+ */
+export interface PayloadMcpApiKeysSelect<T extends boolean = true> {
+  user?: T;
+  label?: T;
+  description?: T;
+  events?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+      };
+  eventSubmissions?:
+    | T
+    | {
+        find?: T;
+      };
+  blog?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+      };
+  successStories?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+      };
+  wiki?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+      };
+  specialRequests?:
+    | T
+    | {
+        find?: T;
+        create?: T;
+        update?: T;
+      };
+  members?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
+  powerGroups?:
+    | T
+    | {
+        find?: T;
+      };
+  top40?:
+    | T
+    | {
+        find?: T;
+      };
+  top20?:
+    | T
+    | {
+        find?: T;
+      };
+  contactSubmissions?:
+    | T
+    | {
+        find?: T;
+      };
+  media?:
+    | T
+    | {
+        find?: T;
+      };
+  settings?:
+    | T
+    | {
+        find?: T;
+      };
+  homepageSettings?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
+  aboutUsSettings?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
+  faqSettings?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
+  contactsPageSettings?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
+  companiesPageSettings?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
+  listingPagesSeo?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
+  slideshowSettingsCollection?:
+    | T
+    | {
+        find?: T;
+        update?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+  enableAPIKey?: T;
+  apiKey?: T;
+  apiKeyIndex?: T;
+  hasAPIKey?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

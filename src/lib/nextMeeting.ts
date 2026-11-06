@@ -7,14 +7,28 @@ import type { Event } from '@/payload-types'
  *
  * The guest form lives on each event page, so there is no single URL for it.
  * Pointing buttons at a specific event goes stale a week later; pointing them
- * at /viesis, which looks the event up on every request, does not.
+ * at /viesis (or /guest), which looks the event up on every request, does not.
  */
 
 /** Element id the registration form sits under on an event page. */
 export const GUEST_REGISTRATION_ANCHOR = 'registracija'
 
-/** Stable path every guest call to action links to. */
-export const GUEST_PATH = '/viesis'
+/**
+ * Stable short links every guest call to action points at — one per site
+ * language, and both answer on every install, so a QR code printed for one
+ * language keeps working if the site's language changes.
+ */
+export const GUEST_PATHS = { lv: '/viesis', en: '/guest' } as const
+
+/** The guest link in the site's language. */
+export function guestPathFor(locale: string | null | undefined): string {
+  return locale === 'lv' ? GUEST_PATHS.lv : GUEST_PATHS.en
+}
+
+/** Whether a link from the CMS already is the guest link, in either language. */
+export function isGuestPath(href: string | null | undefined): boolean {
+  return Boolean(href) && (Object.values(GUEST_PATHS) as string[]).includes(href as string)
+}
 
 /** The next published, public event that has not started yet. */
 export async function findNextPublicEvent(payload: Payload): Promise<Event | null> {
@@ -64,4 +78,14 @@ export function formatMeetingDate(
     timeZone,
   }).format(parsed)
   return `${day}, ${time}`
+}
+
+/**
+ * The response behind both guest short links: a redirect to the next public
+ * meeting's registration form, or to the events list when none is scheduled.
+ * 307 rather than 308, because where it lands changes every week.
+ */
+export async function redirectToNextMeeting(payload: Payload, requestUrl: string): Promise<Response> {
+  const event = await findNextPublicEvent(payload)
+  return Response.redirect(new URL(guestRegistrationPath(event), requestUrl), 307)
 }

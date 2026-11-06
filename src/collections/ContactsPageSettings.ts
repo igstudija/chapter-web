@@ -49,6 +49,7 @@ export const ContactsPageSettings: CollectionConfig = {
           required: true,
           admin: {
             description: 'Select a member from your chapter',
+            sortOptions: 'displayName',
           },
         },
       ],

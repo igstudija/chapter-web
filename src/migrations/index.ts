@@ -14,6 +14,8 @@ import * as migration_20260801_000000_special_request_exchange from './20260801_
 import * as migration_20261105_000000_payload_3_93_columns from './20261105_000000_payload_3_93_columns';
 
 import * as migration_20261105_010000_homepage_meeting_note from './20261105_010000_homepage_meeting_note';
+import * as migration_20261106_000000_member_display_name from './20261106_000000_member_display_name';
+import * as migration_20261106_010000_mcp_api_keys from './20261106_010000_mcp_api_keys';
 export const migrations = [
   {
     up: migration_20260725_172248.up,
@@ -89,5 +91,15 @@ export const migrations = [
     up: migration_20261105_010000_homepage_meeting_note.up,
     down: migration_20261105_010000_homepage_meeting_note.down,
     name: '20261105_010000_homepage_meeting_note',
+  },
+  {
+    up: migration_20261106_000000_member_display_name.up,
+    down: migration_20261106_000000_member_display_name.down,
+    name: '20261106_000000_member_display_name',
+  },
+  {
+    up: migration_20261106_010000_mcp_api_keys.up,
+    down: migration_20261106_010000_mcp_api_keys.down,
+    name: '20261106_010000_mcp_api_keys',
   },
 ];

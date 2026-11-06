@@ -4,7 +4,7 @@ A self-hostable member portal for professional networking organisations — the
 kind that meet regularly, do business with each other, and want their own site
 rather than a seat in someone else's platform.
 
-Built on [Payload CMS 3](https://payloadcms.com) and Next.js 15. One install
+Built on [Payload CMS 3](https://payloadcms.com) and Next.js 16. One install
 serves one organisation: its members, its content, its branding, administered
 from the standard Payload admin panel.
 
@@ -47,6 +47,17 @@ photos, business figures, what each member is looking for.
 **Content**
 Blog, wiki, FAQ, success stories, static pages, and a policy-template system
 with placeholder substitution.
+
+**Guests**
+One short link — `/viesis` on a Latvian site, `/guest` otherwise — that always
+leads to the next public meeting's registration form, for buttons, social
+profiles and printed QR codes.
+
+**MCP server**
+An administrator can connect Claude or another assistant at `/api/mcp` with a
+key whose permissions they tick one by one — drafting events, editing pages,
+leaving absent members off the slides. No deletes, and never user accounts.
+See [Connect Claude with MCP](docs/howto/connect-claude-with-mcp.md).
 
 ---
 
@@ -176,6 +187,11 @@ See [ADR 0006](docs/adr/0006-the-database-is-closed-to-supabases-api-roles.md).
 Administration is the standard Payload admin panel. A user with the
 `member-admin` role can reach it; a plain member cannot.
 
+**Running it from here on:** [docs/howto](docs/howto/README.md) has short guides
+for the recurring jobs — leaving absent members off the slides, connecting
+Claude, running migrations in production, recovering a database a dev server
+pushed to, and the launch checklist for search and sharing.
+
 ### Sharing special requests with another chapter
 
 Two installs can show each other's special requests. An admin on each side
@@ -240,6 +256,21 @@ detected automatically — set `SERVERLESS=1`. It switches the same three
 behaviours: one database connection per instance instead of fifty, logging to
 the console instead of a file that the platform discards, and no memory
 watchdog restarting a process that has no supervisor to restart it.
+
+---
+
+## Upgrading
+
+Pull the release, `pnpm install`, then run `pnpm migrate` against production
+**before** deploying — migrations here only add, so the old build keeps working
+against the new schema, while the new build cannot work against the old one.
+[Run migrations in production](docs/howto/run-migrations-in-production.md) has
+the details, including how to do it from Vercel's build step.
+
+Moving from a Next.js 15 install: read
+[Upgrade to the November 2026 release](docs/howto/upgrade-to-the-november-2026-release.md)
+first. It closes security holes that need a command run on your data, not only
+a deploy.
 
 ---
 
@@ -324,6 +355,7 @@ pnpm test:int         # vitest
 pnpm test:e2e         # playwright
 pnpm generate:types   # regenerate payload-types.ts after schema changes
 pnpm migrate:create   # create a migration after changing collections
+pnpm migrate:reconcile # repair migration records after a dev push — see docs/howto
 ```
 
 Collections live in `src/collections/` and are registered in

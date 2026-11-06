@@ -68,7 +68,8 @@ export async function getMyProfileBaseData(): Promise<MyProfileBaseData> {
   const payload = await getPayload({ config })
   const { user } = await payload.auth({ headers })
 
-  if (!user) {
+  // Only a person has a profile; MCP API keys are an auth collection too.
+  if (!user || user.collection !== 'users') {
     redirect('/login')
   }
 

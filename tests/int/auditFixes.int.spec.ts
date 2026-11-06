@@ -38,7 +38,7 @@ describe('organisation name', () => {
   })
 
   it('reads siteName from the Settings document itself', () => {
-    expect(orgNameFrom({ siteName: 'BNI Vivaldi' })).toBe('BNI Vivaldi')
+    expect(orgNameFrom({ siteName: 'Example Chapter' })).toBe('Example Chapter')
   })
 
   it('never prefers the creation placeholder over the fallback', () => {
@@ -49,29 +49,29 @@ describe('organisation name', () => {
     const meta = generateMetadata({
       contentTitle: 'Kontakti',
       siteSettings: { locale: 'lv' } as never,
-      siteBranding: { siteName: 'BNI Vivaldi' },
-      baseUrl: 'https://bnivivaldi.lv',
+      siteBranding: { siteName: 'Example Chapter' },
+      baseUrl: 'https://chapter.example.org',
       pathname: '/contacts',
     })
-    expect(meta.openGraph).toMatchObject({ siteName: 'BNI Vivaldi', locale: 'lv_LV' })
-    expect(meta.alternates?.canonical).toBe('https://bnivivaldi.lv/contacts')
+    expect(meta.openGraph).toMatchObject({ siteName: 'Example Chapter', locale: 'lv_LV' })
+    expect(meta.alternates?.canonical).toBe('https://chapter.example.org/contacts')
   })
 
   it('emits an Organization schema with social profiles as sameAs', () => {
     const schema = generateOrganizationSchema({
       siteSettings: {
         socialMedia: {
-          facebook: 'https://www.facebook.com/BNIVivaldiRiga',
-          instagram: 'https://www.instagram.com/bnivivaldi',
+          facebook: 'https://www.facebook.com/ExampleChapter',
+          instagram: 'https://www.instagram.com/examplechapter',
         },
       } as never,
-      siteBranding: { siteName: 'BNI Vivaldi' },
-      baseUrl: 'https://bnivivaldi.lv',
+      siteBranding: { siteName: 'Example Chapter' },
+      baseUrl: 'https://chapter.example.org',
     }) as Record<string, unknown>
-    expect(schema).toMatchObject({ '@type': 'Organization', name: 'BNI Vivaldi' })
+    expect(schema).toMatchObject({ '@type': 'Organization', name: 'Example Chapter' })
     expect(schema.sameAs).toEqual([
-      'https://www.facebook.com/BNIVivaldiRiga',
-      'https://www.instagram.com/bnivivaldi',
+      'https://www.facebook.com/ExampleChapter',
+      'https://www.instagram.com/examplechapter',
     ])
   })
 })
@@ -85,8 +85,8 @@ describe('og:locale and origin', () => {
 
   it('takes the origin from NEXT_PUBLIC_SERVER_URL', () => {
     const before = process.env.NEXT_PUBLIC_SERVER_URL
-    process.env.NEXT_PUBLIC_SERVER_URL = 'https://bnivivaldi.lv/'
-    expect(siteOrigin()).toBe('https://bnivivaldi.lv')
+    process.env.NEXT_PUBLIC_SERVER_URL = 'https://chapter.example.org/'
+    expect(siteOrigin()).toBe('https://chapter.example.org')
     process.env.NEXT_PUBLIC_SERVER_URL = 'not a url'
     expect(siteOrigin()).toBeNull()
     process.env.NEXT_PUBLIC_SERVER_URL = before
@@ -116,23 +116,23 @@ describe('event structured data', () => {
     const schema = generateEventSchema({
       name: 'Biznesa brokastis',
       description: '<p>Nāc!</p>',
-      baseUrl: 'https://bnivivaldi.lv',
+      baseUrl: 'https://chapter.example.org',
       pathname: '/events/x',
       startDate: '2026-11-11T04:45:00.000Z',
       location: 'Zoom',
-      organizerName: 'BNI Vivaldi',
+      organizerName: 'Example Chapter',
     }) as Record<string, any>
     expect(schema.description).toBe('Nāc!')
     expect(schema.eventStatus).toBe('https://schema.org/EventScheduled')
     expect(schema.eventAttendanceMode).toBe('https://schema.org/OnlineEventAttendanceMode')
-    expect(schema.location).toEqual({ '@type': 'VirtualLocation', url: 'https://bnivivaldi.lv/events/x' })
-    expect(schema.organizer).toMatchObject({ name: 'BNI Vivaldi' })
+    expect(schema.location).toEqual({ '@type': 'VirtualLocation', url: 'https://chapter.example.org/events/x' })
+    expect(schema.organizer).toMatchObject({ name: 'Example Chapter' })
   })
 
   it('gives an in-person event a Place with an address', () => {
     const schema = generateEventSchema({
       name: 'Klātienes tikšanās',
-      baseUrl: 'https://bnivivaldi.lv',
+      baseUrl: 'https://chapter.example.org',
       location: 'Aston viesnīca, Brīvības iela 48/50, Rīga',
     }) as Record<string, any>
     expect(schema.eventAttendanceMode).toBe('https://schema.org/OfflineEventAttendanceMode')
@@ -160,10 +160,10 @@ describe('dates and addresses', () => {
   })
 
   it('round-trips an address without leaving it readable in the markup', () => {
-    const encoded = encodeEmail('vārds@bnivivaldi.lv')
+    const encoded = encodeEmail('vārds@chapter.example.org')
     expect(encoded).not.toContain('@')
-    expect(encoded).not.toContain('bnivivaldi')
-    expect(decodeEmail(encoded)).toBe('vārds@bnivivaldi.lv')
+    expect(encoded).not.toContain('example')
+    expect(decodeEmail(encoded)).toBe('vārds@chapter.example.org')
     expect(encodeEmail('')).toBe('')
   })
 })

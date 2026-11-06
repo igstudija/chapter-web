@@ -17,7 +17,8 @@ export async function POST(request: Request) {
 
     // Authenticate user
     const { user } = await payload.auth({ headers })
-    if (!user) {
+    // Only a person signs in here; MCP API keys are an auth collection too.
+    if (!user || user.collection !== 'users') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

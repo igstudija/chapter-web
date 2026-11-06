@@ -11,6 +11,7 @@ import { resolvePgPoolMax } from './lib/pgPoolSize'
 import { resolvePoolerUrl } from './lib/poolerUrl'
 import { MAX_UPLOAD_BYTES } from './lib/uploadLimits'
 import { backfillMissingVersions } from './lib/documentVersions'
+import { mcp } from './lib/mcp'
 
 import {
   Users,
@@ -265,5 +266,7 @@ export default buildConfig({
         },
       },
     }),
+    // /api/mcp for assistants such as Claude. See lib/mcp.ts for what it can reach.
+    mcp,
   ],
 })

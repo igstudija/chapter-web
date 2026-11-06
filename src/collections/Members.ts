@@ -1,5 +1,7 @@
+import { randomBytes } from 'crypto'
 import type { CollectionConfig, Access, Where, CollectionSlug } from 'payload'
 import { adminOnly, adminFieldAccess, isAdmin } from '../access'
+import { memberDisplayName } from '../lib/memberDisplayName'
 import { htmlEditorField } from '../fields/HtmlEditor'
 import { sanitizeHtmlContent } from '../lib/sanitizeHtml'
 
@@ -35,7 +37,8 @@ const adminOrOwnProfile: Access = ({ req: { user } }) => {
 export const Members: CollectionConfig = {
   slug: 'members',
   admin: {
-    useAsTitle: 'company',
+    // The person, then the company — see lib/memberDisplayName.ts.
+    useAsTitle: 'displayName',
     defaultColumns: ['name', 'surname', 'company', 'role', 'status'],
     listSearchableFields: [
       'name',
@@ -104,7 +107,7 @@ export const Members: CollectionConfig = {
       // DB roundtrips (create-new-user → populate name/surname →
       // sync-name-to-user → uniqueness check). The new ordering runs the
       // independent queries in parallel where possible.
-      async ({ req, data, operation, originalDoc }) => {
+      async ({ req, data, operation, originalDoc, context }) => {
         if (!data) return data
 
         // 1. createNewUser flow must run first because it sets data.user.
@@ -131,7 +134,12 @@ export const Members: CollectionConfig = {
                 email: newUserEmail,
                 name: newUserName,
                 surname: newUserSurname,
-                password: 'ChangeMe123!',
+                // Nobody is told this password, and nobody needs it: a new
+                // member signs in with a magic link or sets a password through
+                // "forgot password". It used to be a fixed string, which —
+                // published with the source — opened every account created
+                // here whose owner had not changed it.
+                password: randomBytes(32).toString('base64url'),
                 role: 'member',
                 status: 'active',
               },
@@ -196,7 +204,9 @@ export const Members: CollectionConfig = {
         // 3. Sync any updated name/surname back to the users collection.
         // Only fires when something actually changed vs. originalDoc, so
         // pure membership updates don't trigger a user write.
-        if (operation === 'update') {
+        // Skipped when the change came from the user record in the first place
+        // (Users' afterChange), which would otherwise write it straight back.
+        if (operation === 'update' && !context?.syncingNameFromUser) {
           const update: Record<string, string> = {}
           if (data.name && data.name !== originalDoc?.name) update.name = data.name
           if (data.surname && data.surname !== originalDoc?.surname) update.surname = data.surname
@@ -206,10 +216,27 @@ export const Members: CollectionConfig = {
               id: userId,
               data: update,
               depth: 0,
+              context: { syncingNameFromMember: true },
             })
           }
         }
 
+        return data
+      },
+
+      // Last, so it sees the name the hook above may have filled in from the
+      // user record. A partial update carries only what changed; the rest
+      // comes from the stored document.
+      ({ data, originalDoc }) => {
+        if (!data) return data
+        const current = (field: 'name' | 'surname' | 'company') =>
+          data[field] !== undefined ? data[field] : originalDoc?.[field]
+        data.displayName =
+          memberDisplayName({
+            name: current('name'),
+            surname: current('surname'),
+            company: current('company'),
+          }) || null
         return data
       },
     ],
@@ -376,6 +403,15 @@ export const Members: CollectionConfig = {
           },
         },
       ],
+    },
+    {
+      // Written by the last beforeChange hook on every save; never typed.
+      name: 'displayName',
+      type: 'text',
+      index: true,
+      admin: {
+        hidden: true,
+      },
     },
     {
       name: 'phone',

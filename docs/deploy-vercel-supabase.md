@@ -134,8 +134,9 @@ pnpm seed:policies     # fills the three policy pages the footer links to
 the schema itself instead of applying the migrations, and records it as a
 migration named `dev`. After that, `pnpm migrate` decides the schema has drifted
 and stops to ask whether to reset the database — with nothing at the keyboard it
-waits forever, printing nothing. Recovering means applying migration SQL by
-hand. Running the commands in the order above avoids it entirely.
+waits forever, printing nothing. `pnpm migrate:reconcile` repairs that — see
+[Recover from a dev push](howto/recover-from-a-dev-push.md) — but running the
+commands in the order above avoids it entirely.
 
 `pnpm seed:policies` is not optional in the way its name suggests. The footer
 links to Terms, Privacy and Cookie policy from every page, and with no templates
@@ -280,8 +281,9 @@ visitor addresses rather than the proxy's.
 
 ## 7. Check it end to end
 
-- `https://your-domain.org/api/health` → `{"status":"ok","db":"ok"}`. If `db`
-  says `error`, the connection string is wrong — see the table in step 8.
+- `https://your-domain.org/api/health` → `{"status":"ok"}` with a 200. A 503
+  with `"unhealthy"` means the database did not answer — see the table below.
+  Set `HEALTH_TOKEN` and send it as `x-health-token` to see which part failed.
 - `https://your-domain.org/admin` → log in with the account from `pnpm bootstrap`.
 - Upload an image in **Media**. It should appear in the Supabase Storage bucket
   under `media/`, along with `-thumbnail`, `-card` and `-medium` versions
@@ -335,7 +337,8 @@ get by copying values across without thinking about it.
 
 **Schema changes.** When a new version adds migrations, run them from your
 machine against the session pooler (port 5432) *before* the deploy that needs
-them:
+them — or, when the connection string is a secret you cannot read back, from a
+one-off build ([Run migrations in production](howto/run-migrations-in-production.md)):
 
 ```bash
 pnpm migrate
@@ -363,7 +366,7 @@ to a paid plan or schedule your own `pg_dump`.
 | Symptom | Cause |
 |---|---|
 | Build fails: `Object storage is not configured. Missing: …` | Environment variables were added after the first deploy, or one is misspelled. Fix them, then redeploy — the build reads them, so it cannot succeed without. |
-| `/api/health` returns `"db":"error"`, or requests hang | Using the direct connection string (IPv6-only) instead of the transaction pooler. Switch to port 6543. |
+| `/api/health` returns 503, or requests hang | Using the direct connection string (IPv6-only) instead of the transaction pooler. Switch to port 6543. |
 | `password authentication failed` | A special character in the password is not percent-encoded (`@` → `%40`), or the username is missing its `.PROJECT` suffix in the pooler string. |
 | `too many connections` under load | `PG_POOL_MAX` was raised on a serverless host. Leave it unset — it defaults to 1 per instance, which is correct behind a pooler. |
 | `max clients reached in session mode` running migrations or setup locally | The session pooler allows 15 clients; the default pool is 50. Set `PG_POOL_MAX=5` in your local `.env`. |
@@ -375,6 +378,8 @@ to a paid plan or schedule your own `pg_dump`.
 | Emails never arrive | `EMAIL_FROM` is an address the SMTP provider is not authorised to send as. Providers drop those silently. |
 | Security Advisor: **RLS Disabled in Public**, one row per table | `pnpm secure:db --apply` has not been run, or a migration added tables after it was. Run it again — it is safe to repeat. |
 | Security Advisor: **RLS Enabled No Policy**, one row per table, under *Info* | Nothing is wrong. That is what this install is supposed to look like; adding policies would undo it. |
+| `pnpm migrate` asks whether to reset the database, or never finishes | A dev server was pointed at this database. Answer nothing; see [Recover from a dev push](howto/recover-from-a-dev-push.md). |
+| Deployment **Blocked**: the commit author is not a member of the team | Vercel Hobby refuses deploys of commits by people outside the team. Add them, or deploy with the CLI from a copy without `.git` — see [Run migrations in production](howto/run-migrations-in-production.md#deploy-blocked-the-commit-author-is-not-a-member-of-the-team). |
 | Preview deployments fail: `Object storage is not configured` | Environment variables were added for Production only. Vercel does not share them across environments — add each one to Preview as well, or accept that only production builds. |
 
 Vercel's function logs are under **Deployments** → the deployment → **Logs**;

@@ -20,7 +20,7 @@ import {
 import { JsonLd } from '@/components/JsonLd'
 import { DEFAULT_ORG_NAME } from '@/lib/branding'
 import { iconPath } from '@/lib/iconPath'
-import { GUEST_PATH, findNextPublicEvent, formatMeetingDate } from '@/lib/nextMeeting'
+import { findNextPublicEvent, formatMeetingDate, guestPathFor, isGuestPath } from '@/lib/nextMeeting'
 
 /** How long after its newest post the home page keeps showing the blog band. */
 const BLOG_FRESH_FOR_MS = 180 * 24 * 60 * 60 * 1000
@@ -136,7 +136,8 @@ export default async function HomePage() {
   const stats = homepage?.stats
   const cta = homepage?.cta
   const timezone = currentSite?.timezone || 'Europe/Riga'
-  const guestButtonFromCms = hero?.primaryButtonLink === GUEST_PATH
+  const guestPath = guestPathFor(locale)
+  const guestButtonFromCms = isGuestPath(hero?.primaryButtonLink)
   const newestPostAt = blogData.docs[0]?.publishedAt || blogData.docs[0]?.createdAt
   const blogIsFresh =
     Boolean(newestPostAt) &&
@@ -310,14 +311,14 @@ export default async function HomePage() {
               prospect to a meeting as a guest. It used to be absent from the
               hero — the red button went to the member list — so it now leads,
               and the CMS buttons follow it. An editor who points a CMS button
-              at /viesis themselves gets it once, not twice.
+              at the guest link themselves gets it once, not twice.
             */}
             <div
               className="rise-in mt-11 flex flex-col gap-3 sm:flex-row sm:items-center"
               style={{ animationDelay: '300ms' }}
             >
               {!guestButtonFromCms && (
-                <Link href={GUEST_PATH} className="btn btn-primary px-7 py-3.5">
+                <Link href={guestPath} className="btn btn-primary px-7 py-3.5">
                   {t('home', 'guestCta')}
                 </Link>
               )}
@@ -606,14 +607,14 @@ export default async function HomePage() {
               {cta?.description || t('home', 'ctaDescription')}
             </p>
             <div className="mt-11 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              {cta?.buttonLink !== GUEST_PATH && (
-                <Link href={GUEST_PATH} className="btn btn-primary px-9 py-4 text-base">
+              {!isGuestPath(cta?.buttonLink) && (
+                <Link href={guestPath} className="btn btn-primary px-9 py-4 text-base">
                   {t('home', 'guestCta')}
                 </Link>
               )}
               <Link
                 href={cta?.buttonLink || '/contacts'}
-                className={`btn px-9 py-4 text-base ${cta?.buttonLink === GUEST_PATH ? 'btn-primary' : 'btn-line-invert'}`}
+                className={`btn px-9 py-4 text-base ${isGuestPath(cta?.buttonLink) ? 'btn-primary' : 'btn-line-invert'}`}
               >
                 {cta?.buttonText || t('home', 'getInTouch')}
               </Link>
