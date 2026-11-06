@@ -63,7 +63,7 @@ See [Connect Claude with MCP](docs/howto/connect-claude-with-mcp.md).
 
 ## Requirements
 
-- **Node.js** 20.9+ (or 18.20.2+)
+- **Node.js** 20.9 or newer — Next.js 16 no longer runs on 18
 - **pnpm** 9 or 10
 - **A Supabase project** — provides both Postgres and object storage
 - **An SMTP provider** — sends invitations and password resets

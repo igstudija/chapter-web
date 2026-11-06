@@ -251,6 +251,11 @@ it silently.
 `NEXT_PUBLIC_*` variables are compiled into the build. Changing one later
 requires a redeploy, not just a restart.
 
+Three more are optional, each explained in `.env.example`:
+`SECURITY_CONTACT` (where `/.well-known/security.txt` sends vulnerability
+reports), `HEALTH_TOKEN` (unlocks the details of `/api/health` for a monitor),
+and `MCP_DISABLED=1` (removes the MCP endpoint).
+
 4. **Deploy.** The first build takes 3–6 minutes.
 
 ### Set the region to match Supabase
@@ -290,6 +295,17 @@ visitor addresses rather than the proxy's.
   generated a few seconds later.
 - Trigger a password reset and confirm the email arrives, with a link pointing
   at the right domain.
+- `https://your-domain.org/viesis` (Latvian sites) or `/guest` leads to the
+  events list, or once an event is published, to its registration form.
+
+### Then
+
+- Work through the [search and sharing checklist](howto/launch-checklist-search-and-sharing.md):
+  site name, share image, social profiles, sitemap.
+- To let Claude draft events and pages, [connect it with MCP](howto/connect-claude-with-mcp.md).
+- Before each meeting, [leave absent members off the slides](howto/skip-members-from-the-slideshow.md).
+
+The rest of the guides are listed in [docs/howto](howto/README.md).
 
 ---
 
