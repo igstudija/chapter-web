@@ -38,18 +38,24 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    // Self-hosted (Docker): served straight from object storage, unoptimized
-    // on purpose. The in-process optimizer (sharp) was the main driver of
-    // unbounded RSS growth there: every remote image was re-fetched and
+    // Served straight from object storage, unoptimized on every host.
+    //
+    // Self-hosted (Docker): the in-process optimizer (sharp) was the main
+    // driver of unbounded RSS growth. Every remote image was re-fetched and
     // re-encoded in the app's own memory, which held RSS above the container
     // health-check threshold until it got killed.
     //
-    // On Vercel that reason does not exist — optimisation runs in Vercel's
-    // image service, not in the app's function — and leaving it off cost the
-    // home page its LCP: a 1920 px, 457 KB hero downloaded in full on phones
-    // (7.2 s mobile LCP in the 2026-11-04 audit). There it is on, with AVIF/WebP.
-    unoptimized: process.env.VERCEL !== '1',
-    formats: ['image/avif', 'image/webp'],
+    // Vercel: optimisation was on there for a while (a3a86ac, hero LCP) and
+    // used up the team's image transformation quota. Past it `/_next/image`
+    // answers 402 OPTIMIZED_IMAGE_REQUEST_PAYMENT_REQUIRED, and every image not
+    // already in Vercel's cache rendered broken, member photos on the group
+    // slides among them. The slideshow preloader also expects plain storage
+    // URLs, so an optimised slide downloaded each image twice.
+    //
+    // To send a phone less than a full original, use the -thumbnail/-card/
+    // -medium copies generated at upload: getThumbnailUrl for one size,
+    // getVariantSrcSet on a plain <img> for a responsive srcset (the hero).
+    unoptimized: true,
     remotePatterns: imageHosts(),
   },
   webpack: (webpackConfig, { isServer }) => {
