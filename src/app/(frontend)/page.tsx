@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { getSettings } from '@/lib/getSiteSettings'
-import Image from 'next/image'
+import { preload } from 'react-dom'
 import { headers } from 'next/headers'
+import { getVariantSrcSet } from '@/lib/getThumbnailUrl'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 // Direct imports, not the @/components barrel: the barrel re-exports every
@@ -24,6 +25,9 @@ import { findNextPublicEvent, formatMeetingDate, guestPathFor, isGuestPath } fro
 
 /** How long after its newest post the home page keeps showing the blog band. */
 const BLOG_FRESH_FOR_MS = 180 * 24 * 60 * 60 * 1000
+
+/** The hero spans the viewport. */
+const HERO_SIZES = '100vw'
 
 export async function generateMetadata() {
   const headersList = await headers()
@@ -147,6 +151,19 @@ export default async function HomePage() {
       ? (hero.backgroundImage as Media)
       : null
 
+  // The hero is the LCP element. Storage already holds an 800 px copy of it,
+  // which a phone takes instead of the full original; the preload hands the
+  // browser the same choice before it reaches the <img>.
+  const heroSrcSet = backgroundImage ? getVariantSrcSet(backgroundImage, ['medium']) : undefined
+  if (backgroundImage?.url) {
+    preload(backgroundImage.url, {
+      as: 'image',
+      imageSrcSet: heroSrcSet,
+      imageSizes: heroSrcSet ? HERO_SIZES : undefined,
+      fetchPriority: 'high',
+    })
+  }
+
   /**
    * The headline highlight used to be split on an empty string when no
    * highlight was configured, which explodes the title into one span per
@@ -204,13 +221,18 @@ export default async function HomePage() {
         {/* Background Image */}
         {backgroundImage?.url ? (
           <>
-            <Image
+            {/* A plain <img>: with `images.unoptimized` on, next/image drops
+                srcSet, and srcSet is what keeps a phone from downloading the
+                full original. See getVariantSrcSet. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={backgroundImage.url}
+              srcSet={heroSrcSet}
+              sizes={heroSrcSet ? HERO_SIZES : undefined}
               alt={backgroundImage.alt || 'Hero background'}
-              fill
-              className="scale-105 object-cover"
-              sizes="100vw"
-              priority
+              fetchPriority="high"
+              decoding="async"
+              className="absolute inset-0 h-full w-full scale-105 object-cover"
             />
             {/*
               A flat 60% black wash over the whole photo is what made this read

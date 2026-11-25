@@ -9,6 +9,7 @@ import {
   uploadObject,
 } from './storage'
 import { IS_SERVERLESS } from './runtime'
+import { THUMBNAIL_BOX, type ThumbnailSize } from './getThumbnailUrl'
 
 /**
  * Background thumbnail generation for uploaded images.
@@ -20,16 +21,19 @@ import { IS_SERVERLESS } from './runtime'
  */
 
 interface ImageSize {
-  name: string
+  name: ThumbnailSize
   width: number
   height: number
 }
 
-const IMAGE_SIZES: ImageSize[] = [
-  { name: 'thumbnail', width: 200, height: 200 },
-  { name: 'card', width: 400, height: 400 },
-  { name: 'medium', width: 800, height: 800 },
-]
+// The boxes live with getThumbnailUrl because getVariantSrcSet works out each
+// copy's width from them; a size changed here alone would give the browser
+// wrong srcset descriptors.
+const IMAGE_SIZES: ImageSize[] = (Object.keys(THUMBNAIL_BOX) as ThumbnailSize[]).map((name) => ({
+  name,
+  width: THUMBNAIL_BOX[name],
+  height: THUMBNAIL_BOX[name],
+}))
 
 const MEDIA_PREFIX = 'media'
 
