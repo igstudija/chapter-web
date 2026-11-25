@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { IntroSlide } from './IntroSlide'
-import { GroupSlide } from './GroupSlide'
+import { GroupSlide, groupSlideLogoUrl, groupSlidePhotoUrl } from './GroupSlide'
 import { MemberSlide } from './MemberSlide'
 import { GuestsSlide } from './GuestsSlide'
 import { GuestDetailSlide } from './GuestDetailSlide'
@@ -60,13 +60,14 @@ function slideMediaToPreload(slide: SlideData | undefined): {
 
   if (slide.type === 'group') {
     // A group slide puts every member of the group up at once. `next/image` is
-    // configured `unoptimized`, so these are the plain storage URLs and a
-    // preload hits the same cache entry the slide will read.
+    // configured `unoptimized`, so these are plain storage URLs; building them
+    // with the slide's own functions makes the preload hit the entry it reads.
     const { members } = slide.data as { members: SlideMember[] }
     return {
-      images: members
-        .flatMap((m) => [m.profileImage?.url, m.logo?.url])
-        .filter((url): url is string => !!url),
+      images: members.flatMap((m) => [
+        ...(m.profileImage?.url ? [groupSlidePhotoUrl(m.profileImage.url)] : []),
+        ...(m.logo?.url ? [groupSlideLogoUrl(m.logo.url)] : []),
+      ]),
       video: null,
     }
   }
