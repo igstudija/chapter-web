@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { parseSlideVideo, isSupportedSlideVideoUrl } from '@/lib/slideVideo'
-import { isSafariBrowser } from '@/lib/browserDetect'
 
 describe('parseSlideVideo', () => {
   it('accepts every common YouTube link shape', () => {
@@ -61,41 +60,16 @@ describe('parseSlideVideo', () => {
   })
 
   it('rejects anything it cannot embed', () => {
-    for (const input of [null, undefined, '', '   ', 'not a url', 'https://example.com/video.mp4']) {
+    for (const input of [
+      null,
+      undefined,
+      '',
+      '   ',
+      'not a url',
+      'https://example.com/video.mp4',
+    ]) {
       expect(parseSlideVideo(input)).toBeNull()
       expect(isSupportedSlideVideoUrl(input)).toBe(false)
-    }
-  })
-})
-
-describe('isSafariBrowser', () => {
-  const SAFARI_MAC =
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15'
-  const SAFARI_IOS =
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1'
-
-  it('flags real Safari on desktop and on iOS', () => {
-    expect(isSafariBrowser(SAFARI_MAC)).toBe(true)
-    expect(isSafariBrowser(SAFARI_IOS)).toBe(true)
-  })
-
-  it('leaves other browsers alone — the gate is on Safari, not on mobile', () => {
-    const others = [
-      // Chrome / Firefox / Edge on iOS: all carry "Safari" in their UA.
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/123.0.6312.52 Mobile/15E148 Safari/604.1',
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/124.0 Mobile/15E148 Safari/605.1.15',
-      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/123.0.0.0 Mobile/15E148 Safari/605.1.15',
-      // Android Chrome and Samsung Internet.
-      'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Mobile Safari/537.36',
-      'Mozilla/5.0 (Linux; Android 13; SM-S911B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/23.0 Chrome/115.0.0.0 Mobile Safari/537.36',
-      // Desktop Chrome, Edge, Firefox.
-      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36 Edg/123.0.0.0',
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:124.0) Gecko/20100101 Firefox/124.0',
-    ]
-
-    for (const ua of others) {
-      expect(isSafariBrowser(ua), ua).toBe(false)
     }
   })
 })

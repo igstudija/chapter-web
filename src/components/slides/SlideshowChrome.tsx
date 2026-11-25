@@ -163,14 +163,10 @@ function ControlCluster({ props }: { props: ChromeProps }) {
  * player has behaved for a decade and keeps a projected slide free of
  * furniture.
  *
- * Two `foreignObject`s rather than one, because SVG hit-testing is not CSS box
- * hit-testing: `pointer-events` on a `foreignObject` decides whether the browser
- * descends into its subtree at all, so `pointer-events: auto` on a child cannot
- * win back what the parent turned off, and a full-bleed `foreignObject` left at
- * the default swallows every click aimed at the slide underneath it. The logo
- * wall's tiles are buttons that jump to a member, and one overlay covering the
- * frame made every one of them dead. So the informational layer is inert end to
- * end, and the controls get their own box, no bigger than the pill itself and
+ * Two layers, both positioned on the 1920x1080 stage. The informational layer
+ * covers the frame and is inert end to end, so it never swallows a click aimed
+ * at the slide underneath: the logo wall's tiles are buttons that jump to a
+ * member. The controls get their own box, no bigger than the pill itself and
  * only live once that pill is on screen.
  */
 export function SlideshowChrome(props: ChromeProps) {
@@ -195,12 +191,9 @@ export function SlideshowChrome(props: ChromeProps) {
 
   return (
     <>
-      <foreignObject
-        x="0"
-        y="0"
-        width={SLIDE_WIDTH}
-        height={SLIDE_HEIGHT}
-        style={{ pointerEvents: 'none' }}
+      <div
+        className="pointer-events-none absolute left-0 top-0"
+        style={{ width: SLIDE_WIDTH, height: SLIDE_HEIGHT }}
       >
         <div className="pointer-events-none relative h-full w-full">
           {/*
@@ -252,19 +245,22 @@ export function SlideshowChrome(props: ChromeProps) {
             )}
           </div>
         </div>
-      </foreignObject>
+      </div>
 
       {/*
       Controls, revealed on pointer activity or when the pointer rests on them.
       Inert while hidden, so an invisible pill parked over the foot of the slide
       does not eat clicks aimed at whatever the slide draws underneath it.
     */}
-      <foreignObject
-        x={(SLIDE_WIDTH - CONTROLS_BOX_WIDTH) / 2}
-        y={SLIDE_HEIGHT - CONTROLS_BOX_HEIGHT}
-        width={CONTROLS_BOX_WIDTH}
-        height={CONTROLS_BOX_HEIGHT}
-        style={{ pointerEvents: revealed ? 'auto' : 'none' }}
+      <div
+        className="absolute"
+        style={{
+          left: (SLIDE_WIDTH - CONTROLS_BOX_WIDTH) / 2,
+          top: SLIDE_HEIGHT - CONTROLS_BOX_HEIGHT,
+          width: CONTROLS_BOX_WIDTH,
+          height: CONTROLS_BOX_HEIGHT,
+          pointerEvents: revealed ? 'auto' : 'none',
+        }}
       >
         <div
           className="flex h-full w-full flex-col items-center justify-end"
@@ -292,7 +288,7 @@ export function SlideshowChrome(props: ChromeProps) {
             </span>
           </div>
         </div>
-      </foreignObject>
+      </div>
     </>
   )
 }
