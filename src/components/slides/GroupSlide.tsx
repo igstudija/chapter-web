@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { CompanyLogo } from '@/components/CompanyLogo'
+import { getThumbnailUrl } from '@/lib/getThumbnailUrl'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 
 interface Member {
@@ -36,6 +37,18 @@ interface GroupSlideProps {
   members: Member[]
   translations: GroupSlideTranslations
 }
+
+/**
+ * The sized copies a group slide draws, written next to each original at upload.
+ * A tile is 180 px, so the 400 px `-card` copy covers it at 2x; a logo sits in an
+ * 80x32 box, which the 200 px `-thumbnail` covers. Loading the originals put up
+ * to a dozen full-size photos on screen at once.
+ *
+ * SlideshowViewer preloads through these same functions, so the preload and the
+ * slide read one cache entry.
+ */
+export const groupSlidePhotoUrl = (url: string): string => getThumbnailUrl(url, 'card') || url
+export const groupSlideLogoUrl = (url: string): string => getThumbnailUrl(url, 'thumbnail') || url
 
 const RIGHT_PANEL_WIDTH = 520
 
@@ -113,7 +126,7 @@ export function GroupSlide({ group, members, translations }: GroupSlideProps) {
                 <div className="relative aspect-square w-full">
                   {member.profileImage?.url ? (
                     <Image
-                      src={member.profileImage.url}
+                      src={groupSlidePhotoUrl(member.profileImage.url)}
                       alt={`${member.name} ${member.surname}`}
                       fill
                       sizes="180px"
@@ -130,7 +143,7 @@ export function GroupSlide({ group, members, translations }: GroupSlideProps) {
                   {member.logo?.url && (
                     <div className="absolute bottom-3 right-3 rounded-md bg-white/95 px-2 py-1 shadow-sm">
                       <CompanyLogo
-                        src={member.logo.url}
+                        src={groupSlideLogoUrl(member.logo.url)}
                         alt={`${member.company} logo`}
                         width={80}
                         height={32}

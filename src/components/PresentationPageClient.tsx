@@ -11,7 +11,6 @@ import type {
   SlideMediaType,
   SlideMember,
 } from '@/lib/buildSlides'
-import { isSafariBrowser } from '@/lib/browserDetect'
 import type { SlideImageRef } from './PresentationForm'
 
 interface PresentationPageClientProps {
@@ -53,9 +52,6 @@ interface SlideshowTranslations {
      one member's figures, these label a whole power group's. */
   groupBusinessReceived?: string
   groupBusinessGiven?: string
-  safariNotSupported?: string
-  safariMessage?: string
-  safariPreviewMessage?: string
 }
 
 interface PreviewData {
@@ -90,8 +86,10 @@ function applyMemberOverrides(
       slideImages: images,
       slideMediaType: overrides.slideMediaType,
       slideVideoUrl: overrides.slideVideoUrl,
-      slideSpecialRequestDisplay: overrides.slideSpecialRequestDisplay as SlideMember['slideSpecialRequestDisplay'],
-      slideNextSpeakerPosition: overrides.slideNextSpeakerPosition as SlideMember['slideNextSpeakerPosition'],
+      slideSpecialRequestDisplay:
+        overrides.slideSpecialRequestDisplay as SlideMember['slideSpecialRequestDisplay'],
+      slideNextSpeakerPosition:
+        overrides.slideNextSpeakerPosition as SlideMember['slideNextSpeakerPosition'],
       tyfcbGiven: overrides.tyfcbGiven,
       tyfcbReceived: overrides.tyfcbReceived,
     }
@@ -127,13 +125,8 @@ export function PresentationPageClient({
   const [previewData, setPreviewData] = useState<PreviewData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isSafari, setIsSafari] = useState(false)
   // Bumped by "open my slide"; the viewer jumps back to this member on change.
   const [focusSignal, setFocusSignal] = useState(0)
-
-  useEffect(() => {
-    setIsSafari(isSafariBrowser())
-  }, [])
 
   useEffect(() => {
     const timestamp = Date.now()
@@ -226,55 +219,28 @@ export function PresentationPageClient({
             <span>{openMySlideLabel}</span>
           </button>
         </div>
-        {isSafari ? (
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-6 text-center">
-            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-6 h-6 text-yellow-600 dark:text-yellow-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
+        <>
+          {loading && (
+            <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
+              Ielādē preview...
             </div>
-            <p className="text-yellow-800 dark:text-yellow-200 font-medium mb-2">
-              {previewData?.translations?.safariNotSupported || 'Safari is not supported'}
-            </p>
-            <p className="text-yellow-700 dark:text-yellow-300 text-sm">
-              {previewData?.translations?.safariPreviewMessage ||
-                'Please use Chrome, Firefox, Opera or Microsoft Edge to preview the slideshow.'}
-            </p>
-          </div>
-        ) : (
-          <>
-            {loading && (
-              <div className="p-8 text-center text-neutral-500 dark:text-neutral-400">
-                Ielādē preview...
-              </div>
-            )}
-            {error && <div className="p-8 text-center text-red-500">Kļūda: {error}</div>}
-            {previewData && overriddenContext && (
-              <SlideshowViewer
-                slideBlocks={previewData.slideBlocks}
-                buildContext={overriddenContext}
-                transitionSoundUrl={previewData.transitionSoundUrl}
-                startMemberId={memberId}
-                overrideBackgroundColor={slideBackgroundColor}
-                overrideBackgroundColorRight={slideBackgroundColorRight}
-                overrideImageMode={slideImageMode}
-                overrideTemplate={slideTemplate}
-                focusStartMemberSignal={focusSignal}
-                translations={previewData.translations}
-              />
-            )}
-          </>
-        )}
+          )}
+          {error && <div className="p-8 text-center text-red-500">Kļūda: {error}</div>}
+          {previewData && overriddenContext && (
+            <SlideshowViewer
+              slideBlocks={previewData.slideBlocks}
+              buildContext={overriddenContext}
+              transitionSoundUrl={previewData.transitionSoundUrl}
+              startMemberId={memberId}
+              overrideBackgroundColor={slideBackgroundColor}
+              overrideBackgroundColorRight={slideBackgroundColorRight}
+              overrideImageMode={slideImageMode}
+              overrideTemplate={slideTemplate}
+              focusStartMemberSignal={focusSignal}
+              translations={previewData.translations}
+            />
+          )}
+        </>
       </div>
     </>
   )

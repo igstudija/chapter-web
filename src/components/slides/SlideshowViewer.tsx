@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react'
 import Image from 'next/image'
 import { IntroSlide } from './IntroSlide'
-import { GroupSlide } from './GroupSlide'
+import { GroupSlide, groupSlideLogoUrl, groupSlidePhotoUrl } from './GroupSlide'
 import { MemberSlide } from './MemberSlide'
 import { GuestsSlide } from './GuestsSlide'
 import { GuestDetailSlide } from './GuestDetailSlide'
@@ -23,6 +23,35 @@ import {
   type SlidePowerGroup,
 } from '@/lib/buildSlides'
 import { SlideshowChrome, SLIDE_WIDTH, SLIDE_HEIGHT, type ChromeProps } from './SlideshowChrome'
+
+/**
+ * How far the 1920x1080 stage has to shrink or grow to fit its frame, centred
+ * and letterboxed the way `preserveAspectRatio="xMidYMid meet"` would do it.
+ *
+ * The stage used to be an SVG `viewBox` with the slide's HTML inside a
+ * `<foreignObject>`. WebKit lays HTML inside `foreignObject` out without the
+ * SVG's scale, so on Safari, and on every iPad and iPhone browser (Chrome
+ * there runs on WebKit too), the slide rendered at full size and ran off the
+ * screen. A CSS transform scales the same way in every engine, so there is no
+ * browser to warn about any more.
+ *
+ * Returns 0 until the frame has been measured; the stage stays hidden until then.
+ */
+function useStageScale(frame: HTMLElement | null): number {
+  const [scale, setScale] = useState(0)
+
+  useLayoutEffect(() => {
+    if (!frame) return
+    const fit = () =>
+      setScale(Math.min(frame.clientWidth / SLIDE_WIDTH, frame.clientHeight / SLIDE_HEIGHT))
+    fit()
+    const observer = new ResizeObserver(fit)
+    observer.observe(frame)
+    return () => observer.disconnect()
+  }, [frame])
+
+  return scale
+}
 
 /** How long the minimal chrome's controls linger after the pointer stops. */
 const CONTROLS_IDLE_MS = 2600
@@ -60,13 +89,14 @@ function slideMediaToPreload(slide: SlideData | undefined): {
 
   if (slide.type === 'group') {
     // A group slide puts every member of the group up at once. `next/image` is
-    // configured `unoptimized`, so these are the plain storage URLs and a
-    // preload hits the same cache entry the slide will read.
+    // configured `unoptimized`, so these are plain storage URLs; building them
+    // with the slide's own functions makes the preload hit the entry it reads.
     const { members } = slide.data as { members: SlideMember[] }
     return {
-      images: members
-        .flatMap((m) => [m.profileImage?.url, m.logo?.url])
-        .filter((url): url is string => !!url),
+      images: members.flatMap((m) => [
+        ...(m.profileImage?.url ? [groupSlidePhotoUrl(m.profileImage.url)] : []),
+        ...(m.logo?.url ? [groupSlideLogoUrl(m.logo.url)] : []),
+      ]),
       video: null,
     }
   }
@@ -168,7 +198,15 @@ export function SlideshowViewer({
   const [timeRemaining, setTimeRemaining] = useState(buildContext.settings.slideSeconds)
   const [progressStarted, setProgressStarted] = useState(false)
   const [attendanceFilter, setAttendanceFilter] = useState<'all' | 'onsite' | 'online'>('all')
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  // The frame is also kept in state so the stage is measured again when it
+  // mounts later, e.g. after an attendance filter that left no slides is lifted.
+  const [frame, setFrame] = useState<HTMLDivElement | null>(null)
+  const attachFrame = useCallback((el: HTMLDivElement | null) => {
+    containerRef.current = el
+    setFrame(el)
+  }, [])
+  const stageScale = useStageScale(frame)
   const prevAttendanceFilterRef = useRef<'all' | 'onsite' | 'online'>('all')
 
   const slides = useMemo(
@@ -337,7 +375,8 @@ export function SlideshowViewer({
     if (!container) return
 
     if (container.requestFullscreen) {
-      container.requestFullscreen()
+      // A refused request still leaves the CSS fallback below in place.
+      container.requestFullscreen().catch(() => {})
     } else if (
       (container as HTMLDivElement & { webkitRequestFullscreen?: () => void })
         .webkitRequestFullscreen
@@ -350,12 +389,18 @@ export function SlideshowViewer({
   }, [])
 
   const exitFullscreen = useCallback(() => {
-    if (document.exitFullscreen) {
-      document.exitFullscreen()
-    } else if (
-      (document as Document & { webkitExitFullscreen?: () => void }).webkitExitFullscreen
-    ) {
-      ;(document as Document & { webkitExitFullscreen: () => void }).webkitExitFullscreen()
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null
+      webkitExitFullscreen?: () => void
+    }
+    // In the CSS fallback nothing is fullscreen and exitFullscreen() would
+    // reject; leaving it is only the state change below.
+    if (doc.fullscreenElement ?? doc.webkitFullscreenElement) {
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => {})
+      } else {
+        doc.webkitExitFullscreen?.()
+      }
     }
     setIsFullscreen(false)
   }, [])
@@ -562,20 +607,40 @@ export function SlideshowViewer({
 
   return (
     <div
-      ref={containerRef}
+      ref={attachFrame}
       onMouseMove={notePointerActivity}
-      className={`relative bg-neutral-950 flex items-center justify-center ${
-        isFullscreen
-          ? 'fixed inset-0 z-50 h-screen w-screen'
-          : 'w-full rounded-xl shadow-2xl aspect-video'
+      /*
+        `fixed` and `relative` must never be on the frame together: both set
+        `position`, Tailwind emits `relative` later, and it won. Where the
+        Fullscreen API is missing (Chrome and Firefox on iPad and iPhone) this
+        class is the whole fullscreen, so it fell back to a 100vw x 100vh box
+        left in the page flow, hanging off the right and bottom of the screen.
+        `inset-0` rather than `h-screen`: 100vh on iOS includes the area behind
+        the browser's toolbars.
+      */
+      className={`overflow-hidden bg-neutral-950 ${
+        isFullscreen ? 'fixed inset-0 z-50' : 'relative w-full rounded-xl shadow-2xl aspect-video'
       }`}
     >
-      <svg
-        viewBox={`0 0 ${SLIDE_WIDTH} ${SLIDE_HEIGHT}`}
-        className="w-full h-full"
-        preserveAspectRatio="xMidYMid meet"
+      {/* The slide is laid out at 1920x1080 and scaled to the frame; see useStageScale. */}
+      <div
+        className="absolute left-1/2 top-1/2"
+        style={{
+          width: SLIDE_WIDTH,
+          height: SLIDE_HEIGHT,
+          transform: `translate(-50%, -50%) scale(${stageScale})`,
+          visibility: stageScale > 0 ? 'visible' : 'hidden',
+        }}
       >
-        <foreignObject x="0" y="0" width={SLIDE_WIDTH} height={contentHeight}>
+        {/*
+          `isolate` keeps the slide's own z-indexes (the logo, the request flash)
+          under the chrome, and `overflow-hidden` clips it to its box: both are
+          what the old <foreignObject> did implicitly.
+        */}
+        <div
+          className="absolute left-0 top-0 isolate overflow-hidden"
+          style={{ width: SLIDE_WIDTH, height: contentHeight }}
+        >
           <div className="w-full h-full relative">
             {logoUrl && currentSlide.type !== 'intro' && currentSlide.type !== 'custom-image' && (
               <div className="absolute left-6 top-6 z-10 bg-white rounded-lg p-2 shadow-md">
@@ -741,10 +806,10 @@ export function SlideshowViewer({
               <SpecialRequestFlash request={flashRequest} title={translations.specialRequest} />
             )}
           </div>
-        </foreignObject>
+        </div>
 
         <SlideshowChrome {...chromeProps} />
-      </svg>
+      </div>
 
       {/*
         The next slide's player, mounted a slide early so YouTube or Vimeo has
