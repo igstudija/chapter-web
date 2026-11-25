@@ -187,7 +187,7 @@ export function SlideshowChrome(props: ChromeProps) {
   const revealed = controlsVisible || stripHovered
 
   const badge =
-    'pointer-events-auto flex items-center gap-3 rounded-full bg-black/55 px-6 py-3 text-white backdrop-blur-md ring-1 ring-white/15'
+    'flex items-center gap-3 rounded-full bg-black/55 px-6 py-3 text-white backdrop-blur-md ring-1 ring-white/15'
 
   return (
     <>

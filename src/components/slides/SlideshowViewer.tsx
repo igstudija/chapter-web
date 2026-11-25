@@ -389,12 +389,18 @@ export function SlideshowViewer({
   }, [])
 
   const exitFullscreen = useCallback(() => {
-    if (document.exitFullscreen) {
-      document.exitFullscreen()
-    } else if (
-      (document as Document & { webkitExitFullscreen?: () => void }).webkitExitFullscreen
-    ) {
-      ;(document as Document & { webkitExitFullscreen: () => void }).webkitExitFullscreen()
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null
+      webkitExitFullscreen?: () => void
+    }
+    // In the CSS fallback nothing is fullscreen and exitFullscreen() would
+    // reject; leaving it is only the state change below.
+    if (doc.fullscreenElement ?? doc.webkitFullscreenElement) {
+      if (doc.exitFullscreen) {
+        doc.exitFullscreen().catch(() => {})
+      } else {
+        doc.webkitExitFullscreen?.()
+      }
     }
     setIsFullscreen(false)
   }, [])
@@ -626,8 +632,13 @@ export function SlideshowViewer({
           visibility: stageScale > 0 ? 'visible' : 'hidden',
         }}
       >
+        {/*
+          `isolate` keeps the slide's own z-indexes (the logo, the request flash)
+          under the chrome, and `overflow-hidden` clips it to its box: both are
+          what the old <foreignObject> did implicitly.
+        */}
         <div
-          className="absolute left-0 top-0"
+          className="absolute left-0 top-0 isolate overflow-hidden"
           style={{ width: SLIDE_WIDTH, height: contentHeight }}
         >
           <div className="w-full h-full relative">
